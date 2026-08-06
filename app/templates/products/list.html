@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-8">Productos</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <!-- Sidebar categorías -->
+    <aside>
+        <h3 class="font-bold mb-4">Categorías</h3>
+        <ul class="space-y-2">
+            {% for category in categories %}
+            <li>
+                <a href="/products?category={{ category.slug }}" 
+                   class="hover:text-blue-600 {% if current_category == category.slug %}text-blue-600 font-bold{% endif %}">
+                    {{ category.name }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </aside>
+
+    <!-- Grid productos -->
+    <div class="col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for product in products %}
+        <div class="bg-white rounded-lg shadow p-6">
+            {% if product.image_url %}
+            <img src="{{ product.image_url }}" alt="{{ product.title }}" class="w-full h-48 object-cover rounded mb-4">
+            {% endif %}
+            <h3 class="font-bold text-lg mb-2">{{ product.title }}</h3>
+            <p class="text-gray-600 mb-4">{{ product.description[:100] }}...</p>
+            <div class="flex justify-between items-center">
+                <span class="text-xl font-bold">${{ product.price }}</span>
+                <button hx-post="/cart/add/{{ product.id }}" 
+                        hx-target="#cart-count"
+                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Agregar
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

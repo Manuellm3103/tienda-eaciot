@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Admin - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+    <a href="/admin/ai/suggestions" class="bg-purple-600 text-white px-4 py-2 rounded">
+        Ver Sugerencias IA
+    </a>
+</div>
+
+<!-- Métricas -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm">Ventas Totales</h3>
+        <p class="text-3xl font-bold">${{ metrics.sales.total }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm">Ventas Hoy</h3>
+        <p class="text-3xl font-bold">${{ metrics.sales.today }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm">Clientes Totales</h3>
+        <p class="text-3xl font-bold">{{ metrics.customers.total }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-gray-500 text-sm">Nuevos Hoy</h3>
+        <p class="text-3xl font-bold">{{ metrics.customers.new_today }}</p>
+    </div>
+</div>
+
+<!-- Sugerencias IA -->
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-xl font-bold mb-4">Sugerencias de IA</h2>
+    <div id="ai-suggestions" hx-get="/admin/ai/suggestions/partial" hx-trigger="load">
+        Cargando sugerencias...
+    </div>
+</div>
+
+<!-- Top Productos -->
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold mb-4">Top Productos</h2>
+    <table class="w-full">
+        <thead>
+            <tr class="border-b">
+                <th class="text-left py-2">Producto</th>
+                <th class="text-right py-2">Vendidos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in metrics.top_products %}
+            <tr class="border-b">
+                <td class="py-2">{{ product.title }}</td>
+                <td class="text-right py-2">{{ product.sold }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

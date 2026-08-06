@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tienda Eaciot{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold">Tienda Eaciot</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/products" class="hover:text-blue-600">Productos</a>
+                    <a href="/cart" class="hover:text-blue-600">Carrito</a>
+                    {% if user %}
+                        <a href="/account" class="hover:text-blue-600">Mi Cuenta</a>
+                        <a href="/auth/logout" class="hover:text-red-600">Salir</a>
+                    {% else %}
+                        <a href="/auth/login" class="bg-blue-600 text-white px-4 py-2 rounded">Iniciar Sesión</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>
