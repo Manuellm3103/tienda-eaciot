@@ -1,0 +1,7 @@
+PassengerAppRoot /home/USER/public_html/tienda
+PassengerBaseURI /
+PassengerPython /home/USER/virtualenv/public_html/tienda/3.11/bin/python
+
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
