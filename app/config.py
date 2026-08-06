@@ -10,12 +10,6 @@ class Settings(BaseSettings):
     
     database_url: str = "postgresql+asyncpg://user:password@localhost:5432/tienda_eaciot"
     
-    auth0_domain: str = ""
-    auth0_client_id: str = ""
-    auth0_client_secret: str = ""
-    auth0_callback_url: str = ""
-    auth0_audience: str = ""
-    
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "llama3"
     
