@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Verificar Email - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Verificar Email
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Verificando tu dirección de email...
+            </p>
+        </div>
+        
+        <div id="status" class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p class="mt-4 text-gray-600">Procesando verificación...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const token = urlParams.get('token');
+
+if (token) {
+    window.location.href = `/auth/verify-email/confirm?token=${token}`;
+} else {
+    document.getElementById('status').innerHTML = `
+        <div class="text-red-600">
+            <svg class="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <p class="mt-4">Token de verificación no válido</p>
+            <a href="/auth/login" class="mt-4 inline-block text-blue-600 hover:text-blue-500">Ir al login</a>
+        </div>
+    `;
+}
+</script>
+{% endblock %}
