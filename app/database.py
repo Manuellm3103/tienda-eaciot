@@ -3,11 +3,21 @@ from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
 
 
-engine = create_async_engine(
-    settings.database_url,
-    echo=settings.debug,
-    connect_args={"statement_cache_size": 0, "prepared_statement_cache_size": 0},
-)
+if settings.database_url.startswith("sqlite"):
+    # SQLite async via aiosqlite
+    engine = create_async_engine(
+        settings.database_url,
+        echo=settings.debug,
+        connect_args={"check_same_thread": False},
+    )
+else:
+    # PostgreSQL via asyncpg + Supabase/Pooler safe settings
+    engine = create_async_engine(
+        settings.database_url,
+        echo=settings.debug,
+        connect_args={"statement_cache_size": 0, "prepared_statement_cache_size": 0},
+    )
+
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

@@ -1,14 +1,13 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Boolean, Integer, Numeric, DateTime, Text, JSON, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 
 
 class Promotion(Base):
     __tablename__ = "promotions"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
     title = Column(String(255), nullable=False)
     description = Column(Text)
     
@@ -38,16 +37,16 @@ class Promotion(Base):
 class Coupon(Base):
     __tablename__ = "coupons"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
     code = Column(String(50), unique=True, nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), index=True)
     
-    promotion_id = Column(UUID(as_uuid=True), ForeignKey("promotions.id"))
-    congratulation_rule_id = Column(UUID(as_uuid=True), ForeignKey("congratulation_rules.id"))
+    promotion_id = Column(String(36), ForeignKey("promotions.id"))
+    congratulation_rule_id = Column(String(36), ForeignKey("congratulation_rules.id"))
     
     is_used = Column(Boolean, default=False)
     used_at = Column(DateTime)
-    used_in_order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"))
+    used_in_order_id = Column(String(36), ForeignKey("orders.id"))
     
     expires_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)

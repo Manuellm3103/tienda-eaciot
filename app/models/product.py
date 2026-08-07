@@ -1,14 +1,13 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Boolean, Integer, Numeric, DateTime, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 
 
 class Category(Base):
     __tablename__ = "categories"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
     name = Column(String(255), nullable=False)
     slug = Column(String(255), unique=True, nullable=False, index=True)
     description = Column(Text)
@@ -20,11 +19,11 @@ class Category(Base):
 class Product(Base):
     __tablename__ = "products"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
     title = Column(String(255), nullable=False)
     description = Column(Text)
     price = Column(Numeric(10, 2), nullable=False)
-    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"))
+    category_id = Column(String(36), ForeignKey("categories.id"))
     
     product_type = Column(String(20), nullable=False)  # ebook, curso, software, template, fisico
     

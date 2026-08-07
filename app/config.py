@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:8000"
     debug: bool = False
     
-    database_url: str = "postgresql+asyncpg://user:password@localhost:5432/tienda_eaciot"
+    database_url: str = "sqlite+aiosqlite:///./app.db"
     
     # Ollama
     ollama_host: str = "http://localhost:11434"

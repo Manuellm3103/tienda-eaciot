@@ -1,16 +1,15 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Numeric, DateTime, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 
 
 class Refund(Base):
     __tablename__ = "refunds"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), nullable=False, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    order_id = Column(String(36), ForeignKey("orders.id"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     
     amount = Column(Numeric(10, 2), nullable=False)
     reason = Column(Text)

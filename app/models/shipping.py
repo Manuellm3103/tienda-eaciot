@@ -1,15 +1,14 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Numeric, DateTime, ForeignKey, JSON
-from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 
 
 class ShippingAddress(Base):
     __tablename__ = "shipping_addresses"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     
     name = Column(String(255), nullable=False)
     phone = Column(String(50))
@@ -31,8 +30,8 @@ class ShippingAddress(Base):
 class Shipment(Base):
     __tablename__ = "shipments"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), nullable=False, index=True)
+    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    order_id = Column(String(36), ForeignKey("orders.id"), nullable=False, index=True)
     
     carrier = Column(String(100))  # FedEx, DHL, Estafeta, etc.
     tracking_number = Column(String(255))
