@@ -11,6 +11,6 @@ venv/
 dist/
 build/
 uploads/
-*.db
+# *.db  # descomentar cuando se migre a PostgreSQL
 .pytest_cache/
 .mypy_cache/
