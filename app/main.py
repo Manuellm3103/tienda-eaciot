@@ -23,6 +23,7 @@ from app.routers import (
     shipping_router,
     refunds_router,
 )
+from app.routers.pages import router as pages_router
 
 
 app = FastAPI(
@@ -48,6 +49,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.middleware("http")(rate_limit_middleware)
 
 # Register routers
+app.include_router(pages_router)
 app.include_router(auth_router)
 app.include_router(products_router)
 app.include_router(admin_products_router)

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Promociones - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Administrar Promociones</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Título</th>
+                <th class="text-left py-3 px-4">Tipo</th>
+                <th class="text-right py-3 px-4">Descuento</th>
+                <th class="text-center py-3 px-4">Activo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for promo in promotions %}
+            <tr class="border-b">
+                <td class="py-3 px-4">{{ promo.title }}</td>
+                <td class="py-3 px-4">{{ promo.discount_type }}</td>
+                <td class="text-right py-3 px-4">{{ promo.discount_value }}</td>
+                <td class="text-center py-3 px-4">{{ 'Sí' if promo.is_active else 'No' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

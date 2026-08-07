@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Carrito - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-8">Carrito de Compras</h1>
+
+{% if items %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Producto</th>
+                <th class="text-center py-3 px-4">Cantidad</th>
+                <th class="text-right py-3 px-4">Subtotal</th>
+                <th class="py-3 px-4"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr class="border-b">
+                <td class="py-4 px-4">{{ item.product.title }}</td>
+                <td class="text-center py-4 px-4">{{ item.quantity }}</td>
+                <td class="text-right py-4 px-4">${{ item.subtotal }}</td>
+                <td class="py-4 px-4">
+                    <form action="/cart/remove/{{ item.product.id }}" method="POST">
+                        <button type="submit" class="text-red-600 hover:text-red-800">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot class="bg-gray-50">
+            <tr>
+                <td colspan="2" class="text-right py-4 px-4 font-bold">Total:</td>
+                <td class="text-right py-4 px-4 font-bold text-xl">${{ total }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="mt-8 flex justify-end">
+    <a href="/checkout" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700">
+        Proceder al pago
+    </a>
+</div>
+{% else %}
+<div class="text-center py-16">
+    <p class="text-xl text-gray-600 mb-4">Tu carrito está vacío</p>
+    <a href="/products/" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+        Ver productos
+    </a>
+</div>
+{% endif %}
+{% endblock %}

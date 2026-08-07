@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.title }} - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div>
+        {% if product.image_url %}
+        <img src="{{ product.image_url }}" alt="{{ product.title }}" class="w-full h-96 object-cover rounded-lg shadow">
+        {% else %}
+        <div class="w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center">
+            <span class="text-gray-500">Sin imagen</span>
+        </div>
+        {% endif %}
+    </div>
+    <div>
+        <h1 class="text-3xl font-bold mb-4">{{ product.title }}</h1>
+        <p class="text-gray-600 mb-6">{{ product.description }}</p>
+        <p class="text-3xl font-bold text-blue-600 mb-6">${{ product.price }}</p>
+        <div class="flex space-x-4">
+            <button hx-post="/cart/add/{{ product.id }}" hx-target="#cart-count"
+                    class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700">
+                Agregar al carrito
+            </button>
+            <a href="/products/" class="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-300">
+                Ver más productos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

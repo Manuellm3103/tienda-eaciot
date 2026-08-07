@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Cuenta - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-8">Mi Cuenta</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-bold mb-4">Perfil</h2>
+        <p><strong>Nombre:</strong> {{ user.name or 'No especificado' }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Nivel:</strong> {{ user.loyalty_level }}</p>
+        <p><strong>Puntos:</strong> {{ user.loyalty_points }}</p>
+        <p><strong>Total gastado:</strong> ${{ user.total_spent }}</p>
+    </div>
+
+    <div class="md:col-span-2">
+        <h2 class="text-xl font-bold mb-4">Historial de compras</h2>
+        {% if orders %}
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left py-3 px-4">Orden</th>
+                        <th class="text-left py-3 px-4">Fecha</th>
+                        <th class="text-left py-3 px-4">Estado</th>
+                        <th class="text-right py-3 px-4">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr class="border-b">
+                        <td class="py-3 px-4">#{{ order.id[:8] }}</td>
+                        <td class="py-3 px-4">{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="py-3 px-4">{{ order.status }}</td>
+                        <td class="text-right py-3 px-4">${{ order.total_amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-600">No tienes compras aún.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

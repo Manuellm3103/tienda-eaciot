@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Pago Exitoso - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="text-center py-16">
+    <h1 class="text-4xl font-bold text-green-600 mb-4">¡Pago exitoso!</h1>
+    <p class="text-xl text-gray-600 mb-4">Tu orden #{{ order_id[:8] }} ha sido procesada.</p>
+    <p class="text-gray-500 mb-8">Recibirás un correo con los detalles de tu compra.</p>
+    <a href="/products/" class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700">
+        Seguir comprando
+    </a>
+</div>
+{% endblock %}
