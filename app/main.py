@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from app.config import settings
 from app.database import init_db
 from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors
@@ -15,6 +15,11 @@ from app.routers import (
     promotions_router,
     admin_promotions_router,
     admin_dashboard_router,
+    reviews_router,
+    wishlist_router,
+    search_router,
+    shipping_router,
+    refunds_router,
 )
 
 
@@ -22,6 +27,7 @@ app = FastAPI(
     title=settings.app_name,
     docs_url="/api/docs" if settings.debug else None,
     redoc_url="/api/redoc" if settings.debug else None,
+    version="1.0.0",
 )
 
 # Setup CORS
@@ -43,6 +49,11 @@ app.include_router(loyalty_router)
 app.include_router(promotions_router)
 app.include_router(admin_promotions_router)
 app.include_router(admin_dashboard_router)
+app.include_router(reviews_router)
+app.include_router(wishlist_router)
+app.include_router(search_router)
+app.include_router(shipping_router)
+app.include_router(refunds_router)
 
 
 @app.on_event("startup")
@@ -60,6 +71,13 @@ async def health():
     }
 
 
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    """Redirect to products page"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/products")
+
+
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     if request.url.path.startswith("/api/"):
@@ -67,7 +85,6 @@ async def not_found_handler(request: Request, exc):
             status_code=404,
             content={"detail": "Not found"}
         )
-    # For web routes, you could return a custom 404 page
     return JSONResponse(
         status_code=404,
         content={"detail": "Page not found"}
@@ -76,7 +93,6 @@ async def not_found_handler(request: Request, exc):
 
 @app.exception_handler(500)
 async def internal_error_handler(request: Request, exc):
-    # Log the error (would integrate with Sentry in production)
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"}

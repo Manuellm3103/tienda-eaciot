@@ -7,6 +7,11 @@ from app.routers.loyalty import router as loyalty_router
 from app.routers.promotions import router as promotions_router
 from app.routers.admin_promotions import router as admin_promotions_router
 from app.routers.admin_dashboard import router as admin_dashboard_router
+from app.routers.reviews import router as reviews_router
+from app.routers.wishlist import router as wishlist_router
+from app.routers.search import router as search_router
+from app.routers.shipping import router as shipping_router
+from app.routers.refunds import router as refunds_router
 
 __all__ = [
     "auth_router",
@@ -18,4 +23,9 @@ __all__ = [
     "promotions_router",
     "admin_promotions_router",
     "admin_dashboard_router",
+    "reviews_router",
+    "wishlist_router",
+    "search_router",
+    "shipping_router",
+    "refunds_router",
 ]
