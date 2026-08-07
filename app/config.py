@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -9,6 +10,13 @@ class Settings(BaseSettings):
     debug: bool = False
     
     database_url: str = "sqlite+aiosqlite:///./app.db"
+    
+    @field_validator('database_url', mode='before')
+    def force_sqlite_in_production(cls, v):
+        # Forzar SQLite para evitar problemas de conexión con PostgreSQL en Render/Supabase
+        if v and isinstance(v, str) and ('postgresql' in v or 'postgres' in v):
+            return "sqlite+aiosqlite:///./app.db"
+        return v
     
     # Ollama
     ollama_host: str = "http://localhost:11434"
