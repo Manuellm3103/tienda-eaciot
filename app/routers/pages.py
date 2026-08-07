@@ -17,6 +17,7 @@ from app.services.auth_service import decode_token
 from app.services.product_service import product_service
 from app.services.order_service import order_service
 from app.services.promotion_service import promotion_service
+from app.services.stripe_service import stripe_service
 from app.config import settings
 
 router = APIRouter(tags=["pages"])
@@ -145,12 +146,18 @@ async def checkout_create(
     
     order_data = OrderCreate(items=items, shipping_address=shipping_address)
     order = await order_service.create_order(db, user.id, order_data)
+    await db.commit()
     
     # Clear cart
     response.delete_cookie("cart")
     
+    # Create Stripe checkout session
+    success_url = f"{settings.frontend_url}/checkout/success?order_id={order.id}&payment=stripe"
+    cancel_url = f"{settings.frontend_url}/checkout/cancel"
+    stripe_result = await stripe_service.create_checkout_session(order, success_url, cancel_url)
+    
     # Redirect to Stripe
-    return RedirectResponse(url=f"/payments/stripe/pay?order_id={order.id}", status_code=302)
+    return RedirectResponse(url=stripe_result["url"], status_code=302)
 
 
 @router.get("/checkout/success", response_class=HTMLResponse)

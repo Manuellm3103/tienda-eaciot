@@ -6,7 +6,7 @@ from app.database import get_db
 from app.schemas.product import ProductResponse, CategoryResponse
 from app.services.product_service import product_service
 
-router = APIRouter(prefix="/products", tags=["products"])
+router = APIRouter(prefix="/api/products", tags=["products"])
 
 
 @router.get("/", response_model=List[ProductResponse])
