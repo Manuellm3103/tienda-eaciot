@@ -19,7 +19,12 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     <a href="/products" class="hover:text-blue-600">Productos</a>
+                    <a href="/wishlist/page" class="hover:text-blue-600">Wishlist</a>
                     <a href="/cart" class="hover:text-blue-600">Carrito <span id="cart-count" class="bg-red-500 text-white text-xs rounded-full px-2 py-1"></span></a>
+                    <form action="/search" method="GET" class="flex">
+                        <input type="text" name="q" placeholder="Buscar..." class="border rounded-l-md px-3 py-1 text-sm">
+                        <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded-r-md text-sm">Buscar</button>
+                    </form>
                     {% if user %}
                         <a href="/account" class="hover:text-blue-600">Mi Cuenta</a>
                         <a href="/auth/logout" class="hover:text-red-600">Salir</a>

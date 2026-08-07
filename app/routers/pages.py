@@ -18,6 +18,7 @@ from app.services.product_service import product_service
 from app.services.order_service import order_service
 from app.services.promotion_service import promotion_service
 from app.services.stripe_service import stripe_service
+from app.services.search_service import search_service
 from app.config import settings
 
 router = APIRouter(tags=["pages"])
@@ -181,6 +182,24 @@ async def account_page(request: Request, db: AsyncSession = Depends(get_db)):
     return templates.TemplateResponse(
         "account.html",
         {"request": request, "user": user, "orders": orders},
+    )
+
+
+# ==================== SEARCH ====================
+
+@router.get("/search", response_class=HTMLResponse)
+async def search_page(
+    request: Request,
+    q: str = "",
+    db: AsyncSession = Depends(get_db),
+):
+    products = []
+    if q:
+        result = await search_service.search_products(db, query=q)
+        products = result.get("products", [])
+    return templates.TemplateResponse(
+        "search.html",
+        {"request": request, "products": products, "q": q},
     )
 
 

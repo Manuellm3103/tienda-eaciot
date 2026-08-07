@@ -5,7 +5,10 @@
 {% block content %}
 <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold">Administrar Promociones</h1>
-    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+    <div class="space-x-2">
+        <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+        <a href="/admin/promotions/new" class="bg-blue-600 text-white px-4 py-2 rounded">+ Nueva Promoción</a>
+    </div>
 </div>
 
 <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -15,7 +18,9 @@
                 <th class="text-left py-3 px-4">Título</th>
                 <th class="text-left py-3 px-4">Tipo</th>
                 <th class="text-right py-3 px-4">Descuento</th>
-                <th class="text-center py-3 px-4">Activo</th>
+                <th class="text-center py-3 px-4">Cupón</th>
+                <th class="text-center py-3 px-4">Aprobada</th>
+                <th class="py-3 px-4">Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -24,7 +29,18 @@
                 <td class="py-3 px-4">{{ promo.title }}</td>
                 <td class="py-3 px-4">{{ promo.discount_type }}</td>
                 <td class="text-right py-3 px-4">{{ promo.discount_value }}</td>
-                <td class="text-center py-3 px-4">{{ 'Sí' if promo.is_active else 'No' }}</td>
+                <td class="text-center py-3 px-4">{{ promo.coupon_code or '-' }}</td>
+                <td class="text-center py-3 px-4">{{ 'Sí' if promo.is_approved else 'No' }}</td>
+                <td class="py-3 px-4">
+                    <div class="flex space-x-2">
+                        {% if not promo.is_approved %}
+                        <a href="/admin/promotions/{{ promo.id }}/approve" class="text-green-600 hover:text-green-800">Aprobar</a>
+                        {% endif %}
+                        <form action="/admin/promotions/{{ promo.id }}/delete" method="POST" onsubmit="return confirm('¿Eliminar promoción?')">
+                            <button type="submit" class="text-red-600 hover:text-red-800">Eliminar</button>
+                        </form>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
         </tbody>

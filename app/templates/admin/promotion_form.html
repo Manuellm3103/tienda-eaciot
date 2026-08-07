@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Promoción - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">Nueva Promoción</h1>
+    
+    <form method="POST" action="/admin/promotions/new" class="bg-white rounded-lg shadow p-6 space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Título</label>
+            <input type="text" name="title" required class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Descripción</label>
+            <textarea name="description" rows="3" class="mt-1 block w-full border rounded-md px-3 py-2"></textarea>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tipo de descuento</label>
+                <select name="discount_type" required class="mt-1 block w-full border rounded-md px-3 py-2">
+                    <option value="percentage">Porcentaje (%)</option>
+                    <option value="fixed">Monto fijo ($)</option>
+                    <option value="free_shipping">Envío gratis</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Valor</label>
+                <input type="number" step="0.01" name="discount_value" value="10" required class="mt-1 block w-full border rounded-md px-3 py-2">
+            </div>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Código de cupón (opcional)</label>
+            <input type="text" name="coupon_code" class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        
+        <div class="flex justify-end space-x-4">
+            <a href="/admin/promotions/" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancelar</a>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
