@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if product else 'Nuevo' }} Producto - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">{{ 'Editar' if product else 'Nuevo' }} Producto</h1>
+    
+    <form method="POST" action="{{ '/admin/products/' + product.id + '/edit' if product else '/admin/products/new' }}" class="bg-white rounded-lg shadow p-6 space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Título</label>
+            <input type="text" name="title" value="{{ product.title if product else '' }}" required class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Descripción</label>
+            <textarea name="description" rows="4" class="mt-1 block w-full border rounded-md px-3 py-2">{{ product.description if product else '' }}</textarea>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Precio</label>
+                <input type="number" step="0.01" name="price" value="{{ product.price if product else '' }}" required class="mt-1 block w-full border rounded-md px-3 py-2">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Stock</label>
+                <input type="number" name="stock" value="{{ product.stock if product else 100 }}" required class="mt-1 block w-full border rounded-md px-3 py-2">
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tipo</label>
+                <select name="product_type" required class="mt-1 block w-full border rounded-md px-3 py-2">
+                    <option value="ebook" {{ 'selected' if product and product.product_type == 'ebook' else '' }}>Ebook</option>
+                    <option value="curso" {{ 'selected' if product and product.product_type == 'curso' else '' }}>Curso</option>
+                    <option value="software" {{ 'selected' if product and product.product_type == 'software' else '' }}>Software</option>
+                    <option value="template" {{ 'selected' if product and product.product_type == 'template' else '' }}>Template</option>
+                    <option value="fisico" {{ 'selected' if product and product.product_type == 'fisico' else '' }}>Físico</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Categoría</label>
+                <select name="category_id" class="mt-1 block w-full border rounded-md px-3 py-2">
+                    <option value="">Sin categoría</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {{ 'selected' if product and product.category_id == category.id else '' }}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700">URL de imagen</label>
+            <input type="url" name="image_url" value="{{ product.image_url if product else '' }}" class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        
+        {% if product %}
+        <div>
+            <label class="flex items-center">
+                <input type="checkbox" name="is_active" value="true" {{ 'checked' if product.is_active else '' }} class="h-4 w-4 text-blue-600">
+                <span class="ml-2">Activo</span>
+            </label>
+        </div>
+        {% endif %}
+        
+        <div class="flex justify-end space-x-4">
+            <a href="/admin/products/" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancelar</a>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

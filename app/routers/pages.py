@@ -186,16 +186,6 @@ async def account_page(request: Request, db: AsyncSession = Depends(get_db)):
 
 # ==================== ADMIN ====================
 
-@router.get("/admin/products", response_class=HTMLResponse)
-async def admin_products_page(request: Request, db: AsyncSession = Depends(get_db)):
-    products = await product_service.get_products(db, active_only=False)
-    categories = await product_service.get_categories(db)
-    return templates.TemplateResponse(
-        "admin/products.html",
-        {"request": request, "products": products, "categories": categories},
-    )
-
-
 @router.get("/admin/promotions", response_class=HTMLResponse)
 async def admin_promotions_page(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Promotion).order_by(Promotion.created_at.desc()))
