@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Fidelidad - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-8">Programa de Fidelidad</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <h3 class="text-gray-500 text-sm">Nivel Actual</h3>
+        <p class="text-4xl font-bold text-blue-600 capitalize">{{ status.level }}</p>
+        <p class="text-gray-600 mt-2">{{ status.discount }}% de descuento</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <h3 class="text-gray-500 text-sm">Puntos Acumulados</h3>
+        <p class="text-4xl font-bold text-green-600">{{ status.points }}</p>
+        <p class="text-gray-600 mt-2">Puntos disponibles</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <h3 class="text-gray-500 text-sm">Total Gastado</h3>
+        <p class="text-4xl font-bold text-purple-600">${{ status.total_spent }}</p>
+        <p class="text-gray-600 mt-2">{{ status.purchase_count }} compras</p>
+    </div>
+</div>
+
+{% if status.next_level != status.level %}
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <h2 class="text-xl font-bold mb-4">Próximo nivel: {{ status.next_level }}</h2>
+    <p class="text-gray-600 mb-2">Te faltan ${{ status.points_to_next }} para subir de nivel.</p>
+    <div class="w-full bg-gray-200 rounded-full h-4">
+        {% set progress = (status.total_spent / (status.total_spent + status.points_to_next) * 100)|int %}
+        <div class="bg-blue-600 h-4 rounded-full" style="width: {{ progress }}%"></div>
+    </div>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-xl font-bold mb-4">Historial de puntos</h2>
+    {% if history %}
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-2 px-4">Fecha</th>
+                <th class="text-left py-2 px-4">Motivo</th>
+                <th class="text-right py-2 px-4">Puntos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for h in history %}
+            <tr class="border-b">
+                <td class="py-2 px-4">{{ h.created_at.strftime('%Y-%m-%d') }}</td>
+                <td class="py-2 px-4">{{ h.reason }}</td>
+                <td class="text-right py-2 px-4 text-green-600">+{{ h.points_change }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-gray-600">No hay historial de puntos aún.</p>
+    {% endif %}
+</div>
+{% endblock %}

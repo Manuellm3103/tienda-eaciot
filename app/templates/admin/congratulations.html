@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Felicitaciones - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Reglas de Felicitación</h1>
+    <div class="space-x-2">
+        <a href="/admin/promotions/" class="bg-gray-600 text-white px-4 py-2 rounded">Promociones</a>
+        <a href="/admin/promotions/congratulations/new" class="bg-blue-600 text-white px-4 py-2 rounded">+ Nueva Regla</a>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Nombre</th>
+                <th class="text-left py-3 px-4">Evento</th>
+                <th class="text-left py-3 px-4">Recompensa</th>
+                <th class="text-center py-3 px-4">Usos</th>
+                <th class="py-3 px-4">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rule in rules %}
+            <tr class="border-b">
+                <td class="py-3 px-4">{{ rule.name }}</td>
+                <td class="py-3 px-4">{{ rule.event_type }} {% if rule.event_value %}{{ rule.event_value }}{% endif %}</td>
+                <td class="py-3 px-4">{{ rule.reward_type }} {% if rule.reward_value %}{{ rule.reward_value }}{% endif %}</td>
+                <td class="text-center py-3 px-4">{{ rule.current_uses }}</td>
+                <td class="py-3 px-4">
+                    <form action="/admin/promotions/congratulations/{{ rule.id }}/delete" method="POST" onsubmit="return confirm('¿Eliminar regla?')">
+                        <button type="submit" class="text-red-600 hover:text-red-800">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Regla de Felicitación - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">Nueva Regla de Felicitación</h1>
+    
+    <form method="POST" action="/admin/promotions/congratulations/new" class="bg-white rounded-lg shadow p-6 space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+            <input type="text" name="name" required class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Descripción</label>
+            <textarea name="description" rows="2" class="mt-1 block w-full border rounded-md px-3 py-2"></textarea>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tipo de evento</label>
+                <select name="event_type" required class="mt-1 block w-full border rounded-md px-3 py-2">
+                    <option value="total_spent">Total gastado ($)</option>
+                    <option value="purchase_count">Número de compras</option>
+                    <option value="loyalty_level_up">Subida de nivel</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Valor del evento</label>
+                <input type="text" name="event_value" placeholder="ej: 5000" class="mt-1 block w-full border rounded-md px-3 py-2">
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tipo de recompensa</label>
+                <select name="reward_type" required class="mt-1 block w-full border rounded-md px-3 py-2">
+                    <option value="coupon">Cupón</option>
+                    <option value="points">Puntos</option>
+                    <option value="free_shipping">Envío gratis</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Valor de recompensa</label>
+                <input type="text" name="reward_value" placeholder="ej: 20" class="mt-1 block w-full border rounded-md px-3 py-2">
+            </div>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Asunto del email</label>
+            <input type="text" name="email_subject" class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Mensaje</label>
+            <textarea name="message_template" rows="4" required class="mt-1 block w-full border rounded-md px-3 py-2" placeholder="¡Felicidades {{ user.name }}! Has alcanzado..."></textarea>
+        </div>
+        
+        <div class="flex justify-end space-x-4">
+            <a href="/admin/promotions/congratulations" class="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancelar</a>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Guardar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

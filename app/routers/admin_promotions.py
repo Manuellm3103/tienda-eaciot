@@ -8,6 +8,7 @@ from decimal import Decimal
 from datetime import datetime
 from app.database import get_db
 from app.models.promotion import Promotion
+from app.models.congratulation import CongratulationRule
 from app.schemas.promotion import PromotionCreate, PromotionResponse, CongratulationRuleCreate, CongratulationRuleResponse
 from app.services.promotion_service import promotion_service
 
@@ -88,3 +89,53 @@ async def admin_promotion_delete(promotion_id: str, db: AsyncSession = Depends(g
         await db.delete(promo)
         await db.commit()
     return RedirectResponse(url="/admin/promotions/", status_code=302)
+
+
+# ==================== CONGRATULATION RULES ====================
+
+@router.get("/congratulations", response_class=HTMLResponse)
+async def admin_congratulations_list(request: Request, db: AsyncSession = Depends(get_db)):
+    rules = await promotion_service.get_congratulation_rules(db)
+    return templates.TemplateResponse("admin/congratulations.html", {"request": request, "rules": rules})
+
+
+@router.get("/congratulations/new", response_class=HTMLResponse)
+async def admin_congratulation_new(request: Request):
+    return templates.TemplateResponse("admin/congratulation_form.html", {"request": request, "rule": None})
+
+
+@router.post("/congratulations/new")
+async def admin_congratulation_create(
+    request: Request,
+    name: str = Form(...),
+    description: str = Form(""),
+    event_type: str = Form(...),
+    event_value: str = Form(""),
+    reward_type: str = Form(...),
+    reward_value: str = Form(""),
+    message_template: str = Form(...),
+    email_subject: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+):
+    data = CongratulationRuleCreate(
+        name=name,
+        description=description or None,
+        event_type=event_type,
+        event_value=Decimal(event_value) if event_value else None,
+        reward_type=reward_type,
+        reward_value=Decimal(reward_value) if reward_value else None,
+        message_template=message_template,
+        email_subject=email_subject or None,
+    )
+    await promotion_service.create_congratulation_rule(db, data)
+    await db.commit()
+    return RedirectResponse(url="/admin/promotions/congratulations", status_code=302)
+
+
+@router.post("/congratulations/{rule_id}/delete")
+async def admin_congratulation_delete(rule_id: str, db: AsyncSession = Depends(get_db)):
+    rule = await db.get(CongratulationRule, rule_id)
+    if rule:
+        await db.delete(rule)
+        await db.commit()
+    return RedirectResponse(url="/admin/promotions/congratulations", status_code=302)
