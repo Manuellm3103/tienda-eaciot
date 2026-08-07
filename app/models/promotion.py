@@ -7,7 +7,7 @@ from app.database import Base
 class Promotion(Base):
     __tablename__ = "promotions"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String(255), nullable=False)
     description = Column(Text)
     
@@ -37,7 +37,7 @@ class Promotion(Base):
 class Coupon(Base):
     __tablename__ = "coupons"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     code = Column(String(50), unique=True, nullable=False, index=True)
     user_id = Column(String(36), ForeignKey("users.id"), index=True)
     

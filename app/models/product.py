@@ -7,7 +7,7 @@ from app.database import Base
 class Category(Base):
     __tablename__ = "categories"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
     slug = Column(String(255), unique=True, nullable=False, index=True)
     description = Column(Text)
@@ -19,7 +19,7 @@ class Category(Base):
 class Product(Base):
     __tablename__ = "products"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = Column(String(255), nullable=False)
     description = Column(Text)
     price = Column(Numeric(10, 2), nullable=False)

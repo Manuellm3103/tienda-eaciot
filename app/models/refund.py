@@ -7,7 +7,7 @@ from app.database import Base
 class Refund(Base):
     __tablename__ = "refunds"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     order_id = Column(String(36), ForeignKey("orders.id"), nullable=False, index=True)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     

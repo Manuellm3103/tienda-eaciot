@@ -7,7 +7,7 @@ from app.database import Base
 class EmailQueue(Base):
     __tablename__ = "email_queue"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     to_email = Column(String(255), nullable=False, index=True)
     subject = Column(String(500), nullable=False)
     html_content = Column(Text, nullable=False)

@@ -7,7 +7,7 @@ from app.database import Base
 class CongratulationRule(Base):
     __tablename__ = "congratulation_rules"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
     description = Column(Text)
     
@@ -33,7 +33,7 @@ class CongratulationRule(Base):
 class CongratulationHistory(Base):
     __tablename__ = "congratulation_history"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     rule_id = Column(String(36), ForeignKey("congratulation_rules.id"), nullable=False)
     order_id = Column(String(36), ForeignKey("orders.id"))

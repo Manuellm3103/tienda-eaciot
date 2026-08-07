@@ -7,7 +7,7 @@ from app.database import Base
 class ShippingAddress(Base):
     __tablename__ = "shipping_addresses"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     
     name = Column(String(255), nullable=False)
@@ -30,7 +30,7 @@ class ShippingAddress(Base):
 class Shipment(Base):
     __tablename__ = "shipments"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     order_id = Column(String(36), ForeignKey("orders.id"), nullable=False, index=True)
     
     carrier = Column(String(100))  # FedEx, DHL, Estafeta, etc.

@@ -7,7 +7,7 @@ from app.database import Base
 class LoyaltyHistory(Base):
     __tablename__ = "loyalty_history"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     points_change = Column(Integer, nullable=False)
     reason = Column(String(255))

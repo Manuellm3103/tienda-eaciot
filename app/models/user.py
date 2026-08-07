@@ -7,7 +7,7 @@ from app.database import Base
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(String(36), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=True)  # Nullable for OAuth users
     name = Column(String(255))
