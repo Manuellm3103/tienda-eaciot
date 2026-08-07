@@ -1,10 +1,12 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
-from app.database import init_db
+from app.database import init_db, get_db
 from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors
+from app.services.product_service import product_service
 from app.routers import (
     auth_router,
     products_router,
@@ -29,6 +31,9 @@ app = FastAPI(
     redoc_url="/api/redoc" if settings.debug else None,
     version="1.0.0",
 )
+
+# Templates
+templates = Jinja2Templates(directory="app/templates")
 
 # Setup CORS
 setup_cors(app)
@@ -72,10 +77,30 @@ async def health():
 
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    """Redirect to products page"""
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/products")
+async def root(request: Request, db: AsyncSession = Depends(get_db)):
+    """Homepage"""
+    products = await product_service.get_products(db, None)
+    featured = products[:3] if products else []
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "featured_products": featured},
+    )
+
+
+@app.get("/products", response_class=HTMLResponse)
+async def products_redirect():
+    return RedirectResponse(url="/products/")
+
+
+@app.get("/products/", response_class=HTMLResponse)
+async def products_page(request: Request, db: AsyncSession = Depends(get_db)):
+    """Products listing page"""
+    products = await product_service.get_products(db, None)
+    categories = await product_service.get_categories(db)
+    return templates.TemplateResponse(
+        "products/list.html",
+        {"request": request, "products": products, "categories": categories},
+    )
 
 
 @app.exception_handler(404)
