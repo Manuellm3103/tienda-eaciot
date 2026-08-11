@@ -34,7 +34,13 @@ def get_cart_from_cookie(request: Request) -> dict:
 
 
 def set_cart_cookie(response: Response, cart: dict):
-    response.set_cookie(key="cart", value=json.dumps(cart), httponly=False, max_age=30 * 24 * 60 * 60)
+    response.set_cookie(
+        key="cart",
+        value=json.dumps(cart),
+        httponly=False,
+        max_age=30 * 24 * 60 * 60,
+        samesite="lax",
+    )
 
 
 async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[User]:
