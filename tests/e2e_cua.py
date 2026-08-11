@@ -7,6 +7,7 @@ saves a screenshot report. It validates the critical commercial path:
 landing -> catalog -> product detail -> cart -> checkout gate.
 """
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -15,7 +16,7 @@ import urllib.request
 from pathlib import Path
 
 CUA_DRIVER = Path(r"C:\Users\Manu\AppData\Local\Programs\Cua\cua-driver\bin\cua-driver.exe")
-BASE_URL = "https://tienda-eaciot.onrender.com"
+BASE_URL = os.environ.get("E2E_BASE_URL", "https://tienda-eaciot.onrender.com")
 API_URL = f"{BASE_URL}/api/products"
 SCREENSHOT_DIR = Path(__file__).resolve().parent.parent / "e2e_screenshots"
 SESSION = "eaciot-commercial-flow"
