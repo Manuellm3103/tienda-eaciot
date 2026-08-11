@@ -63,6 +63,16 @@ class OrderService:
         order.status = status
         await db.flush()
         return order
+    
+    async def mark_order_paid(self, db: AsyncSession, order_id: UUID, payment_method: str, payment_id: str) -> Optional[Order]:
+        order = await self.get_order(db, order_id)
+        if not order:
+            return None
+        order.status = "paid"
+        order.payment_method = payment_method
+        order.payment_id = payment_id
+        await db.flush()
+        return order
 
 
 order_service = OrderService()

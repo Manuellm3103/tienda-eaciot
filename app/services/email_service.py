@@ -147,6 +147,56 @@ class EmailService:
             subject="Restablecer contraseña - Tienda Eaciot",
             html_content=html_content
         )
+    
+    async def send_order_confirmation_email(self, to_email: str, name: str, order_id: str, total: float):
+        """Send order confirmation email after successful payment."""
+        order_url = f"{settings.frontend_url}/account"
+        template = Template("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: #16a34a; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+                .button { display: inline-block; background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+                .total { font-size: 1.25rem; font-weight: bold; color: #16a34a; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>¡Pago confirmado!</h1>
+                </div>
+                <div class="content">
+                    <h2>Hola {{ name }},</h2>
+                    <p>Tu orden <strong>#{{ order_id_short }}</strong> ha sido pagada exitosamente.</p>
+                    <p class="total">Total: ${{ total }}</p>
+                    <p style="text-align: center;">
+                        <a href="{{ order_url }}" class="button">Ver mi cuenta</a>
+                    </p>
+                    <p>Gracias por tu compra en Tienda Eaciot.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """)
+        html_content = template.render(
+            name=name,
+            order_id_short=str(order_id)[:8],
+            order_url=order_url,
+            total=total,
+        )
+        return await self.send_email(
+            to_email=to_email,
+            subject="Tu pago fue confirmado - Tienda Eaciot",
+            html_content=html_content,
+        )
 
 
 email_service = EmailService()

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
+from app.models.user import User
 from app.services.stripe_service import stripe_service
 from app.services.paypal_service import paypal_service
 from app.services.order_service import order_service
@@ -27,6 +28,38 @@ async def create_stripe_session(order_id: str, request: Request, db: AsyncSessio
     return result
 
 
+async def _fulfill_order(db: AsyncSession, order_id: str, payment_method: str, payment_id: str):
+    """Idempotent order fulfillment after a successful payment."""
+    order = await order_service.get_order(db, order_id)
+    if not order:
+        return
+    
+    # Idempotency: skip if already paid.
+    if order.status == "paid":
+        return
+    
+    order = await order_service.mark_order_paid(db, order_id, payment_method, payment_id)
+    if not order:
+        return
+    
+    # Update loyalty points
+    await loyalty_service.update_user_loyalty(
+        db, order.user_id, order.total_amount, order.id
+    )
+    
+    # Check congratulation rules
+    user = await db.get(User, order.user_id)
+    if user:
+        await promotion_service.check_congratulation_rules(db, user, order.id)
+        # Send confirmation email (best-effort)
+        await email_service.send_order_confirmation_email(
+            to_email=user.email,
+            name=user.name or user.email,
+            order_id=str(order.id),
+            total=float(order.total_amount),
+        )
+
+
 @router.post("/stripe/webhook")
 async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     payload = await request.body()
@@ -37,23 +70,14 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid signature")
     
-    if event["type"] == "checkout.session.completed":
+    event_type = event.get("type")
+    if event_type in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
         session = event["data"]["object"]
-        order_id = session["metadata"]["order_id"]
-        
-        # Update order status
-        order = await order_service.update_order_status(db, order_id, "paid")
-        
-        if order:
-            # Update loyalty points
-            await loyalty_service.update_user_loyalty(
-                db, order.user_id, order.total_amount, order.id
-            )
-            
-            # Check congratulation rules
-            user = await db.get(User, order.user_id)
-            if user:
-                await promotion_service.check_congratulation_rules(db, user, order.id)
+        order_id = session.get("metadata", {}).get("order_id")
+        if order_id:
+            payment_intent = session.get("payment_intent") or session.get("id")
+            await _fulfill_order(db, order_id, "stripe", payment_intent)
+            await db.commit()
     
     return {"status": "success"}
 
@@ -78,19 +102,9 @@ async def capture_paypal_order(order_id: str, paypal_order_id: str, db: AsyncSes
     try:
         result = await paypal_service.capture_order(paypal_order_id)
         
-        # Update order status
-        order = await order_service.update_order_status(db, order_id, "paid")
-        
-        if order:
-            # Update loyalty points
-            await loyalty_service.update_user_loyalty(
-                db, order.user_id, order.total_amount, order.id
-            )
-            
-            # Check congratulation rules
-            user = await db.get(User, order.user_id)
-            if user:
-                await promotion_service.check_congratulation_rules(db, user, order.id)
+        capture_id = result.get("purchase_units", [{}])[0].get("payments", {}).get("captures", [{}])[0].get("id") or paypal_order_id
+        await _fulfill_order(db, order_id, "paypal", capture_id)
+        await db.commit()
         
         return result
     except Exception as e:
