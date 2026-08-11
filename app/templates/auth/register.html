@@ -144,7 +144,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name, email, password })
+            body: JSON.stringify({ name, email, password, _csrf_token: window.getCsrfToken() })
         });
         
         if (response.ok) {

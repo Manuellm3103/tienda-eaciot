@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import RedirectResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta
@@ -15,10 +14,11 @@ from app.services.auth_service import (
 )
 from app.services.email_service import email_service
 from app.services.oauth_service import oauth_service
+from app.middleware import validate_csrf
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 
 # ==================== PAGES ====================
@@ -51,7 +51,8 @@ async def verify_email_page(request: Request, token: str = ""):
 # ==================== REGISTRO ====================
 
 @router.post("/register", response_model=UserResponse)
-async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(request: Request, data: UserCreate, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
     # Check if user exists
     result = await db.execute(select(User).where(User.email == data.email))
     existing_user = result.scalar_one_or_none()
@@ -176,7 +177,8 @@ async def login(data: UserLogin, response: Response, db: AsyncSession = Depends(
 
 
 @router.post("/login/web")
-async def login_web(data: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login_web(request: Request, data: UserLogin, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
     """Login for web forms - returns redirect"""
     # Find user
     result = await db.execute(select(User).where(User.email == data.email))
@@ -208,8 +210,9 @@ async def login_web(data: UserLogin, db: AsyncSession = Depends(get_db)):
 # ==================== PASSWORD RESET ====================
 
 @router.post("/forgot-password")
-async def forgot_password(email: str, db: AsyncSession = Depends(get_db)):
+async def forgot_password(request: Request, email: str, db: AsyncSession = Depends(get_db)):
     """Send password reset email"""
+    await validate_csrf(request)
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     
@@ -234,8 +237,9 @@ async def forgot_password(email: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/reset-password")
-async def reset_password(token: str, new_password: str, db: AsyncSession = Depends(get_db)):
+async def reset_password(request: Request, token: str, new_password: str, db: AsyncSession = Depends(get_db)):
     """Reset password with token"""
+    await validate_csrf(request)
     result = await db.execute(
         select(User).where(
             User.reset_token == token,

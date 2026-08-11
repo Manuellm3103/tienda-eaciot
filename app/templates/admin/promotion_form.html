@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'macros/csrf.html' import csrf_input %}
 
 {% block title %}Nueva Promoción - Tienda Eaciot{% endblock %}
 
@@ -7,6 +8,7 @@
     <h1 class="text-3xl font-bold mb-8">Nueva Promoción</h1>
     
     <form method="POST" action="/admin/promotions/new" class="bg-white rounded-lg shadow p-6 space-y-4">
+        {{ csrf_input(request) }}
         <div>
             <label class="block text-sm font-medium text-gray-700">Título</label>
             <input type="text" name="title" required class="mt-1 block w-full border rounded-md px-3 py-2">

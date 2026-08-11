@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
@@ -10,7 +9,7 @@ from app.services.loyalty_service import loyalty_service
 from app.services.auth_service import decode_token
 
 router = APIRouter(prefix="/loyalty", tags=["loyalty"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 
 async def _get_user_id(request: Request, db: AsyncSession) -> UUID:

@@ -1,13 +1,13 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from app.config import settings
 from app.database import init_db, get_db
-from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors
+from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors, CSRFMiddleware
 from app.services.product_service import product_service
 from app.routers import (
     auth_router,
@@ -28,11 +28,18 @@ from app.routers import (
 from app.routers.pages import router as pages_router
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
+
 app = FastAPI(
     title=settings.app_name,
     docs_url="/api/docs" if settings.debug else None,
     redoc_url="/api/redoc" if settings.debug else None,
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Production hardening: force HTTPS and validate hosts before custom domain setup.
@@ -46,10 +53,13 @@ if settings.allowed_hosts_list != ["*"]:
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Templates
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 # Setup CORS
 setup_cors(app)
+
+# Add CSRF token cookie to every response
+app.add_middleware(CSRFMiddleware)
 
 # Add security headers
 app.add_middleware(SecurityHeadersMiddleware)
@@ -73,11 +83,6 @@ app.include_router(wishlist_router)
 app.include_router(search_router)
 app.include_router(shipping_router)
 app.include_router(refunds_router)
-
-
-@app.on_event("startup")
-async def startup():
-    await init_db()
 
 
 @app.get("/health")

@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
@@ -10,9 +9,10 @@ from app.models.user import User
 from app.schemas.product import ProductResponse
 from app.services.wishlist_service import wishlist_service
 from app.services.auth_service import decode_token
+from app.middleware import validate_csrf
 
 router = APIRouter(prefix="/wishlist", tags=["wishlist"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 
 async def _get_user_id(request: Request, db: AsyncSession) -> UUID:
@@ -38,6 +38,7 @@ async def get_wishlist(request: Request, db: AsyncSession = Depends(get_db)):
 
 @router.post("/{product_id}")
 async def add_to_wishlist(product_id: UUID, request: Request, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
     user_id = await _get_user_id(request, db)
     added = await wishlist_service.add_to_wishlist(db, user_id, product_id)
     if not added:
@@ -47,6 +48,7 @@ async def add_to_wishlist(product_id: UUID, request: Request, db: AsyncSession =
 
 @router.delete("/{product_id}")
 async def remove_from_wishlist(product_id: UUID, request: Request, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
     user_id = await _get_user_id(request, db)
     removed = await wishlist_service.remove_from_wishlist(db, user_id, product_id)
     if not removed:

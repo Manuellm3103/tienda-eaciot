@@ -4,7 +4,6 @@ from decimal import Decimal
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
@@ -19,10 +18,11 @@ from app.services.order_service import order_service
 from app.services.promotion_service import promotion_service
 from app.services.stripe_service import stripe_service
 from app.services.search_service import search_service
+from app.middleware import validate_csrf
 from app.config import settings
 
 router = APIRouter(tags=["pages"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 
 def get_cart_from_cookie(request: Request) -> dict:
@@ -107,6 +107,7 @@ async def cart_add_get(product_id: str, request: Request):
 
 @router.post("/cart/remove/{product_id}")
 async def cart_remove(product_id: str, request: Request, response: Response):
+    await validate_csrf(request)
     cart = get_cart_from_cookie(request)
     if product_id in cart:
         del cart[product_id]
@@ -144,6 +145,7 @@ async def checkout_create(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
+    await validate_csrf(request)
     user = await get_current_user_optional(request, db)
     if not user:
         return RedirectResponse(url="/auth/login?next=/checkout", status_code=302)

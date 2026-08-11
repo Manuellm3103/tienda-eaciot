@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.services.dashboard_service import dashboard_service
 
 router = APIRouter(prefix="/admin", tags=["admin-dashboard"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 
 @router.get("/dashboard", response_class=HTMLResponse)

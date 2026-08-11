@@ -118,7 +118,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, _csrf_token: window.getCsrfToken() })
         });
         
         if (response.ok) {

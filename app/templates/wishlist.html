@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'macros/csrf.html' import csrf_input %}
 
 {% block title %}Wishlist - Tienda Eaciot{% endblock %}
 
@@ -19,6 +20,7 @@
             <div class="space-x-2">
                 <a href="/products/{{ product.id }}" class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700">Ver</a>
                 <form action="/wishlist/{{ product.id }}" method="POST" class="inline">
+                    {{ csrf_input(request) }}
                     <input type="hidden" name="_method" value="DELETE">
                     <button type="submit" class="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700">Quitar</button>
                 </form>

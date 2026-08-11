@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from 'macros/csrf.html' import csrf_input %}
 
 {% block title %}Checkout - Tienda Eaciot{% endblock %}
 
@@ -25,6 +26,7 @@
     <div>
         <h2 class="text-xl font-bold mb-4">Datos de envío</h2>
         <form action="/checkout" method="POST" class="bg-white rounded-lg shadow p-6 space-y-4">
+            {{ csrf_input(request) }}
             <div>
                 <label class="block text-sm font-medium text-gray-700">Nombre completo</label>
                 <input type="text" name="name" required class="mt-1 block w-full border rounded-md px-3 py-2">

@@ -6,6 +6,17 @@
     <title>{% block title %}Tienda Eaciot{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script>
+        window.getCsrfToken = function() {
+            const match = document.cookie.match(new RegExp('(^| )csrf_token=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : '';
+        };
+        document.addEventListener('htmx:configRequest', function(evt) {
+            if (evt.detail.verb !== 'get') {
+                evt.detail.headers['X-CSRF-Token'] = window.getCsrfToken();
+            }
+        });
+    </script>
 </head>
 <body class="bg-gray-50">
     <nav class="bg-white shadow">

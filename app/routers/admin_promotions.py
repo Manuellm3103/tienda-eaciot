@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
@@ -11,9 +10,10 @@ from app.models.promotion import Promotion
 from app.models.congratulation import CongratulationRule
 from app.schemas.promotion import PromotionCreate, PromotionResponse, CongratulationRuleCreate, CongratulationRuleResponse
 from app.services.promotion_service import promotion_service
+from app.middleware import validate_csrf
 
 router = APIRouter(prefix="/admin/promotions", tags=["admin-promotions"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 
 @router.post("/", response_model=PromotionResponse)
@@ -63,6 +63,7 @@ async def admin_promotion_create(
     coupon_code: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
+    await validate_csrf(request)
     data = PromotionCreate(
         title=title,
         description=description or None,
@@ -83,7 +84,8 @@ async def admin_promotion_approve(promotion_id: str, db: AsyncSession = Depends(
 
 
 @router.post("/{promotion_id}/delete")
-async def admin_promotion_delete(promotion_id: str, db: AsyncSession = Depends(get_db)):
+async def admin_promotion_delete(request: Request, promotion_id: str, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
     promo = await db.get(Promotion, promotion_id)
     if promo:
         await db.delete(promo)
@@ -117,6 +119,7 @@ async def admin_congratulation_create(
     email_subject: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
+    await validate_csrf(request)
     data = CongratulationRuleCreate(
         name=name,
         description=description or None,
@@ -133,7 +136,8 @@ async def admin_congratulation_create(
 
 
 @router.post("/congratulations/{rule_id}/delete")
-async def admin_congratulation_delete(rule_id: str, db: AsyncSession = Depends(get_db)):
+async def admin_congratulation_delete(request: Request, rule_id: str, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
     rule = await db.get(CongratulationRule, rule_id)
     if rule:
         await db.delete(rule)

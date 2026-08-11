@@ -16,3 +16,5 @@ uploads/
 .mypy_cache/
 e2e_screenshots/
 .simplicio/
+app.db
+test.db

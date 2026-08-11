@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
@@ -8,9 +7,10 @@ from decimal import Decimal
 from app.database import get_db
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, CategoryCreate, CategoryResponse
 from app.services.product_service import product_service
+from app.middleware import validate_csrf
 
 router = APIRouter(prefix="/admin/products", tags=["admin-products"])
-templates = Jinja2Templates(directory="app/templates")
+from app.templates_instance import templates
 
 
 @router.post("/", response_model=ProductResponse)
@@ -72,6 +72,7 @@ async def admin_product_create(
     image_url: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
+    await validate_csrf(request)
     data = ProductCreate(
         title=title,
         description=description or None,
@@ -112,6 +113,7 @@ async def admin_product_update(
     is_active: bool = Form(False),
     db: AsyncSession = Depends(get_db),
 ):
+    await validate_csrf(request)
     data = ProductUpdate(
         title=title,
         description=description or None,
@@ -128,7 +130,8 @@ async def admin_product_update(
 
 
 @router.post("/{product_id}/delete")
-async def admin_product_delete(product_id: str, db: AsyncSession = Depends(get_db)):
+async def admin_product_delete(request: Request, product_id: str, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
     await product_service.delete_product(db, product_id)
     await db.commit()
     return RedirectResponse(url="/admin/products/", status_code=302)
