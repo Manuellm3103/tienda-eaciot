@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     app_secret_key: str = "change-me"
     frontend_url: str = "http://localhost:8000"
     debug: bool = False
+    force_https: bool = False
+    allowed_hosts: str = "*"
     
     database_url: str = "sqlite+aiosqlite:///./app.db"
     
@@ -17,6 +19,10 @@ class Settings(BaseSettings):
         if v and isinstance(v, str) and ('postgresql' in v or 'postgres' in v):
             return "sqlite+aiosqlite:///./app.db"
         return v
+    
+    @property
+    def allowed_hosts_list(self) -> list[str]:
+        return [h.strip() for h in self.allowed_hosts.split(",") if h.strip()]
     
     # Ollama
     ollama_host: str = "http://localhost:11434"

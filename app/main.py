@@ -3,6 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from app.config import settings
 from app.database import init_db, get_db
 from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors
@@ -32,6 +34,13 @@ app = FastAPI(
     redoc_url="/api/redoc" if settings.debug else None,
     version="1.0.0",
 )
+
+# Production hardening: force HTTPS and validate hosts before custom domain setup.
+if settings.force_https:
+    app.add_middleware(HTTPSRedirectMiddleware)
+
+if settings.allowed_hosts_list != ["*"]:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts_list)
 
 # Static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
