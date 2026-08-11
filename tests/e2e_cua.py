@@ -210,7 +210,7 @@ def main():
     navigate(target_id, tab_id, f"{BASE_URL}/checkout")
     state = wait_and_shot(target_id, tab_id, "06_checkout_gate")
     page_text = json.dumps(state)
-    assert any(x in page_text for x in ["Iniciar", "Registrarse", "Checkout", "Direcci", "Total"]), "Unexpected checkout gate"
+    assert "Iniciar" in page_text or "Registrarse" in page_text, "Checkout did not redirect anonymous user to login"
 
     print("\nCommercial flow E2E completed successfully.")
     print(f"Screenshots saved in: {SCREENSHOT_DIR}")

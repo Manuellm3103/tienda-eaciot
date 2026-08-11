@@ -119,6 +119,8 @@ async def cart_remove(product_id: str, request: Request, response: Response):
 @router.get("/checkout", response_class=HTMLResponse)
 async def checkout_page(request: Request, db: AsyncSession = Depends(get_db)):
     user = await get_current_user_optional(request, db)
+    if not user:
+        return RedirectResponse(url="/auth/login?next=/checkout", status_code=302)
     cart = get_cart_from_cookie(request)
     if not cart:
         return RedirectResponse(url="/products/", status_code=302)
