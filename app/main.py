@@ -86,13 +86,26 @@ app.include_router(refunds_router)
 
 
 @app.get("/health")
-async def health():
-    return {
-        "status": "ok",
-        "app": settings.app_name,
-        "version": "1.0.0",
-        "environment": "production" if not settings.debug else "development",
-    }
+async def health(db: AsyncSession = Depends(get_db)):
+    db_ok = False
+    try:
+        from sqlalchemy import text
+        await db.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
+    
+    status_code = 200 if db_ok else 503
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "status": "ok" if db_ok else "degraded",
+            "database": "connected" if db_ok else "disconnected",
+            "app": settings.app_name,
+            "version": "1.0.0",
+            "environment": "production" if not settings.debug else "development",
+        },
+    )
 
 
 @app.get("/", response_class=HTMLResponse)

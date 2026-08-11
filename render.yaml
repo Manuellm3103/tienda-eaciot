@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: tienda-eaciot
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    releaseCommand: "bash scripts/release.sh"
+    startCommand: "bash scripts/start.sh"
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///./app.db
+      - key: FRONTEND_URL
+        value: https://tienda-eaciot.onrender.com
+      - key: FORCE_HTTPS
+        value: "true"
+      - key: ALLOWED_HOSTS
+        value: "tienda-eaciot.onrender.com,www.tienda.eaciot.com,tienda.eaciot.com"
+    disk:
+      name: tienda-data
+      mountPath: /opt/render/project/src
+      sizeGB: 1
