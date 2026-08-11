@@ -95,6 +95,16 @@ async def cart_add(product_id: str, request: Request, response: Response):
     return HTMLResponse(content=str(sum(cart.values())))
 
 
+@router.get("/cart/add/{product_id}")
+async def cart_add_get(product_id: str, request: Request):
+    """Graceful fallback for no-JS clients and CUA/browser automation."""
+    cart = get_cart_from_cookie(request)
+    cart[product_id] = cart.get(product_id, 0) + 1
+    response = RedirectResponse(url="/cart", status_code=302)
+    set_cart_cookie(response, cart)
+    return response
+
+
 @router.post("/cart/remove/{product_id}")
 async def cart_remove(product_id: str, request: Request, response: Response):
     cart = get_cart_from_cookie(request)

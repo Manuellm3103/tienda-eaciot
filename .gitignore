@@ -14,3 +14,5 @@ uploads/
 # *.db  # descomentar cuando se migre a PostgreSQL
 .pytest_cache/
 .mypy_cache/
+e2e_screenshots/
+.simplicio/
