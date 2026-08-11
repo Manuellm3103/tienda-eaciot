@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, Numeric, DateTime, ForeignKey, JSON
+from sqlalchemy.orm import relationship
 from app.database import Base
 
 
@@ -36,3 +37,5 @@ class OrderItem(Base):
     quantity = Column(Integer, default=1)
     price_at_purchase = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    
+    product = relationship("Product", lazy="selectin")
