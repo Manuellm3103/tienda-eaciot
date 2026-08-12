@@ -7,7 +7,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from app.config import settings
 from app.database import init_db, get_db
-from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors, CSRFMiddleware
+from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors, CSRFMiddleware, CanonicalDomainMiddleware
 from app.services.product_service import product_service
 from app.routers import (
     auth_router,
@@ -41,6 +41,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Canonical domain redirect (e.g. www -> non-www) when ALLOWED_HOSTS is set.
+if settings.allowed_hosts_list != ["*"]:
+    app.add_middleware(CanonicalDomainMiddleware)
 
 # Production hardening: force HTTPS and validate hosts before custom domain setup.
 if settings.force_https:

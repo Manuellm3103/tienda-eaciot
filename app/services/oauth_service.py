@@ -3,6 +3,16 @@ from app.config import settings
 from typing import Optional
 
 
+def _oauth_callback_path(provider: str) -> str:
+    return f"/auth/{provider}/callback"
+
+
+def _oauth_redirect_uri(provider: str) -> str:
+    """Build redirect URI from FRONTEND_URL so OAuth works on any deployed domain."""
+    base = settings.frontend_url.rstrip("/")
+    return f"{base}{_oauth_callback_path(provider)}"
+
+
 class OAuthService:
     """Service for handling OAuth authentication with multiple providers"""
     
@@ -12,7 +22,7 @@ class OAuthService:
         return (
             "https://accounts.google.com/o/oauth2/v2/auth?"
             f"client_id={settings.google_client_id}&"
-            f"redirect_uri={settings.google_redirect_uri}&"
+            f"redirect_uri={_oauth_redirect_uri('google')}&"
             "response_type=code&"
             "scope=openid email profile&"
             f"state={state}"
@@ -27,7 +37,7 @@ class OAuthService:
                     "code": code,
                     "client_id": settings.google_client_id,
                     "client_secret": settings.google_client_secret,
-                    "redirect_uri": settings.google_redirect_uri,
+                    "redirect_uri": _oauth_redirect_uri('google'),
                     "grant_type": "authorization_code",
                 },
             )
@@ -50,7 +60,7 @@ class OAuthService:
         return (
             "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?"
             f"client_id={settings.microsoft_client_id}&"
-            f"redirect_uri={settings.microsoft_redirect_uri}&"
+            f"redirect_uri={_oauth_redirect_uri('microsoft')}&"
             "response_type=code&"
             "scope=openid email profile User.Read&"
             f"state={state}"
@@ -65,7 +75,7 @@ class OAuthService:
                     "code": code,
                     "client_id": settings.microsoft_client_id,
                     "client_secret": settings.microsoft_client_secret,
-                    "redirect_uri": settings.microsoft_redirect_uri,
+                    "redirect_uri": _oauth_redirect_uri('microsoft'),
                     "grant_type": "authorization_code",
                 },
             )
@@ -88,7 +98,7 @@ class OAuthService:
         return (
             "https://github.com/login/oauth/authorize?"
             f"client_id={settings.github_client_id}&"
-            f"redirect_uri={settings.github_redirect_uri}&"
+            f"redirect_uri={_oauth_redirect_uri('github')}&"
             "scope=user:email&"
             f"state={state}"
         )

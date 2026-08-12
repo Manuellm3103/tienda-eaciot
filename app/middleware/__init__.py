@@ -3,6 +3,7 @@ from app.middleware.security import SecurityHeadersMiddleware
 from app.middleware.cors import setup_cors
 from app.middleware.csrf import validate_csrf, get_csrf_token
 from app.middleware.csrf_middleware import CSRFMiddleware
+from app.middleware.canonical import CanonicalDomainMiddleware
 
 __all__ = [
     "rate_limit_middleware",
@@ -11,4 +12,5 @@ __all__ = [
     "validate_csrf",
     "get_csrf_token",
     "CSRFMiddleware",
+    "CanonicalDomainMiddleware",
 ]
