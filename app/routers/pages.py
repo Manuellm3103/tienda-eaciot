@@ -43,15 +43,24 @@ def set_cart_cookie(response: Response, cart: dict):
     )
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[User]:
     token = request.cookies.get("access_token")
+    logger.info("get_current_user_optional: token present=%s", bool(token))
     if not token:
         return None
     payload = decode_token(token)
+    logger.info("get_current_user_optional: payload=%s", payload)
     if not payload or not payload.get("sub"):
         return None
     result = await db.execute(select(User).where(User.id == payload["sub"]))
-    return result.scalar_one_or_none()
+    user = result.scalar_one_or_none()
+    logger.info("get_current_user_optional: user=%s", user)
+    return user
 
 
 # ==================== PRODUCT DETAIL ====================
