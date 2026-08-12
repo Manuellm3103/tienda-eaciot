@@ -113,8 +113,6 @@ async def cart_remove(product_id: str, request: Request, response: Response):
 @router.get("/checkout", response_class=HTMLResponse)
 async def checkout_page(request: Request, db: AsyncSession = Depends(get_db)):
     user = await get_current_user_optional(request, db)
-    if not user:
-        return RedirectResponse(url="/auth/login?next=/checkout", status_code=302)
     cart = get_cart_from_cookie(request)
     if not cart:
         return RedirectResponse(url="/products/", status_code=302)
@@ -164,6 +162,18 @@ async def checkout_create(
     cart = get_cart_from_cookie(request)
     if not cart:
         return RedirectResponse(url="/products/", status_code=302)
+
+    # ── Guest checkout: create or reuse a user account ──────────────
+    email = (form.get("email") or "").strip().lower()
+    if not user:
+        if not email:
+            return RedirectResponse(url="/checkout?error=email_required", status_code=302)
+        from app.services.user_service import user_service
+        existing = await user_service.get_user_by_email(db, email)
+        if existing:
+            user = existing
+        else:
+            user = await user_service.create_guest_user(db, email, name=form.get("name", "").strip() or None)
 
     # ── Extract shipping fields ────────────────────────────────────
     name = (form.get("name") or "").strip()

@@ -41,7 +41,7 @@ async def test_cart_page(client):
 async def test_checkout_redirects_when_not_logged_in(client):
     response = await client.get("/checkout")
     assert response.status_code == 302
-    assert response.headers["location"] == "/auth/login?next=/checkout"
+    assert response.headers["location"] == "/products/"
 
 
 @pytest.mark.asyncio
