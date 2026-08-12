@@ -14,11 +14,11 @@ services:
       - key: DATABASE_URL
         value: sqlite+aiosqlite:///./app.db
       - key: FRONTEND_URL
-        value: https://tienda-eaciot.onrender.com
+        value: https://tienda.eaciot.com
       - key: FORCE_HTTPS
         value: "true"
       - key: ALLOWED_HOSTS
-        value: "tienda-eaciot.onrender.com,www.tienda.eaciot.com,tienda.eaciot.com"
+        value: "tienda.eaciot.com,www.tienda.eaciot.com,tienda-eaciot.onrender.com"
     disk:
       name: tienda-data
       mountPath: /opt/render/project/src
