@@ -36,11 +36,10 @@
                     <a href="/products/{{ product.id }}" class="bg-gray-200 text-gray-800 px-3 py-2 rounded hover:bg-gray-300">
                         Ver
                     </a>
-                    <button hx-post="/cart/add/{{ product.id }}" 
-                            hx-target="#cart-count"
-                            class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700">
+                    <a href="/cart/add/{{ product.id }}"
+                       class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 inline-block">
                         Agregar
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>

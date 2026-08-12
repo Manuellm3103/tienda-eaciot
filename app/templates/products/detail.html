@@ -18,10 +18,10 @@
         <p class="text-gray-600 mb-6">{{ product.description }}</p>
         <p class="text-3xl font-bold text-blue-600 mb-6">${{ product.price }}</p>
         <div class="flex space-x-4">
-            <button hx-post="/cart/add/{{ product.id }}" hx-target="#cart-count"
-                    class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700">
+            <a href="/cart/add/{{ product.id }}"
+               class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 inline-block">
                 Agregar al carrito
-            </button>
+            </a>
             <a href="/products/" class="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-300">
                 Ver más productos
             </a>
