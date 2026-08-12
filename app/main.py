@@ -9,6 +9,7 @@ from app.config import settings
 from app.database import init_db, get_db
 from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors, CSRFMiddleware, CanonicalDomainMiddleware
 from app.services.product_service import product_service
+from app.dependencies import get_current_user_optional
 from app.routers import (
     auth_router,
     products_router,
@@ -115,11 +116,12 @@ async def health(db: AsyncSession = Depends(get_db)):
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request, db: AsyncSession = Depends(get_db)):
     """Homepage"""
+    user = await get_current_user_optional(request, db)
     products = await product_service.get_products(db, None)
     featured = products[:3] if products else []
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "featured_products": featured},
+        {"request": request, "featured_products": featured, "user": user},
     )
 
 
@@ -131,11 +133,12 @@ async def products_redirect():
 @app.get("/products/", response_class=HTMLResponse)
 async def products_page(request: Request, db: AsyncSession = Depends(get_db)):
     """Products listing page"""
+    user = await get_current_user_optional(request, db)
     products = await product_service.get_products(db, None)
     categories = await product_service.get_categories(db)
     return templates.TemplateResponse(
         "products/list.html",
-        {"request": request, "products": products, "categories": categories},
+        {"request": request, "products": products, "categories": categories, "user": user},
     )
 
 

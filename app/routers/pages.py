@@ -12,7 +12,7 @@ from app.models.product import Product, Category
 from app.models.order import Order
 from app.models.promotion import Promotion
 from app.schemas.order import OrderCreate, OrderItemCreate
-from app.services.auth_service import decode_token
+from app.dependencies import get_current_user_optional
 from app.services.product_service import product_service
 from app.services.order_service import order_service
 from app.services.promotion_service import promotion_service
@@ -41,26 +41,6 @@ def set_cart_cookie(response: Response, cart: dict):
         max_age=30 * 24 * 60 * 60,
         samesite="lax",
     )
-
-
-import logging
-
-logger = logging.getLogger(__name__)
-
-
-async def get_current_user_optional(request: Request, db: AsyncSession = Depends(get_db)) -> Optional[User]:
-    token = request.cookies.get("access_token")
-    logger.info("get_current_user_optional: token present=%s", bool(token))
-    if not token:
-        return None
-    payload = decode_token(token)
-    logger.info("get_current_user_optional: payload=%s", payload)
-    if not payload or not payload.get("sub"):
-        return None
-    result = await db.execute(select(User).where(User.id == payload["sub"]))
-    user = result.scalar_one_or_none()
-    logger.info("get_current_user_optional: user=%s", user)
-    return user
 
 
 # ==================== PRODUCT DETAIL ====================
