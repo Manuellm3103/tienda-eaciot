@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     
     # Ollama
     ollama_host: str = "http://localhost:11434"
-    ollama_model: str = "llama3"
+    ollama_model: str = "ornith:9b"
     
     # Stripe
     stripe_secret_key: str = ""

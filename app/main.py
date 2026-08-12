@@ -27,6 +27,7 @@ from app.routers import (
     refunds_router,
 )
 from app.routers.pages import router as pages_router
+from app.routers.chat import router as chat_router
 
 
 @asynccontextmanager
@@ -74,6 +75,7 @@ app.middleware("http")(rate_limit_middleware)
 
 # Register routers
 app.include_router(pages_router)
+app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(products_router)
 app.include_router(admin_products_router)
