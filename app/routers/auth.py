@@ -305,8 +305,8 @@ async def google_callback(code: str, state: str = "/", db: AsyncSession = Depend
                 )
                 db.add(user)
         
-        await db.flush()
-        
+        await db.commit()
+
         # Create token and redirect
         access_token = create_access_token(data={"sub": str(user.id)})
         response = RedirectResponse(url=state)
@@ -318,10 +318,11 @@ async def google_callback(code: str, state: str = "/", db: AsyncSession = Depend
             samesite="lax",
             max_age=30 * 24 * 60 * 60,
         )
-        
+
         return response
-        
+
     except Exception as e:
+        await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -368,8 +369,8 @@ async def microsoft_callback(code: str, state: str = "/", db: AsyncSession = Dep
                 )
                 db.add(user)
         
-        await db.flush()
-        
+        await db.commit()
+
         # Create token and redirect
         access_token = create_access_token(data={"sub": str(user.id)})
         response = RedirectResponse(url=state)
@@ -381,10 +382,11 @@ async def microsoft_callback(code: str, state: str = "/", db: AsyncSession = Dep
             samesite="lax",
             max_age=30 * 24 * 60 * 60,
         )
-        
+
         return response
-        
+
     except Exception as e:
+        await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -436,8 +438,8 @@ async def github_callback(code: str, state: str = "/", db: AsyncSession = Depend
                 )
                 db.add(user)
         
-        await db.flush()
-        
+        await db.commit()
+
         # Create token and redirect
         access_token = create_access_token(data={"sub": str(user.id)})
         response = RedirectResponse(url=state)
@@ -449,10 +451,11 @@ async def github_callback(code: str, state: str = "/", db: AsyncSession = Depend
             samesite="lax",
             max_age=30 * 24 * 60 * 60,
         )
-        
+
         return response
-        
+
     except Exception as e:
+        await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 
