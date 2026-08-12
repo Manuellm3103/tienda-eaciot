@@ -1,4 +1,5 @@
 import stripe
+from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.config import settings
@@ -28,6 +29,17 @@ class StripeService:
                     "unit_amount": int(item.price_at_purchase * 100),
                 },
                 "quantity": item.quantity,
+            })
+
+        # Add shipping cost as a line item if applicable
+        if order.shipping_amount and Decimal(str(order.shipping_amount)) > 0:
+            line_items.append({
+                "price_data": {
+                    "currency": "mxn",
+                    "product_data": {"name": "Envío"},
+                    "unit_amount": int(Decimal(str(order.shipping_amount)) * 100),
+                },
+                "quantity": 1,
             })
 
         if not line_items:
