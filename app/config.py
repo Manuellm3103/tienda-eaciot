@@ -33,12 +33,6 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     stripe_publishable_key: str = ""
     
-    # PayPal
-    paypal_client_id: str = ""
-    paypal_client_secret: str = ""
-    paypal_mode: str = "sandbox"
-    paypal_webhook_id: str = ""
-    
     # SMTP Email
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
@@ -68,6 +62,7 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache()
