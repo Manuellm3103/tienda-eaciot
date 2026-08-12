@@ -41,7 +41,7 @@ def set_cart_cookie(response: Response, cart: dict):
         value=json.dumps(cart),
         httponly=False,
         max_age=30 * 24 * 60 * 60,
-        samesite="lax",
+        samesite="none",
         path="/",
         secure=settings.frontend_url.startswith("https"),
     )
