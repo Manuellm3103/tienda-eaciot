@@ -167,10 +167,16 @@
                 const typing = appendTyping();
 
                 try {
-                    const res = await fetch('/api/chat/?message=' + encodeURIComponent(text));
+                    const res = await fetch('/api/chat/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'same-origin',
+                        body: JSON.stringify({message: text})
+                    });
                     const data = await res.json();
                     typing.remove();
-                    appendMessage(data.answer || 'No entendí bien, ¿puedes reformular?', 'bot');
+                    const agentLabel = data.agent ? ` (${data.agent})` : '';
+                    appendMessage(data.answer || 'No entendí bien, ¿puedes reformular?' + agentLabel, 'bot');
                     appendProducts(data.products);
                 } catch (err) {
                     typing.remove();
