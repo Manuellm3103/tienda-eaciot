@@ -15,9 +15,12 @@ class ShippingService:
         "international": {"base": 500, "per_kg": 100},
     }
     
-    def calculate_shipping_cost(self, weight: Decimal, destination_state: str, origin_state: str = "CDMX") -> Decimal:
-        """Calculate shipping cost based on weight and destination"""
-        if destination_state.lower() == origin_state.lower():
+    def calculate_shipping_cost(self, weight: Decimal, destination_state: str, origin_state: str = "CDMX", destination_country: str = "México") -> Decimal:
+        """Calculate shipping cost based on weight, destination state and country"""
+        # International shipping
+        if destination_country.lower() not in ("méxico", "mexico", ""):
+            zone = "international"
+        elif destination_state.lower() == origin_state.lower():
             zone = "local"
         elif destination_state.lower() in ["méxico", "estado de méxico", "cdmx"]:
             zone = "local"

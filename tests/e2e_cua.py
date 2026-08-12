@@ -14,12 +14,19 @@ import sys
 import time
 import urllib.request
 from pathlib import Path
+from uuid import uuid4
 
 CUA_DRIVER = Path(r"C:\Users\Manu\AppData\Local\Programs\Cua\cua-driver\bin\cua-driver.exe")
-BASE_URL = os.environ.get("E2E_BASE_URL", "https://tienda-eaciot.onrender.com")
+BASE_URL = os.environ.get("E2E_BASE_URL", "https://tienda.eaciot.onrender.com")
 API_URL = f"{BASE_URL}/api/products"
+REGISTER_URL = f"{BASE_URL}/auth/register"
 SCREENSHOT_DIR = Path(__file__).resolve().parent.parent / "e2e_screenshots"
 SESSION = "eaciot-commercial-flow"
+
+# Test user credentials (randomized per run)
+TEST_EMAIL = f"e2e_{uuid4().hex[:8]}@eaciot.test"
+TEST_PASSWORD = "E2ETestPass123!"
+TEST_NAME = "E2E Test User"
 
 
 def cua_call(tool: str, payload: dict, timeout: float = 30.0) -> dict:
@@ -164,6 +171,37 @@ def fetch_first_product_id() -> str:
     return str(items[0]["id"])
 
 
+def register_test_user() -> None:
+    """Register a throwaway test user via the public API."""
+    payload = json.dumps({
+        "email": TEST_EMAIL,
+        "password": TEST_PASSWORD,
+        "name": TEST_NAME,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        REGISTER_URL,
+        data=payload,
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            print(f"  Registered {TEST_EMAIL} (status {resp.status})")
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="ignore")
+        if "already registered" in body.lower():
+            print(f"  User {TEST_EMAIL} already exists")
+        else:
+            raise RuntimeError(f"Registration failed: {e.code} {body}")
+
+
+def type_text(target_id: str, tab_id: str, ref: str, text: str):
+    cua_call(
+        "browser_type",
+        {"session": SESSION, "target_id": target_id, "tab_id": tab_id, "ref": ref, "text": text},
+    )
+
+
 def main():
     print("Starting cua-driver E2E commercial flow...")
     cua_call("start_session", {"session": SESSION})
@@ -214,6 +252,185 @@ def main():
 
     print("\nCommercial flow E2E completed successfully.")
     print(f"Screenshots saved in: {SCREENSHOT_DIR}")
+
+
+def run_authenticated_checkout_flow(target_id: str, tab_id: str):
+    """Full authenticated purchase flow: login -> product -> cart -> checkout -> Stripe test -> success."""
+    print("\n=== Authenticated checkout flow ===")
+
+    # 1. Login
+    print("\nA1. Login page")
+    navigate(target_id, tab_id, f"{BASE_URL}/auth/login")
+    state = wait_and_shot(target_id, tab_id, "a01_login")
+    email_ref = find_ref(state, "email") or find_ref_by_query(target_id, tab_id, "email")
+    password_ref = find_ref(state, "contraseña") or find_ref_by_query(target_id, tab_id, "contraseña")
+    if not email_ref or not password_ref:
+        # Fall back to first text inputs
+        inputs = [r for r in state.get("content_refs", []) if r.get("role") == "textfield"]
+        if len(inputs) >= 2:
+            email_ref, password_ref = inputs[0]["ref"], inputs[1]["ref"]
+    assert email_ref and password_ref, "Could not find login form fields"
+    type_text(target_id, tab_id, email_ref, TEST_EMAIL)
+    type_text(target_id, tab_id, password_ref, TEST_PASSWORD)
+    state = snapshot(target_id, tab_id)
+    submit_ref = find_ref(state, "iniciar sesión") or find_ref(state, "login")
+    if submit_ref:
+        click(target_id, tab_id, submit_ref)
+    else:
+        # Submit via Return key on password field
+        cua_call("press_key", {"session": SESSION, "target_id": target_id, "tab_id": tab_id, "key": "Return"})
+    state = wait_and_shot(target_id, tab_id, "a02_logged_in")
+    page_text = json.dumps(state)
+    assert "Mi Cuenta" in page_text or "Cerrar" in page_text or TEST_NAME in page_text, "Login did not succeed"
+
+    # 2. Product catalog and add to cart
+    print("\nA2. Product catalog")
+    product_id = fetch_first_product_id()
+    print(f"  First product id: {product_id}")
+    navigate(target_id, tab_id, f"{BASE_URL}/products/{product_id}")
+    state = wait_and_shot(target_id, tab_id, "a03_product_detail")
+    assert "Agregar al carrito" in json.dumps(state), "Add to cart button missing"
+
+    print("\nA3. Add to cart")
+    navigate(target_id, tab_id, f"{BASE_URL}/cart/add/{product_id}")
+    state = wait_and_shot(target_id, tab_id, "a04_added_to_cart")
+
+    # 4. Cart -> checkout
+    print("\nA4. Cart")
+    navigate(target_id, tab_id, f"{BASE_URL}/cart")
+    state = wait_and_shot(target_id, tab_id, "a05_cart")
+    checkout_ref = find_ref(state, "proceder al pago")
+    assert checkout_ref, "Checkout button missing"
+    click(target_id, tab_id, checkout_ref)
+    state = wait_and_shot(target_id, tab_id, "a06_checkout_form")
+    assert "Datos de envío" in json.dumps(state), "Checkout form not rendered"
+
+    # 5. Fill shipping form
+    print("\nA5. Fill shipping form")
+    field_map = {
+        "name": TEST_NAME,
+        "street": "Av. Reforma 123",
+        "apartment": "Piso 4",
+        "city": "Ciudad de México",
+        "state": "CDMX",
+        "zip_code": "01000",
+        "phone": "5551234567",
+    }
+    for field_name, value in field_map.items():
+        ref = find_ref(state, field_name)
+        if not ref:
+            ref = find_ref_by_query(target_id, tab_id, field_name)
+        if ref:
+            type_text(target_id, tab_id, ref, value)
+            state = snapshot(target_id, tab_id)
+
+    # Country select defaults to México; leave it
+    pay_ref = find_ref(state, "pagar con stripe") or find_ref_by_query(target_id, tab_id, "pagar")
+    assert pay_ref, "Pay button not found"
+    click(target_id, tab_id, pay_ref)
+
+    # 6. Stripe Checkout
+    print("\nA6. Stripe Checkout")
+    time.sleep(5)
+    state = snapshot(target_id, tab_id, screenshot=True)
+    save_screenshot(state, "a07_stripe_checkout")
+    current_url = state.get("url", "")
+    print(f"  Current URL: {current_url}")
+    assert "stripe.com" in current_url, f"Did not redirect to Stripe checkout: {current_url}"
+
+    # Fill Stripe test card details
+    # Stripe Checkout fields are identified by placeholder/label
+    stripe_field_queries = [
+        ("Correo electrónico", TEST_EMAIL),
+        ("Número de tarjeta", "4242 4242 4242 4242"),
+        ("MM / AA", "12 / 30"),
+        ("CVC", "123"),
+        ("Nombre en la tarjeta", TEST_NAME),
+    ]
+    for query, text in stripe_field_queries:
+        ref = find_ref_by_query(target_id, tab_id, query)
+        if ref:
+            type_text(target_id, tab_id, ref, text)
+            time.sleep(0.5)
+
+    # Submit payment in Stripe
+    time.sleep(1)
+    state = snapshot(target_id, tab_id)
+    pay_ref = find_ref(state, "pagar") or find_ref_by_query(target_id, tab_id, "pagar")
+    if pay_ref:
+        click(target_id, tab_id, pay_ref)
+
+    # 7. Success page
+    print("\nA7. Success page")
+    time.sleep(6)
+    state = snapshot(target_id, tab_id, screenshot=True)
+    save_screenshot(state, "a08_success")
+    current_url = state.get("url", "")
+    print(f"  Current URL: {current_url}")
+    assert "/checkout/success" in current_url, f"Did not reach success page: {current_url}"
+
+    # 8. Account page shows order
+    print("\nA8. Account order history")
+    navigate(target_id, tab_id, f"{BASE_URL}/account")
+    state = wait_and_shot(target_id, tab_id, "a09_account")
+    assert "Mi Cuenta" in json.dumps(state), "Account page not rendered"
+
+    print("\nAuthenticated checkout flow completed successfully.")
+
+
+def main():
+    print("Starting cua-driver E2E commercial flow...")
+    cua_call("start_session", {"session": SESSION})
+
+    pid = start_chrome()
+    print(f"Chrome PID: {pid}")
+    window_id = get_window_id(pid)
+    target_id, tab_id = bind_browser(pid, window_id)
+    print(f"Bound target={target_id} tab={tab_id}")
+
+    # 1. Landing page
+    print("\n1. Landing page")
+    navigate(target_id, tab_id, BASE_URL)
+    state = wait_and_shot(target_id, tab_id, "01_landing")
+    assert "Bienvenido a Tienda Eaciot" in json.dumps(state), "Landing text missing"
+
+    # 2. Product catalog
+    print("\n2. Product catalog")
+    navigate(target_id, tab_id, f"{BASE_URL}/products/")
+    state = wait_and_shot(target_id, tab_id, "02_products")
+    assert "Productos" in json.dumps(state), "Products heading missing"
+
+    # 3. First product detail
+    print("\n3. Product detail")
+    product_id = fetch_first_product_id()
+    print(f"  First product id: {product_id}")
+    navigate(target_id, tab_id, f"{BASE_URL}/products/{product_id}")
+    state = wait_and_shot(target_id, tab_id, "03_product_detail")
+    assert "Agregar al carrito" in json.dumps(state), "Add to cart button missing"
+
+    # 4. Add to cart via graceful no-JS fallback route
+    print("\n4. Add to cart")
+    navigate(target_id, tab_id, f"{BASE_URL}/cart/add/{product_id}")
+    state = wait_and_shot(target_id, tab_id, "04_added_to_cart")
+
+    # 5. Cart
+    print("\n5. Shopping cart")
+    navigate(target_id, tab_id, f"{BASE_URL}/cart")
+    state = wait_and_shot(target_id, tab_id, "05_cart")
+    assert "Proceder al pago" in json.dumps(state), "Checkout button missing"
+
+    # 6. Checkout gate (requires auth)
+    print("\n6. Checkout gate")
+    navigate(target_id, tab_id, f"{BASE_URL}/checkout")
+    state = wait_and_shot(target_id, tab_id, "06_checkout_gate")
+    page_text = json.dumps(state)
+    assert "Iniciar" in page_text or "Registrarse" in page_text, "Checkout did not redirect anonymous user to login"
+
+    # Prepare test user and run authenticated purchase flow
+    register_test_user()
+    run_authenticated_checkout_flow(target_id, tab_id)
+
+    print(f"\nScreenshots saved in: {SCREENSHOT_DIR}")
     cua_call("end_session", {"session": SESSION})
 
 

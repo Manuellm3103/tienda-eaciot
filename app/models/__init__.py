@@ -9,6 +9,7 @@ from app.models.wishlist import Wishlist
 from app.models.shipping import ShippingAddress, Shipment
 from app.models.refund import Refund
 from app.models.email_queue import EmailQueue
+from app.models.chat import ChatMessage
 
 __all__ = [
     "User",
@@ -27,4 +28,5 @@ __all__ = [
     "Shipment",
     "Refund",
     "EmailQueue",
+    "ChatMessage",
 ]

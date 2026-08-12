@@ -26,17 +26,12 @@ class Settings(BaseSettings):
     
     # Ollama
     ollama_host: str = "http://localhost:11434"
-    ollama_model: str = "llama3"
+    ollama_model: str = "ornith:9b"
     
     # Stripe
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_publishable_key: str = ""
-    
-    # PayPal
-    paypal_client_id: str = ""
-    paypal_client_secret: str = ""
-    paypal_mode: str = "sandbox"
     
     # SMTP Email
     smtp_host: str = "smtp.gmail.com"
@@ -67,6 +62,7 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 @lru_cache()

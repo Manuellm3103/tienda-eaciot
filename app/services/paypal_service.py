@@ -5,9 +5,9 @@ from typing import Optional
 
 class PayPalService:
     def __init__(self):
-        self.client_id = settings.paypal_client_id
-        self.client_secret = settings.paypal_client_secret
-        self.mode = settings.paypal_mode
+        self.client_id = getattr(settings, "paypal_client_id", "")
+        self.client_secret = getattr(settings, "paypal_client_secret", "")
+        self.mode = getattr(settings, "paypal_mode", "sandbox")
         self.base_url = "https://api-m.sandbox.paypal.com" if self.mode == "sandbox" else "https://api-m.paypal.com"
     
     async def get_access_token(self) -> str:

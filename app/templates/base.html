@@ -57,5 +57,136 @@
             <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
         </div>
     </footer>
+
+    <!-- AI Shopping Assistant Widget -->
+    <div id="chat-widget-container" class="fixed bottom-4 right-4 z-50">
+        <button id="chat-toggle" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-transform hover:scale-105" aria-label="Asistente AI">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+        </button>
+
+        <div id="chat-panel" class="hidden bg-white rounded-2xl shadow-2xl w-80 sm:w-96 flex flex-col overflow-hidden border border-gray-200 mb-4">
+            <div class="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
+                <div>
+                    <h3 class="font-semibold">Asistente Eaciot</h3>
+                    <p class="text-xs text-blue-100">Pregúntame por productos o recomendaciones</p>
+                </div>
+                <button id="chat-close" class="text-white hover:text-blue-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div id="chat-messages" class="flex-1 h-80 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                <div class="flex items-start">
+                    <div class="bg-white border border-gray-200 rounded-lg rounded-tl-none px-3 py-2 text-sm text-gray-700 shadow-sm max-w-[85%]">
+                        ¡Hola! Soy tu asistente de Tienda Eaciot. ¿Qué estás buscando hoy?
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 border-t border-gray-200 bg-white">
+                <form id="chat-form" class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Ej: recomiéndame un curso" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                    <button type="submit" id="chat-send" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-50">Enviar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const toggle = document.getElementById('chat-toggle');
+            const panel = document.getElementById('chat-panel');
+            const close = document.getElementById('chat-close');
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('chat-send');
+            const messages = document.getElementById('chat-messages');
+
+            toggle.addEventListener('click', () => panel.classList.toggle('hidden'));
+            close.addEventListener('click', () => panel.classList.add('hidden'));
+
+            function appendMessage(text, sender) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex ' + (sender === 'user' ? 'justify-end' : 'items-start');
+                const bubble = document.createElement('div');
+                bubble.className = sender === 'user'
+                    ? 'bg-blue-600 text-white rounded-lg rounded-tr-none px-3 py-2 text-sm shadow-sm max-w-[85%]'
+                    : 'bg-white border border-gray-200 rounded-lg rounded-tl-none px-3 py-2 text-sm text-gray-700 shadow-sm max-w-[85%]';
+                bubble.innerText = text;
+                wrapper.appendChild(bubble);
+                messages.appendChild(wrapper);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function appendProducts(products) {
+                if (!products || products.length === 0) return;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex items-start';
+                const list = document.createElement('div');
+                list.className = 'bg-white border border-gray-200 rounded-lg rounded-tl-none px-3 py-2 shadow-sm max-w-[85%]';
+                products.forEach(p => {
+                    const link = document.createElement('a');
+                    link.href = '/products/' + p.id;
+                    link.className = 'flex items-center gap-3 py-2 hover:bg-gray-50 rounded transition';
+                    const img = document.createElement('img');
+                    img.src = p.image_url || '/static/images/logo.png';
+                    img.alt = p.title;
+                    img.className = 'w-12 h-12 object-cover rounded';
+                    const info = document.createElement('div');
+                    info.innerHTML = '<p class="text-sm font-medium text-gray-800">' + p.title + '</p><p class="text-sm text-blue-600 font-semibold">$' + p.price.toFixed(2) + '</p>';
+                    link.appendChild(img);
+                    link.appendChild(info);
+                    list.appendChild(link);
+                });
+                wrapper.appendChild(list);
+                messages.appendChild(wrapper);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            function appendTyping() {
+                const wrapper = document.createElement('div');
+                wrapper.id = 'chat-typing';
+                wrapper.className = 'flex items-start';
+                wrapper.innerHTML = '<div class="bg-white border border-gray-200 rounded-lg rounded-tl-none px-3 py-2 text-sm text-gray-500 shadow-sm">Eaciot está escribiendo...</div>';
+                messages.appendChild(wrapper);
+                messages.scrollTop = messages.scrollHeight;
+                return wrapper;
+            }
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const text = input.value.trim();
+                if (!text) return;
+                appendMessage(text, 'user');
+                input.value = '';
+                sendBtn.disabled = true;
+                const typing = appendTyping();
+
+                try {
+                    const res = await fetch('/api/chat/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        credentials: 'same-origin',
+                        body: JSON.stringify({message: text})
+                    });
+                    const data = await res.json();
+                    typing.remove();
+                    const agentLabel = data.agent ? ` (${data.agent})` : '';
+                    appendMessage(data.answer || 'No entendí bien, ¿puedes reformular?' + agentLabel, 'bot');
+                    appendProducts(data.products);
+                } catch (err) {
+                    typing.remove();
+                    appendMessage('Ups, el asistente no responde. Intenta de nuevo en un momento.', 'bot');
+                } finally {
+                    sendBtn.disabled = false;
+                    input.focus();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

@@ -19,6 +19,10 @@ services:
         value: "true"
       - key: ALLOWED_HOSTS
         value: "tienda.eaciot.com,www.tienda.eaciot.com,tienda-eaciot.onrender.com"
+      - key: OLLAMA_HOST
+        value: ""
+      - key: OLLAMA_MODEL
+        value: ""
     disk:
       name: tienda-data
       mountPath: /opt/render/project/src
