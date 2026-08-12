@@ -21,7 +21,7 @@ class CanonicalDomainMiddleware(BaseHTTPMiddleware):
         if host and host != canonical and canonical != "*":
             # Only redirect if the current host is in allowed list but not canonical.
             if host in [h.lower() for h in allowed]:
-                url = request.url.replace(host=canonical)
+                url = request.url.replace(hostname=canonical)
                 return RedirectResponse(url=str(url), status_code=301)
 
         return await call_next(request)
