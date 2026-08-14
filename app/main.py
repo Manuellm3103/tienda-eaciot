@@ -31,6 +31,8 @@ from app.routers.admin_rag import router as admin_rag_router
 from app.routers.admin_analytics import router as admin_analytics_router
 from app.routers.admin_pricing import router as admin_pricing_router
 from app.routers.admin_cart_recovery import router as admin_cart_recovery_router
+from app.routers.admin_shipments import router as admin_shipments_router
+from app.routers.admin_reports import router as admin_reports_router
 from app.routers.pages import router as pages_router
 from app.routers.chat import router as chat_router
 from app.routers.legal import router as legal_router
@@ -96,6 +98,8 @@ app.include_router(admin_rag_router)
 app.include_router(admin_analytics_router)
 app.include_router(admin_pricing_router)
 app.include_router(admin_cart_recovery_router)
+app.include_router(admin_shipments_router)
+app.include_router(admin_reports_router)
 app.include_router(reviews_router)
 app.include_router(wishlist_router)
 app.include_router(search_router)

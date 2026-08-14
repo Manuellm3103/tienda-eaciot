@@ -109,5 +109,62 @@ class ShippingService:
         result = await db.execute(select(Shipment).where(Shipment.order_id == order_id))
         return result.scalar_one_or_none()
 
+    async def list_shipments(self, db: AsyncSession, limit: int = 100) -> list[dict]:
+        """Admin view: shipments joined with order + customer info."""
+        from app.models.order import Order
+        from app.models.user import User
+
+        result = await db.execute(
+            select(Shipment).order_by(Shipment.created_at.desc()).limit(limit)
+        )
+        shipments = result.scalars().all()
+
+        rows = []
+        for s in shipments:
+            order = await db.get(Order, s.order_id)
+            user = await db.get(User, order.user_id) if order else None
+            rows.append(
+                {
+                    "id": str(s.id),
+                    "order_id": str(s.order_id),
+                    "carrier": s.carrier,
+                    "tracking_number": s.tracking_number,
+                    "tracking_url": s.tracking_url,
+                    "status": s.status,
+                    "customer_email": user.email if user else None,
+                    "customer_name": (user.name or user.email) if user else "—",
+                    "total": float(order.total_amount) if order else 0.0,
+                }
+            )
+        return rows
+
+    async def assign_tracking(
+        self,
+        db: AsyncSession,
+        shipment_id: UUID,
+        carrier: str,
+        tracking_number: str,
+    ) -> Optional[Shipment]:
+        """Assign a carrier + tracking number and regenerate the tracking URL."""
+        result = await db.execute(
+            select(Shipment).where(Shipment.id == shipment_id)
+        )
+        shipment = result.scalar_one_or_none()
+        if not shipment:
+            return None
+        shipment.carrier = carrier
+        shipment.tracking_number = tracking_number
+
+        carrier_urls = {
+            "fedex": f"https://www.fedex.com/fedextrack/?trknbr={tracking_number}",
+            "dhl": f"https://www.dhl.com/en/express/tracking.html?AWB={tracking_number}",
+            "estafeta": f"https://www.estafeta.com/Herramientas/Rastreo?cb={tracking_number}",
+            "99minutos": f"https://www.99minutos.com/tracking/{tracking_number}",
+            "correos": f"https://www.correosdemexico.gob.mx/ServiciosLinea/Paginas/ccpost.aspx?c={tracking_number}",
+        }
+        shipment.tracking_url = carrier_urls.get(carrier.lower())
+        await db.flush()
+        return shipment
+
 
 shipping_service = ShippingService()

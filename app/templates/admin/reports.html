@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Reportes</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<p class="text-gray-600 mb-6">
+    Exporta la información de tu tienda en CSV para contabilidad y operaciones.
+</p>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <a href="/admin/reports/sales.csv" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+        <h2 class="text-xl font-bold mb-2">📈 Ventas</h2>
+        <p class="text-gray-600 text-sm">Órdenes, cliente, estado, método de pago y totales.</p>
+        <span class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded text-sm">Descargar CSV</span>
+    </a>
+    <a href="/admin/reports/products.csv" class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+        <h2 class="text-xl font-bold mb-2">📦 Productos</h2>
+        <p class="text-gray-600 text-sm">Catálogo completo con precios, stock y estado.</p>
+        <span class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded text-sm">Descargar CSV</span>
+    </a>
+</div>
+{% endblock %}

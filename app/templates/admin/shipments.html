@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Envíos - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Gestión de Envíos</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<p class="text-gray-600 mb-6">
+    Asigna paquetería y número de guía a cada envío, y notifica al cliente con
+    el link de rastreo. El email se envía de inmediato vía SMTP.
+</p>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Orden</th>
+                <th class="text-left py-3 px-4">Cliente</th>
+                <th class="text-center py-3 px-4">Estado</th>
+                <th class="text-left py-3 px-4">Paquetería / Guía</th>
+                <th class="text-right py-3 px-4">Total</th>
+                <th class="text-center py-3 px-4">Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="shipments-body">
+            <tr><td colspan="6" class="py-4 text-center text-gray-400">Cargando…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="status" class="mt-4 text-sm text-center"></div>
+
+<script>
+(function() {
+    const CARRIERS = ['fedex', 'dhl', 'estafeta', '99minutos', 'correos'];
+
+    function csrfToken() {
+        const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    async function post(url, body) {
+        document.getElementById('status').textContent = 'Procesando…';
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken()},
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error');
+            document.getElementById('status').textContent = '✅ Listo.';
+            load();
+        } catch (err) {
+            document.getElementById('status').textContent = '❌ ' + err.message;
+        }
+    }
+
+    function assignForm(s) {
+        const carriers = CARRIERS.map(c => '<option value="' + c + '"' + (s.carrier === c ? ' selected' : '') + '>' + c + '</option>').join('');
+        return '<div class="flex gap-2 items-center">' +
+            '<select class="carrier border rounded px-2 py-1 text-sm">' + carriers + '</select>' +
+            '<input type="text" class="tracking border rounded px-2 py-1 text-sm w-32" placeholder="guía" value="' + (s.tracking_number || '') + '">' +
+            '<button class="assign bg-blue-100 text-blue-700 px-2 py-1 rounded text-sm hover:bg-blue-200">Asignar</button>' +
+            '</div>';
+    }
+
+    function render(rows) {
+        const body = document.getElementById('shipments-body');
+        body.innerHTML = rows.map(s => {
+            return '<tr class="border-b hover:bg-gray-50">' +
+                '<td class="py-3 px-4 font-mono text-sm">#' + s.order_id.slice(0, 8) + '</td>' +
+                '<td class="py-3 px-4"><span class="font-medium">' + s.customer_name + '</span><br><span class="text-xs text-gray-500">' + (s.customer_email || '') + '</span></td>' +
+                '<td class="text-center py-3 px-4"><span class="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">' + s.status + '</span></td>' +
+                '<td class="py-3 px-4">' + assignForm(s) + (s.tracking_url ? '<a href="' + s.tracking_url + '" target="_blank" class="text-xs text-blue-600">Ver rastreo ↗</a>' : '') + '</td>' +
+                '<td class="text-right py-3 px-4">$' + s.total.toFixed(2) + '</td>' +
+                '<td class="text-center py-3 px-4">' +
+                '<button data-id="' + s.id + '" class="send-email bg-emerald-100 text-emerald-700 px-3 py-1 rounded text-sm hover:bg-emerald-200">Notificar</button>' +
+                '</td>' +
+                '</tr>';
+        }).join('') || '<tr><td colspan="6" class="py-4 text-center text-gray-400">No hay envíos registrados.</td></tr>';
+
+        body.querySelectorAll('.assign').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tr = btn.closest('tr');
+                const carrier = tr.querySelector('.carrier').value;
+                const tracking = tr.querySelector('.tracking').value.trim();
+                const id = tr.querySelector('.send-email').getAttribute('data-id');
+                post('/admin/shipments/' + id + '/assign', {carrier: carrier, tracking_number: tracking});
+            });
+        });
+        body.querySelectorAll('.send-email').forEach(btn => {
+            btn.addEventListener('click', function() {
+                post('/admin/shipments/' + btn.getAttribute('data-id') + '/send-email', {});
+            });
+        });
+    }
+
+    async function load() {
+        try {
+            const res = await fetch('/admin/shipments/list', {credentials: 'same-origin'});
+            const data = await res.json();
+            render(data.shipments || []);
+        } catch (err) {
+            document.getElementById('shipments-body').innerHTML =
+                '<tr><td colspan="6" class="py-4 text-center text-red-500">No se pudo cargar.</td></tr>';
+        }
+    }
+    load();
+})();
+</script>
+{% endblock %}

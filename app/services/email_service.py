@@ -198,5 +198,68 @@ class EmailService:
             html_content=html_content,
         )
 
+    async def send_shipping_confirmation_email(
+        self,
+        to_email: str,
+        name: str,
+        order_id: str,
+        carrier: str,
+        tracking_number: str,
+        tracking_url: str | None,
+    ):
+        """Send a shipping notification with the tracking link."""
+        tracking_block = ""
+        if tracking_url:
+            tracking_block = (
+                '<p style="text-align: center;">'
+                f'<a href="{tracking_url}" class="button">Rastrear mi pedido</a>'
+                "</p>"
+            )
+        elif tracking_number:
+            tracking_block = f"<p>Número de guía: <strong>{tracking_number}</strong></p>"
+
+        template = Template(
+            """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: #0284c7; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+                .button { display: inline-block; background: #0284c7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header"><h1>¡Tu pedido va en camino! 📦</h1></div>
+                <div class="content">
+                    <h2>Hola {{ name }},</h2>
+                    <p>Tu orden <strong>#{{ order_id_short }}</strong> fue enviada por <strong>{{ carrier }}</strong>.</p>
+                    {{ tracking_block }}
+                    <p>Gracias por comprar en Tienda Eaciot.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        )
+        html_content = template.render(
+            name=name,
+            order_id_short=str(order_id)[:8],
+            carrier=carrier or "nuestro socio logístico",
+            tracking_block=tracking_block,
+        )
+        return await self.send_email(
+            to_email=to_email,
+            subject="Tu pedido fue enviado - Tienda Eaciot",
+            html_content=html_content,
+        )
+
 
 email_service = EmailService()
