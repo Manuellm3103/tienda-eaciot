@@ -1,26 +1,45 @@
 """RAG service using ChromaDB for product catalog semantic search.
 
-Indexes active products into a local ChromaDB collection and retrieves
-the most relevant products for a chat query.
+Chromadb is an OPTIONAL dependency: on Render's free tier the filesystem is
+ephemeral and chromadb is heavy, so it may not be installed. This module
+degrades gracefully — when chromadb is missing, `available` is False and
+`retrieve` returns an empty list, so the product advisor falls back to
+keyword search. Install it locally with `pip install chromadb` to enable RAG.
 """
 import os
-import chromadb
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.product import Product
 
+try:
+    import chromadb
+except Exception:  # pragma: no cover - optional dependency
+    chromadb = None
+
 
 class RAGService:
     def __init__(self):
-        self.persist_directory = os.getenv("CHROMA_PERSIST_DIR", "./chroma_data")
-        self.client = chromadb.PersistentClient(path=self.persist_directory)
-        self.collection = self.client.get_or_create_collection(
-            name="products",
-            metadata={"hnsw:space": "cosine"},
-        )
+        self.available = chromadb is not None
+        self.client = None
+        self.collection = None
+        if self.available:
+            self.persist_directory = os.getenv("CHROMA_PERSIST_DIR", "./chroma_data")
+            try:
+                self.client = chromadb.PersistentClient(path=self.persist_directory)
+                self.collection = self.client.get_or_create_collection(
+                    name="products",
+                    metadata={"hnsw:space": "cosine"},
+                )
+            except Exception:
+                self.available = False
+                self.client = None
+                self.collection = None
 
     async def index_products(self, db: AsyncSession) -> int:
         """Re-index all active products. Returns number of indexed documents."""
+        if not self.available:
+            return 0
+
         result = await db.execute(select(Product).where(Product.is_active == True))
         products = result.scalars().all()
 
@@ -47,7 +66,7 @@ class RAGService:
 
     async def retrieve(self, query: str, n: int = 5) -> list[dict]:
         """Retrieve top-n products relevant to the query."""
-        if self.collection.count() == 0:
+        if not self.available or self.collection.count() == 0:
             return []
 
         results = self.collection.query(
@@ -70,9 +89,10 @@ class RAGService:
                 )
         return products
 
-
     def size(self) -> int:
         """Number of documents currently indexed in the vector store."""
+        if not self.available:
+            return 0
         return self.collection.count()
 
 
