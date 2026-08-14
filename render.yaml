@@ -19,8 +19,27 @@ services:
         value: "true"
       - key: ALLOWED_HOSTS
         value: "tienda.eaciot.com,www.tienda.eaciot.com,tienda-eaciot.onrender.com"
-      # AI providers — set the real values in the Render dashboard.
+      # Secrets + provider keys — set the real values in the Render dashboard.
       # sync:false means Render will NOT overwrite them with a blank value.
+      - key: APP_SECRET_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      # AI providers
       - key: OLLAMA_HOST
         sync: false
       - key: OLLAMA_MODEL
@@ -30,6 +49,17 @@ services:
       - key: OPENCODE_MODEL
         sync: false
       - key: OPENCODE_API_KEY
+        sync: false
+      # CFDI / facturación (Facturapi) — vacío emite comprobante provisional
+      - key: FACTURAPI_API_KEY
+        sync: false
+      - key: FACTURAPI_BASE_URL
+        sync: false
+      - key: BUSINESS_RFC
+        sync: false
+      - key: BUSINESS_NAME
+        sync: false
+      - key: BUSINESS_TAX_REGIME
         sync: false
     disk:
       name: tienda-data

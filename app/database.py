@@ -53,3 +53,40 @@ async def get_db_session() -> AsyncSession:
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_ensure_sqlite_columns)
+
+
+# ── Lightweight SQLite column migrations ─────────────────────────────────
+# `create_all` only creates missing TABLES, never missing COLUMNS. On Render
+# the SQLite file persists on the disk mount between deploys, so adding a
+# column to an existing table would otherwise be silently skipped and break
+# runtime queries. This idempotent shim backfills those columns safely.
+_SQLITE_COLUMN_MIGRATIONS = {
+    "orders": [
+        ("customer_rfc", "VARCHAR(20)"),
+        ("uso_cfdi", "VARCHAR(10) DEFAULT 'G03'"),
+    ],
+    "order_items": [
+        ("variant_id", "VARCHAR(36)"),
+        ("variant_name", "VARCHAR(255)"),
+    ],
+}
+
+
+def _ensure_sqlite_columns(connection) -> None:
+    """Add any missing columns to existing SQLite tables (idempotent)."""
+    if not settings.database_url.startswith("sqlite"):
+        return
+    for table, columns in _SQLITE_COLUMN_MIGRATIONS.items():
+        existing_rows = connection.exec_driver_sql(
+            f"PRAGMA table_info({table})"
+        ).fetchall()
+        if not existing_rows:
+            # Table doesn't exist yet (fresh DB) — create_all will make it.
+            continue
+        existing = {row[1] for row in existing_rows}
+        for name, ddl in columns:
+            if name not in existing:
+                connection.exec_driver_sql(
+                    f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"
+                )

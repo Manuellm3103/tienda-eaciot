@@ -13,6 +13,7 @@ from app.models import (  # noqa
     User,
     Category,
     Product,
+    ProductVariant,
     Order,
     OrderItem,
     LoyaltyHistory,
@@ -26,6 +27,10 @@ from app.models import (  # noqa
     Shipment,
     Refund,
     EmailQueue,
+    ChatMessage,
+    UserEvent,
+    SupportTicket,
+    Invoice,
 )
 
 # this is the Alembic Config object, which provides
