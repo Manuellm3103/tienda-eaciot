@@ -8,7 +8,7 @@ class OllamaClient:
         self.model = settings.ollama_model
     
     async def generate(self, prompt: str, system: str = "") -> str:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
             response = await client.post(
                 f"{self.host}/api/generate",
                 json={
@@ -22,7 +22,7 @@ class OllamaClient:
             return response.json()["response"]
     
     async def chat(self, messages: list) -> str:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
             response = await client.post(
                 f"{self.host}/api/chat",
                 json={

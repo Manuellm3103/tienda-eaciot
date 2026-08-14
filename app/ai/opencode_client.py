@@ -1,0 +1,89 @@
+"""
+OpenCode Go LLM client — second LLM provider alongside Ollama Cloud.
+OpenCode Go excels at structured JSON, code generation, and SQL tasks.
+
+Configure via .env:
+    OPENCODE_HOST=http://localhost:8080
+    OPENCODE_MODEL=opencode-go
+"""
+
+import httpx
+from app.config import settings
+from typing import Optional
+
+
+class OpenCodeClient:
+    """Thin client for the OpenCode Go LLM API (OpenAI-compatible endpoint)."""
+
+    def __init__(self):
+        self.host = getattr(settings, "opencode_host", "http://localhost:8080")
+        self.model = getattr(settings, "opencode_model", "opencode-go")
+        self.api_key = getattr(settings, "opencode_api_key", "")
+
+    async def generate(self, prompt: str, system: str = "") -> str:
+        """Generate a completion via OpenAI-compatible /v1/chat/completions.
+
+        The `system` message is passed as a chat role; the legacy
+        /v1/completions endpoint does not accept a system field.
+        """
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
+            response = await client.post(
+                f"{self.host}/v1/chat/completions",
+                json={
+                    "model": self.model,
+                    "messages": messages,
+                    "max_tokens": 1024,
+                    "temperature": 0.7,
+                },
+                headers=headers,
+            )
+            response.raise_for_status()
+            return response.json()["choices"][0]["message"]["content"]
+
+    async def chat(self, messages: list[dict]) -> str:
+        """Chat completion via OpenAI-compatible /v1/chat/completions."""
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
+            response = await client.post(
+                f"{self.host}/v1/chat/completions",
+                json={
+                    "model": self.model,
+                    "messages": messages,
+                    "max_tokens": 1024,
+                    "temperature": 0.7,
+                },
+                headers=headers,
+            )
+            response.raise_for_status()
+            return response.json()["choices"][0]["message"]["content"]
+
+    async def health(self) -> bool:
+        """Check if OpenCode Go is reachable.
+
+        Tries `/v1/models` (OpenAI-compatible, widely supported) first and
+        falls back to `/health` for servers that only expose a health route.
+        """
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(f"{self.host}/v1/models")
+                if resp.status_code == 200:
+                    return True
+                resp = await client.get(f"{self.host}/health")
+                return resp.status_code == 200
+        except Exception:
+            return False
+
+
+opencode_client = OpenCodeClient()

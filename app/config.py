@@ -27,7 +27,17 @@ class Settings(BaseSettings):
     # Ollama
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "ornith:9b"
-    
+
+    # OpenCode Go (secondary LLM provider)
+    opencode_host: str = "http://localhost:8080"
+    opencode_model: str = "opencode-go"
+    opencode_api_key: str = ""
+
+    # OpenCode Go (second LLM provider — JSON / code / SQL tasks)
+    opencode_host: str = "http://localhost:8080"
+    opencode_model: str = "opencode-go"
+    opencode_api_key: str = ""
+
     # Stripe
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""

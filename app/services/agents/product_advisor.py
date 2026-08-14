@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from app.models.product import Product
 from app.services.llm_gateway import llm_gateway
+from app.services.rag_service import rag_service
 from app.services.agents.base import BaseAgent, AgentResult
 
 
@@ -27,6 +28,23 @@ class ProductAdvisorAgent(BaseAgent):
         return [w for w in cleaned.split() if len(w) > 2 and w not in STOPWORDS][:6]
 
     async def _search_products(self, db: AsyncSession, message: str, limit: int = 5) -> List[Product]:
+        # 1) Semantic retrieval via RAG
+        try:
+            rag_results = await rag_service.retrieve(message, n=limit)
+            if rag_results:
+                ids = [r["id"] for r in rag_results]
+                result = await db.execute(
+                    select(Product).where(Product.id.in_(ids))
+                )
+                products = result.scalars().all()
+                # Preserve RAG relevance order (position in `ids`, not DB order)
+                order_map = {str(pid): i for i, pid in enumerate(ids)}
+                products.sort(key=lambda p: order_map.get(str(p.id), len(ids)))
+                return products
+        except Exception:
+            pass
+
+        # 2) Fallback to keyword search
         keywords = self._extract_keywords(message)
         if not keywords:
             result = await db.execute(
