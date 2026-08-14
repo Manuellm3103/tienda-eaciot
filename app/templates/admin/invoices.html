@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Facturación CFDI - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Facturación CFDI</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<p class="text-gray-600 mb-6">
+    Emite facturas electrónicas (CFDI) de las órdenes pagadas. Con
+    <code class="bg-gray-100 px-1 rounded">FACTURAPI_API_KEY</code> configurada se emiten CFDI reales;
+    sin clave se genera un comprobante provisional imprimible.
+</p>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Orden</th>
+                <th class="text-left py-3 px-4">Cliente</th>
+                <th class="text-left py-3 px-4">RFC</th>
+                <th class="text-right py-3 px-4">Total</th>
+                <th class="text-center py-3 px-4">Estado</th>
+                <th class="text-center py-3 px-4">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="invoices-body">
+            <tr><td colspan="6" class="py-4 text-center text-gray-400">Cargando…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="status" class="mt-4 text-sm text-center"></div>
+
+<script>
+(function() {
+    const STATUS = {
+        pending: {label: 'Pendiente', cls: 'bg-gray-100 text-gray-600'},
+        issued: {label: 'Emitida', cls: 'bg-emerald-100 text-emerald-700'},
+        manual: {label: 'Comprobante', cls: 'bg-amber-100 text-amber-700'},
+        failed: {label: 'Error', cls: 'bg-red-100 text-red-700'}
+    };
+    function csrfToken() {
+        const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    function render(rows) {
+        const body = document.getElementById('invoices-body');
+        body.innerHTML = rows.map(inv => {
+            const s = STATUS[inv.status] || STATUS.pending;
+            return '<tr class="border-b hover:bg-gray-50">' +
+                '<td class="py-3 px-4 font-mono text-sm">#' + inv.order_id.slice(0, 8) + '</td>' +
+                '<td class="py-3 px-4">' + (inv.customer_name || '—') + '</td>' +
+                '<td class="py-3 px-4 text-sm">' + (inv.customer_rfc || '—') + '</td>' +
+                '<td class="text-right py-3 px-4">$' + inv.total.toFixed(2) + '</td>' +
+                '<td class="text-center py-3 px-4"><span class="inline-block px-2 py-1 rounded text-xs font-medium ' + s.cls + '">' + s.label + '</span>' +
+                (inv.error ? '<br><span class="text-xs text-red-500">' + inv.error.slice(0, 60) + '</span>' : '') + '</td>' +
+                '<td class="text-center py-3 px-4">' +
+                    '<button data-order="' + inv.order_id + '" class="issue bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200">Emitir</button>' +
+                    (inv.pdf_url ? ' <a href="' + inv.pdf_url + '" target="_blank" class="text-xs text-blue-600">PDF ↗</a>' : '') +
+                '</td>' +
+            '</tr>';
+        }).join('') || '<tr><td colspan="6" class="py-4 text-center text-gray-400">No hay facturas.</td></tr>';
+
+        body.querySelectorAll('.issue').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const orderId = btn.getAttribute('data-order');
+                document.getElementById('status').textContent = 'Emitiendo…';
+                fetch('/admin/invoices/' + orderId + '/issue', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: {'X-CSRF-Token': csrfToken()}
+                }).then(r => r.json()).then(function(data) {
+                    if (data.error) {
+                        document.getElementById('status').textContent = '❌ ' + data.error;
+                    } else {
+                        document.getElementById('status').textContent = '✅ Estado: ' + data.status;
+                    }
+                    load();
+                }).catch(function() {
+                    document.getElementById('status').textContent = '❌ Error.';
+                });
+            });
+        });
+    }
+
+    async function load() {
+        try {
+            const res = await fetch('/admin/invoices/list', {credentials: 'same-origin'});
+            const data = await res.json();
+            render(data.invoices || []);
+        } catch (err) {
+            document.getElementById('invoices-body').innerHTML =
+                '<tr><td colspan="6" class="py-4 text-center text-red-500">No se pudo cargar.</td></tr>';
+        }
+    }
+    load();
+})();
+</script>
+{% endblock %}

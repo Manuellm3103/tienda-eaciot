@@ -333,7 +333,12 @@ async def checkout_create(
         "country": country,
         "phone": phone,
     }
-    order_data = OrderCreate(items=order_items, shipping_address=shipping_address_dict)
+    order_data = OrderCreate(
+        items=order_items,
+        shipping_address=shipping_address_dict,
+        customer_rfc=(form.get("customer_rfc") or "").strip() or None,
+        uso_cfdi=(form.get("uso_cfdi") or "G03").strip() or None,
+    )
     order = await order_service.create_order(db, user.id, order_data)
 
     # Apply shipping cost to order

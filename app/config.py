@@ -28,12 +28,7 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "ornith:9b"
 
-    # OpenCode Go (secondary LLM provider)
-    opencode_host: str = "http://localhost:8080"
-    opencode_model: str = "opencode-go"
-    opencode_api_key: str = ""
-
-    # OpenCode Go (second LLM provider — JSON / code / SQL tasks)
+    # OpenCode Go (secondary LLM provider — JSON / code / SQL tasks)
     opencode_host: str = "http://localhost:8080"
     opencode_model: str = "opencode-go"
     opencode_api_key: str = ""
@@ -42,6 +37,13 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_publishable_key: str = ""
+
+    # CFDI / Facturación electrónica (Facturapi-compatible)
+    facturapi_api_key: str = ""
+    facturapi_base_url: str = "https://www.facturapi.io/v2"
+    business_rfc: str = ""
+    business_name: str = ""
+    business_tax_regime: str = "601"  # 601 = General de Ley Personas Morales
     
     # SMTP Email
     smtp_host: str = "smtp.gmail.com"

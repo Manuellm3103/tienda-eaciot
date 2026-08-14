@@ -94,6 +94,29 @@
                        class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
+            <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                <h3 class="font-semibold text-sm mb-2">Factura (CFDI) — opcional</h3>
+                <p class="text-xs text-gray-500 mb-3">Si requieres factura, captura tu RFC. Si no lo llenas, se emite comprobante sin RFC.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="customer_rfc" class="block text-sm font-medium text-gray-700">RFC</label>
+                        <input type="text" id="customer_rfc" name="customer_rfc" maxlength="13"
+                               placeholder="XAXX010101000"
+                               class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 uppercase">
+                    </div>
+                    <div>
+                        <label for="uso_cfdi" class="block text-sm font-medium text-gray-700">Uso de CFDI</label>
+                        <select id="uso_cfdi" name="uso_cfdi"
+                                class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
+                            <option value="G03" selected>G03 - Gastos en general</option>
+                            <option value="G01">G01 - Adquisición de mercancías</option>
+                            <option value="P01">P01 - Por definir</option>
+                            <option value="S01">S01 - Sin efectos fiscales</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             <button type="submit"
                     class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-bold text-lg transition-colors">
                 Pagar con Stripe — ${{ "%.2f"|format(total) }}

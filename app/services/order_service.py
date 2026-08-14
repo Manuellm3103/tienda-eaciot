@@ -46,6 +46,8 @@ class OrderService:
             subtotal=subtotal,
             total_amount=subtotal,  # Will be updated with discounts/shipping
             shipping_address=data.shipping_address,
+            customer_rfc=(data.customer_rfc or "").strip().upper() or None,
+            uso_cfdi=data.uso_cfdi or None,
         )
         db.add(order)
         await db.flush()

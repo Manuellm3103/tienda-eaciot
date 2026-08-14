@@ -15,6 +15,8 @@ class OrderCreate(BaseModel):
     items: List[OrderItemCreate]
     coupon_code: Optional[str] = None
     shipping_address: Optional[dict] = None
+    customer_rfc: Optional[str] = None
+    uso_cfdi: Optional[str] = None
 
 
 class OrderItemResponse(BaseModel):

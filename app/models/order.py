@@ -23,7 +23,11 @@ class Order(Base):
     
     shipping_address = Column(JSON)
     tracking_number = Column(String(255))
-    
+
+    # CFDI / facturación (opcional al momento del checkout)
+    customer_rfc = Column(String(20), nullable=True)
+    uso_cfdi = Column(String(10), nullable=True, default="G03")  # G03 = Gastos en general
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

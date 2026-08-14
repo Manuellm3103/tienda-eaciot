@@ -97,6 +97,13 @@ async def _fulfill_order(
             total=float(order.total_amount),
         )
 
+    # 6. Create a pending invoice (CFDI) — issuance is manual/admin-driven
+    try:
+        from app.services.invoice_service import invoice_service
+        await invoice_service.get_or_create(db, order.id)
+    except Exception:
+        pass  # invoicing is best-effort; never block fulfillment
+
     return order
 
 
