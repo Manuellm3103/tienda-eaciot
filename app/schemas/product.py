@@ -32,6 +32,8 @@ class ProductBase(BaseModel):
     product_type: str = Field(pattern="^(ebook|curso|software|template|fisico)$")
     image_url: Optional[str] = None
     stock: int = -1
+    specs: Optional[dict] = None
+    videos: Optional[list[str]] = None
 
 
 class ProductCreate(ProductBase):
@@ -46,6 +48,8 @@ class ProductUpdate(BaseModel):
     product_type: Optional[str] = None
     image_url: Optional[str] = None
     stock: Optional[int] = None
+    specs: Optional[dict] = None
+    videos: Optional[list[str]] = None
     is_active: Optional[bool] = None
 
 

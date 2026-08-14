@@ -23,16 +23,22 @@ class ProductService:
         return result.scalar_one_or_none()
     
     async def create_product(self, db: AsyncSession, data: ProductCreate) -> Product:
-        product = Product(**data.model_dump())
+        payload = data.model_dump()
+        # PKs/FKs are String(36); never bind a UUID object (SQLite rejects it).
+        if payload.get("category_id"):
+            payload["category_id"] = str(payload["category_id"])
+        product = Product(**payload)
         db.add(product)
         await db.flush()
         return product
-    
+
     async def update_product(self, db: AsyncSession, product_id: UUID, data: ProductUpdate) -> Optional[Product]:
         product = await self.get_product(db, product_id)
         if not product:
             return None
         for key, value in data.model_dump(exclude_unset=True).items():
+            if key == "category_id" and value:
+                value = str(value)
             setattr(product, key, value)
         await db.flush()
         return product

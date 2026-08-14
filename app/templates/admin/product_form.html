@@ -56,7 +56,20 @@
             <label class="block text-sm font-medium text-gray-700">URL de imagen</label>
             <input type="url" name="image_url" value="{{ product.image_url if product else '' }}" class="mt-1 block w-full border rounded-md px-3 py-2">
         </div>
-        
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Especificaciones</label>
+            <p class="text-xs text-gray-400 mb-1">Una por línea: <code>Clave: Valor</code></p>
+            <textarea name="specs" rows="8" class="mt-1 block w-full border rounded-md px-3 py-2 font-mono text-sm">{% if product and product.specs %}{% for k, v in product.specs.items() %}{{ k }}: {{ v }}
+{% endfor %}{% endif %}</textarea>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Videos oficiales</label>
+            <p class="text-xs text-gray-400 mb-1">Una URL por línea (YouTube)</p>
+            <textarea name="videos" rows="3" class="mt-1 block w-full border rounded-md px-3 py-2">{{ (product.videos or [])|join('\n') if product else '' }}</textarea>
+        </div>
+
         {% if product %}
         <div>
             <label class="flex items-center">

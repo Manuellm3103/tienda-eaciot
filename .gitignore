@@ -19,6 +19,7 @@ e2e_screenshots/
 app.db
 test.db
 smoke_test.db
+e2e_admin_invoice.db
 chroma_data/
 ruvector.db
 ecommerce.db

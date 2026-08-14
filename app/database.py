@@ -78,6 +78,10 @@ _SQLITE_COLUMN_MIGRATIONS = {
     "invoices": [
         ("xml_content", "TEXT"),
     ],
+    "products": [
+        ("specs", "TEXT"),
+        ("videos", "TEXT"),
+    ],
 }
 
 

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, Integer, Numeric, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, Boolean, Integer, Numeric, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -33,6 +33,10 @@ class Product(Base):
     image_url = Column(String)
     file_path = Column(String)
     weight = Column(Numeric(8, 2))
+
+    # Enriched product content (specs + official videos) shown on the detail page.
+    specs = Column(JSON, nullable=True)   # {"Procesador": "...", "RAM": "...", ...}
+    videos = Column(JSON, nullable=True)  # ["https://...youtube...", ...]
 
     is_active = Column(Boolean, default=True)
     stock = Column(Integer, default=-1)

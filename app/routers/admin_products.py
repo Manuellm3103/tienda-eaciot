@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
 from app.database import get_db
@@ -75,6 +75,41 @@ async def admin_product_generate_content(
 
 # ==================== HTML ADMIN PAGES ====================
 
+
+def _parse_specs(text: str) -> Optional[dict]:
+    """Parse 'Clave: Valor' lines into a specs dict. Empty -> None."""
+    specs = {}
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line or ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        key, value = key.strip(), value.strip()
+        if key and value:
+            specs[key] = value
+    return specs or None
+
+
+def _normalize_video(url: str) -> str:
+    """Convert a YouTube watch/short URL into an embeddable URL."""
+    url = url.strip()
+    if "youtu.be/" in url:
+        vid = url.rsplit("youtu.be/", 1)[1].split("?")[0].split("/")[0]
+        return f"https://www.youtube.com/embed/{vid}"
+    if "watch?v=" in url:
+        vid = url.rsplit("watch?v=", 1)[1].split("&")[0]
+        return f"https://www.youtube.com/embed/{vid}"
+    if "youtube.com/shorts/" in url:
+        vid = url.rsplit("/shorts/", 1)[1].split("?")[0].split("/")[0]
+        return f"https://www.youtube.com/embed/{vid}"
+    return url
+
+
+def _parse_videos(text: str) -> Optional[list]:
+    """Parse one-URL-per-line into a normalized embed URL list."""
+    vids = [_normalize_video(line) for line in (text or "").splitlines() if line.strip()]
+    return vids or None
+
 @router.get("/", response_class=HTMLResponse)
 async def admin_products_list(request: Request, db: AsyncSession = Depends(get_db)):
     products = await product_service.get_products(db, active_only=False)
@@ -104,6 +139,8 @@ async def admin_product_create(
     category_id: str = Form(""),
     stock: int = Form(100),
     image_url: str = Form(""),
+    specs: str = Form(""),
+    videos: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await validate_csrf(request)
@@ -115,6 +152,8 @@ async def admin_product_create(
         category_id=category_id or None,
         stock=stock,
         image_url=image_url or None,
+        specs=_parse_specs(specs),
+        videos=_parse_videos(videos),
     )
     await product_service.create_product(db, data)
     await db.commit()
@@ -144,6 +183,8 @@ async def admin_product_update(
     category_id: str = Form(""),
     stock: int = Form(100),
     image_url: str = Form(""),
+    specs: str = Form(""),
+    videos: str = Form(""),
     is_active: bool = Form(False),
     db: AsyncSession = Depends(get_db),
 ):
@@ -156,6 +197,8 @@ async def admin_product_update(
         category_id=category_id or None,
         stock=stock,
         image_url=image_url or None,
+        specs=_parse_specs(specs),
+        videos=_parse_videos(videos),
         is_active=is_active,
     )
     await product_service.update_product(db, product_id, data)
