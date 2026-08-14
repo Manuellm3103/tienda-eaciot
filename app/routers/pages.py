@@ -315,12 +315,22 @@ async def search_page(
     db: AsyncSession = Depends(get_db),
 ):
     products = []
+    ai_expanded = False
+    expanded_terms = []
     if q:
-        result = await search_service.search_products(db, query=q)
+        result = await search_service.search_with_expansion(db, query=q)
         products = result.get("products", [])
+        ai_expanded = result.get("ai_expanded", False)
+        expanded_terms = result.get("expanded_terms", [])
     return templates.TemplateResponse(
         "search.html",
-        {"request": request, "products": products, "q": q},
+        {
+            "request": request,
+            "products": products,
+            "q": q,
+            "ai_expanded": ai_expanded,
+            "expanded_terms": expanded_terms,
+        },
     )
 
 

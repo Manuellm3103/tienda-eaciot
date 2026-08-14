@@ -5,6 +5,14 @@
 {% block content %}
 <h1 class="text-3xl font-bold mb-8">Resultados de búsqueda</h1>
 
+{% if ai_expanded %}
+<div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 mb-6">
+    No encontramos coincidencias exactas para <strong>"{{ q }}"</strong>.
+    Mostramos resultados relacionados con:
+    <strong>{{ expanded_terms|join(', ') }}</strong>
+</div>
+{% endif %}
+
 {% if products %}
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     {% for product in products %}
