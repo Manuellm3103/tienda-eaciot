@@ -71,5 +71,81 @@
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Guardar</button>
         </div>
     </form>
+
+    {% if product %}
+    <div class="bg-white rounded-lg shadow p-6 mt-8">
+        <h2 class="text-xl font-bold mb-4">Variantes</h2>
+        <p class="text-sm text-gray-500 mb-4">Talla, color, edición… Cada variante tiene su propio precio (+/-) y stock.</p>
+
+        <div id="variants-list" class="space-y-2 mb-4"></div>
+
+        <form id="variant-form" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <input type="text" id="v-name" placeholder="Ej: Talla M" class="border rounded-md px-3 py-2">
+            <input type="text" id="v-sku" placeholder="SKU (opcional)" class="border rounded-md px-3 py-2">
+            <input type="number" step="0.01" id="v-delta" placeholder="Δ precio (0.00)" class="border rounded-md px-3 py-2">
+            <input type="number" id="v-stock" placeholder="Stock (-1)" class="border rounded-md px-3 py-2">
+        </form>
+        <button id="v-add" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm">Añadir variante</button>
+        <p id="v-status" class="text-sm mt-3"></p>
+    </div>
+
+    <script>
+    (function() {
+        var PID = '{{ product.id }}';
+        function csrfToken() {
+            var m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+            return m ? decodeURIComponent(m[1]) : '';
+        }
+        function load() {
+            fetch('/admin/products/' + PID + '/variants', {credentials: 'same-origin'})
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var list = document.getElementById('variants-list');
+                    list.innerHTML = (data.variants || []).map(function(v) {
+                        return '<div class="flex items-center justify-between border rounded px-3 py-2">' +
+                            '<span>' + v.name +
+                            (v.sku ? ' <span class="text-xs text-gray-400">[' + v.sku + ']</span>' : '') +
+                            ' <span class="text-xs text-gray-500">Δ$' + v.price_delta.toFixed(2) + ' · stock ' + v.stock + '</span>' +
+                            (v.is_active ? '' : ' <span class="text-xs text-red-500">inactiva</span>') +
+                            '</span>' +
+                            '<button data-id="' + v.id + '" class="v-del text-red-600 hover:text-red-800 text-sm">Eliminar</button>' +
+                            '</div>';
+                    }).join('') || '<p class="text-gray-400">Sin variantes.</p>';
+                    list.querySelectorAll('.v-del').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            fetch('/admin/products/' + PID + '/variants/' + btn.getAttribute('data-id'), {
+                                method: 'DELETE', credentials: 'same-origin',
+                                headers: {'X-CSRF-Token': csrfToken()}
+                            }).then(load);
+                        });
+                    });
+                });
+        }
+        document.getElementById('v-add').addEventListener('click', function() {
+            var name = document.getElementById('v-name').value.trim();
+            if (!name) { document.getElementById('v-status').textContent = 'Nombre requerido.'; return; }
+            var body = {
+                name: name,
+                sku: document.getElementById('v-sku').value.trim(),
+                price_delta: document.getElementById('v-delta').value || 0,
+                stock: document.getElementById('v-stock').value || -1
+            };
+            fetch('/admin/products/' + PID + '/variants', {
+                method: 'POST', credentials: 'same-origin',
+                headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken()},
+                body: JSON.stringify(body)
+            }).then(function(r) { return r.json(); }).then(function() {
+                document.getElementById('v-status').textContent = '✅ Variante añadida.';
+                document.getElementById('v-name').value = '';
+                document.getElementById('v-sku').value = '';
+                document.getElementById('v-delta').value = '';
+                document.getElementById('v-stock').value = '';
+                load();
+            });
+        });
+        load();
+    })();
+    </script>
+    {% endif %}
 </div>
 {% endblock %}

@@ -5,6 +5,7 @@ from uuid import UUID
 from decimal import Decimal
 from app.models.order import Order, OrderItem
 from app.models.product import Product
+from app.models.product_variant import ProductVariant
 from app.models.user import User
 from app.schemas.order import OrderCreate
 
@@ -14,18 +15,29 @@ class OrderService:
         # Get products and calculate totals
         items_data = []
         subtotal = Decimal("0")
-        
+
         for item in data.items:
-            product = await db.get(Product, item.product_id)
+            product = await db.get(Product, str(item.product_id))
             if not product or not product.is_active:
                 raise ValueError(f"Product {item.product_id} not found or inactive")
-            
-            item_total = product.price * item.quantity
+
+            unit_price = product.price
+            variant = None
+            variant_name = None
+            if item.variant_id:
+                variant = await db.get(ProductVariant, str(item.variant_id))
+                if variant and str(variant.product_id) == str(product.id):
+                    unit_price = product.price + (variant.price_delta or Decimal("0"))
+                    variant_name = variant.name
+
+            item_total = unit_price * item.quantity
             subtotal += item_total
             items_data.append({
                 "product_id": product.id,
+                "variant_id": str(variant.id) if variant else None,
+                "variant_name": variant_name,
                 "quantity": item.quantity,
-                "price_at_purchase": product.price,
+                "price_at_purchase": unit_price,
             })
         
         # Create order

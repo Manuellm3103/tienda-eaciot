@@ -17,8 +17,19 @@
         <h1 class="text-3xl font-bold mb-4">{{ product.title }}</h1>
         <p class="text-gray-600 mb-6">{{ product.description }}</p>
         <p class="text-3xl font-bold text-blue-600 mb-6">${{ product.price }}</p>
+        {% if variants %}
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Elige una opción:</label>
+            <select id="variant-select" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                {% for v in variants %}
+                <option value="{{ v.id }}" data-delta="{{ v.price_delta }}">{{ v.name }}{% if v.price_delta != 0 %} ({{ '+' if v.price_delta > 0 else '' }}${{ v.price_delta }}){% endif %}</option>
+                {% endfor %}
+            </select>
+            <p id="variant-price" class="text-sm text-gray-500 mt-2"></p>
+        </div>
+        {% endif %}
         <div class="flex space-x-4">
-            <a href="/cart/add/{{ product.id }}"
+            <a id="add-to-cart" href="/cart/add/{{ product.id }}"
                class="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 inline-block">
                 Agregar al carrito
             </a>
@@ -26,6 +37,25 @@
                 Ver más productos
             </a>
         </div>
+        {% if variants %}
+        <script>
+        (function() {
+            var sel = document.getElementById('variant-select');
+            var btn = document.getElementById('add-to-cart');
+            var priceLabel = document.getElementById('variant-price');
+            function update() {
+                var opt = sel.options[sel.selectedIndex];
+                var delta = parseFloat(opt.getAttribute('data-delta')) || 0;
+                btn.href = '/cart/add/{{ product.id }}?variant_id=' + opt.value;
+                priceLabel.textContent = delta !== 0
+                    ? 'Precio: $' + ({{ product.price }} + delta).toFixed(2)
+                    : '';
+            }
+            sel.addEventListener('change', update);
+            update();
+        })();
+        </script>
+        {% endif %}
     </div>
 </div>
 

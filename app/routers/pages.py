@@ -9,6 +9,7 @@ from sqlalchemy import select
 from app.database import get_db
 from app.models.user import User
 from app.models.product import Product, Category
+from app.models.product_variant import ProductVariant
 from app.models.order import Order
 from app.models.promotion import Promotion
 from app.schemas.order import OrderCreate, OrderItemCreate
@@ -17,6 +18,7 @@ from app.dependencies import get_current_user_optional, require_admin
 from app.services.user_event_service import user_event_service
 from app.services.product_service import product_service
 from app.services.recommendation_service import recommendation_service
+from app.services.variant_service import variant_service
 from app.services.order_service import order_service
 from app.services.promotion_service import promotion_service
 from app.services.stripe_service import stripe_service
@@ -35,6 +37,42 @@ def get_cart_from_cookie(request: Request) -> dict:
         return json.loads(cart_json)
     except Exception:
         return {}
+
+
+def parse_cart_key(key: str) -> tuple[str, Optional[str]]:
+    """Split a cart key into (product_id, variant_id)."""
+    if "::" in key:
+        product_id, variant_id = key.split("::", 1)
+        return product_id, variant_id or None
+    return key, None
+
+
+async def resolve_cart_items(db: AsyncSession, cart: dict) -> list[dict]:
+    """Resolve raw cart keys into displayable line items with variant info."""
+    items = []
+    for key, qty in cart.items():
+        product_id, variant_id = parse_cart_key(key)
+        product = await product_service.get_product(db, product_id)
+        if not product:
+            continue
+        variant = None
+        if variant_id:
+            variant = await variant_service.get_variant(db, variant_id)
+        unit_price = product.price
+        if variant:
+            unit_price = product.price + (variant.price_delta or Decimal("0"))
+        subtotal = unit_price * qty
+        items.append(
+            {
+                "key": key,
+                "product": product,
+                "variant": variant,
+                "quantity": qty,
+                "unit_price": unit_price,
+                "subtotal": subtotal,
+            }
+        )
+    return items
 
 
 def set_cart_cookie(response: Response, cart: dict):
@@ -62,6 +100,8 @@ async def product_detail(request: Request, product_id: str, db: AsyncSession = D
     )
     categories = await product_service.get_categories(db)
     related = await recommendation_service.get_related(db, product_id)
+    variants = await variant_service.list_variants(db, product_id)
+    active_variants = [v for v in variants if v.is_active]
     return templates.TemplateResponse(
         "products/detail.html",
         {
@@ -69,6 +109,7 @@ async def product_detail(request: Request, product_id: str, db: AsyncSession = D
             "product": product,
             "categories": categories,
             "related_products": related,
+            "variants": active_variants,
         },
     )
 
@@ -78,14 +119,8 @@ async def product_detail(request: Request, product_id: str, db: AsyncSession = D
 @router.get("/cart", response_class=HTMLResponse)
 async def cart_page(request: Request, db: AsyncSession = Depends(get_db)):
     cart = get_cart_from_cookie(request)
-    items = []
-    total = Decimal("0")
-    for pid, qty in cart.items():
-        product = await product_service.get_product(db, pid)
-        if product:
-            subtotal = product.price * qty
-            items.append({"product": product, "quantity": qty, "subtotal": subtotal})
-            total += subtotal
+    items = await resolve_cart_items(db, cart)
+    total = sum((item["subtotal"] for item in items), Decimal("0"))
     return templates.TemplateResponse(
         "cart.html",
         {"request": request, "items": items, "total": total},
@@ -97,10 +132,12 @@ async def cart_add(
     product_id: str,
     request: Request,
     response: Response,
+    variant_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
 ):
     cart = get_cart_from_cookie(request)
-    cart[product_id] = cart.get(product_id, 0) + 1
+    key = f"{product_id}::{variant_id}" if variant_id else product_id
+    cart[key] = cart.get(key, 0) + 1
     set_cart_cookie(response, cart)
     user = await get_current_user_optional(request, db)
     await user_event_service.record(
@@ -114,10 +151,12 @@ async def cart_add_get(
     product_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
+    variant_id: Optional[str] = None,
 ):
     """Graceful fallback for no-JS clients and CUA/browser automation."""
     cart = get_cart_from_cookie(request)
-    cart[product_id] = cart.get(product_id, 0) + 1
+    key = f"{product_id}::{variant_id}" if variant_id else product_id
+    cart[key] = cart.get(key, 0) + 1
     response = RedirectResponse(url="/cart", status_code=302)
     set_cart_cookie(response, cart)
     user = await get_current_user_optional(request, db)
@@ -127,12 +166,12 @@ async def cart_add_get(
     return response
 
 
-@router.post("/cart/remove/{product_id}")
-async def cart_remove(product_id: str, request: Request, response: Response):
+@router.post("/cart/remove/{cart_key}")
+async def cart_remove(cart_key: str, request: Request, response: Response):
     await validate_csrf(request)
     cart = get_cart_from_cookie(request)
-    if product_id in cart:
-        del cart[product_id]
+    if cart_key in cart:
+        del cart[cart_key]
     set_cart_cookie(response, cart)
     return RedirectResponse(url="/cart", status_code=302)
 
@@ -146,17 +185,13 @@ async def checkout_page(request: Request, db: AsyncSession = Depends(get_db)):
     if not cart:
         return RedirectResponse(url="/products/", status_code=302)
 
-    items = []
-    subtotal = Decimal("0")
+    items = await resolve_cart_items(db, cart)
+    subtotal = sum((item["subtotal"] for item in items), Decimal("0"))
     total_weight = Decimal("0")
-    for pid, qty in cart.items():
-        product = await product_service.get_product(db, pid)
-        if product:
-            item_subtotal = product.price * qty
-            items.append({"product": product, "quantity": qty, "subtotal": item_subtotal})
-            subtotal += item_subtotal
-            weight = product.weight if product.weight else Decimal("0.5")
-            total_weight += weight * qty
+    for item in items:
+        product = item["product"]
+        weight = product.weight if product.weight else Decimal("0.5")
+        total_weight += weight * item["quantity"]
 
     # Estimate shipping with national zone (real cost calculated on POST with actual address)
     shipping_cost = shipping_service.calculate_shipping_cost(total_weight, "")
@@ -223,10 +258,22 @@ async def checkout_create(
     subtotal = Decimal("0")
     total_weight = Decimal("0")
     for pid, qty in cart.items():
-        product = await product_service.get_product(db, pid)
+        product_id, variant_id = parse_cart_key(pid)
+        product = await product_service.get_product(db, product_id)
         if product:
-            order_items.append(OrderItemCreate(product_id=pid, quantity=qty))
-            subtotal += product.price * qty
+            order_items.append(
+                OrderItemCreate(
+                    product_id=product_id,
+                    quantity=qty,
+                    variant_id=variant_id,
+                )
+            )
+            unit_price = product.price
+            if variant_id:
+                variant = await variant_service.get_variant(db, variant_id)
+                if variant:
+                    unit_price = product.price + (variant.price_delta or Decimal("0"))
+            subtotal += unit_price * qty
             weight = product.weight if product.weight else Decimal("0.5")
             total_weight += weight * qty
 

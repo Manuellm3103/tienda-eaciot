@@ -30,12 +30,14 @@ class Order(Base):
 
 class OrderItem(Base):
     __tablename__ = "order_items"
-    
+
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     order_id = Column(String(36), ForeignKey("orders.id"), nullable=False, index=True)
     product_id = Column(String(36), ForeignKey("products.id"), nullable=False)
+    variant_id = Column(String(36), ForeignKey("product_variants.id"), nullable=True)
+    variant_name = Column(String(255), nullable=True)  # snapshot for the order
     quantity = Column(Integer, default=1)
     price_at_purchase = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     product = relationship("Product", lazy="selectin")

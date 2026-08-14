@@ -1,5 +1,6 @@
 from app.models.user import User
 from app.models.product import Category, Product
+from app.models.product_variant import ProductVariant
 from app.models.order import Order, OrderItem
 from app.models.loyalty import LoyaltyHistory
 from app.models.promotion import Promotion, Coupon
@@ -16,6 +17,7 @@ __all__ = [
     "User",
     "Category",
     "Product",
+    "ProductVariant",
     "Order",
     "OrderItem",
     "LoyaltyHistory",

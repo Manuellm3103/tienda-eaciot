@@ -20,11 +20,14 @@
         <tbody>
             {% for item in items %}
             <tr class="border-b">
-                <td class="py-4 px-4">{{ item.product.title }}</td>
+                <td class="py-4 px-4">
+                    {{ item.product.title }}
+                    {% if item.variant %}<span class="text-xs text-gray-500">· {{ item.variant.name }}</span>{% endif %}
+                </td>
                 <td class="text-center py-4 px-4">{{ item.quantity }}</td>
                 <td class="text-right py-4 px-4">${{ item.subtotal }}</td>
                 <td class="py-4 px-4">
-                    <form action="/cart/remove/{{ item.product.id }}" method="POST">
+                    <form action="/cart/remove/{{ item.key }}" method="POST">
                         {{ csrf_input(request) }}
                         <button type="submit" class="text-red-600 hover:text-red-800">Eliminar</button>
                     </form>
