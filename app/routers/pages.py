@@ -1,5 +1,6 @@
 import json
 import uuid
+import base64
 from decimal import Decimal
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -32,19 +33,27 @@ from app.templates_instance import templates
 
 
 def get_cart_from_cookie(request: Request) -> dict:
-    cart_json = request.cookies.get("cart", "{}")
+    cart_val = request.cookies.get("cart", "")
+    if not cart_val:
+        return {}
+    # The HTTP cookie layer (and some clients like http.cookiejar) may wrap the
+    # value in double quotes — strip them before decoding.
+    cart_val = cart_val.strip().strip('"')
+    # New format: base64(urlsafe) of JSON — immune to cookie-value quoting.
     try:
-        cart = json.loads(cart_json)
+        raw = base64.urlsafe_b64decode(cart_val.encode("ascii")).decode("utf-8")
+        cart = json.loads(raw)
+        return cart if isinstance(cart, dict) else {}
+    except Exception:
+        pass
+    # Legacy fallback: raw JSON (may arrive double-quoted by the HTTP layer).
+    try:
+        cart = json.loads(cart_val)
+        if isinstance(cart, str):
+            cart = json.loads(cart)
+        return cart if isinstance(cart, dict) else {}
     except Exception:
         return {}
-    # Cookie values with special chars ({}, " , ::) can arrive double-encoded
-    # (a JSON string wrapping a JSON object). Normalize both forms to a dict.
-    if isinstance(cart, str):
-        try:
-            cart = json.loads(cart)
-        except Exception:
-            return {}
-    return cart if isinstance(cart, dict) else {}
 
 
 def parse_cart_key(key: str) -> tuple[str, Optional[str]]:
@@ -84,12 +93,15 @@ async def resolve_cart_items(db: AsyncSession, cart: dict) -> list[dict]:
 
 
 def set_cart_cookie(response: Response, cart: dict):
+    # base64(urlsafe) keeps the cookie value free of quotes/braces, which the
+    # HTTP cookie layer (and some clients) would otherwise mangle.
+    encoded = base64.urlsafe_b64encode(json.dumps(cart).encode("utf-8")).decode("ascii")
     response.set_cookie(
         key="cart",
-        value=json.dumps(cart),
+        value=encoded,
         httponly=False,
         max_age=30 * 24 * 60 * 60,
-        samesite="none",
+        samesite="lax",  # first-party cart cookie (was 'none', which required Secure)
         path="/",
         secure=settings.frontend_url.startswith("https"),
     )

@@ -2,10 +2,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Optional
 from uuid import UUID
+from datetime import datetime
 from app.models.promotion import Promotion, Coupon
 from app.models.congratulation import CongratulationRule, CongratulationHistory
 from app.models.user import User
 from app.schemas.promotion import PromotionCreate, CongratulationRuleCreate
+from app.ai.welcome_generator import welcome_generator
 import secrets
 
 
@@ -92,20 +94,46 @@ class PromotionService:
                 should_trigger = True
             
             if should_trigger:
+                message = rule.message_template
+                try:
+                    # Enrich with a personalized AI message (best-effort; the
+                    # static template is the fallback). This closes the loop on
+                    # the welcome_generator, part of the AI Marketing Department.
+                    import asyncio
+
+                    ai_msg = await asyncio.wait_for(
+                        welcome_generator.generate_welcome_message(
+                            {
+                                "name": user.name or user.email,
+                                "loyalty_level": user.loyalty_level,
+                                "total_spent": float(user.total_spent or 0),
+                                "purchase_count": user.purchase_count,
+                            },
+                            rule.event_type,
+                        ),
+                        timeout=5,
+                    )
+                    if ai_msg and ai_msg.get("body"):
+                        greeting = ai_msg.get("greeting", "").strip()
+                        body = ai_msg.get("body", "").strip()
+                        message = f"{greeting}\n{body}" if greeting else body
+                except Exception:
+                    pass
+
                 triggered.append({
                     "rule_id": str(rule.id),
                     "rule_name": rule.name,
-                    "message": rule.message_template,
+                    "message": message,
                     "reward_type": rule.reward_type,
                     "reward_value": float(rule.reward_value) if rule.reward_value else None,
                 })
-                
+
                 # Record history
                 history = CongratulationHistory(
                     user_id=user.id,
                     rule_id=rule.id,
                     order_id=order_id,
-                    message_sent=rule.message_template,
+                    message_sent=message,
                     reward_sent=f"{rule.reward_type}: {rule.reward_value}",
                 )
                 db.add(history)

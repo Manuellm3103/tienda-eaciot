@@ -21,6 +21,12 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 from app.templates_instance import templates
 
 
+def _cookie_secure() -> bool:
+    """Secure cookies only when HTTPS is expected (prod), so local HTTP dev
+    can keep a session without a TLS-terminating proxy."""
+    return settings.force_https or settings.frontend_url.startswith("https://")
+
+
 # ==================== PAGES ====================
 
 @router.get("/login", response_class=HTMLResponse)
@@ -168,42 +174,42 @@ async def login(data: UserLogin, response: Response, db: AsyncSession = Depends(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=_cookie_secure(),
         samesite="lax",
         max_age=30 * 24 * 60 * 60,  # 30 days
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.post("/login/web")
 async def login_web(request: Request, data: UserLogin, db: AsyncSession = Depends(get_db)):
+    """Login for web forms - returns redirect with a session cookie."""
     await validate_csrf(request)
-    """Login for web forms - returns redirect"""
     # Find user
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
-    
+
     if not user or not user.hashed_password or not verify_password(data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
         )
-    
+
     # Create token
     access_token = create_access_token(data={"sub": str(user.id)})
-    
+
     # Redirect with cookie
     response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=_cookie_secure(),
         samesite="lax",
         max_age=30 * 24 * 60 * 60,
     )
-    
+
     return response
 
 
@@ -314,7 +320,7 @@ async def google_callback(code: str, state: str = "/", db: AsyncSession = Depend
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            secure=_cookie_secure(),
             samesite="none",
             max_age=30 * 24 * 60 * 60,
         )
@@ -378,7 +384,7 @@ async def microsoft_callback(code: str, state: str = "/", db: AsyncSession = Dep
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            secure=_cookie_secure(),
             samesite="none",
             max_age=30 * 24 * 60 * 60,
         )
@@ -447,7 +453,7 @@ async def github_callback(code: str, state: str = "/", db: AsyncSession = Depend
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            secure=_cookie_secure(),
             samesite="none",
             max_age=30 * 24 * 60 * 60,
         )

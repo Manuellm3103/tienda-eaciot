@@ -86,12 +86,15 @@ class InvoiceService:
 
     async def _issue_satcfdi(self, db, invoice: Invoice, order: Order) -> Invoice:
         """Generate + sign + stamp a CFDI 4.0 via satcfdi + PAC."""
-        from app.services.cfdi_satcfdi import SATCFDIIssuer
+        import asyncio
 
         items = await self._order_items(db, order)
-        try:
+
+        def _run():
+            from app.services.cfdi_satcfdi import SATCFDIIssuer
+
             issuer = SATCFDIIssuer()
-            result = issuer.issue(
+            return issuer.issue(
                 customer_rfc=invoice.customer_rfc or "XAXX010101000",
                 customer_name=invoice.customer_name or "PUBLICO EN GENERAL",
                 uso_cfdi=invoice.uso_cfdi or "G03",
@@ -99,6 +102,9 @@ class InvoiceService:
                 shipping_amount=order.shipping_amount or Decimal("0"),
                 payment_method=order.payment_method or "stripe",
             )
+
+        try:
+            result = await asyncio.to_thread(_run)
         except Exception as exc:
             invoice.status = "failed"
             invoice.error = str(exc)[:500]

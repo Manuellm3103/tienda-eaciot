@@ -88,7 +88,12 @@ class SATCFDIIssuer:
                 password=settings.pac_password,
                 environment=env,
             )
-        # default: SW Sapien (drop-in Finkok-like PAC)
+        if settings.pac_provider == "finkok":
+            # Finkok has no satcfdi connector — use the manual SOAP client.
+            from app.services.cfdi_finkok import finkok_client
+
+            return finkok_client
+        # default: SW Sapien
         from satcfdi.pacs.swsapien import SWSapien
 
         return SWSapien(
@@ -181,6 +186,16 @@ class SATCFDIIssuer:
 
         comprobante.sign(self.signer)
         comprobante = comprobante.process()
+
+        if settings.pac_provider == "finkok":
+            # Manual SOAP client takes the signed XML string (synchronous).
+            signed_xml = comprobante.xml_bytes(xml_declaration=True).decode("utf-8", errors="ignore")
+            result = self.pac.stamp(signed_xml)
+            xml_bytes = result["xml"].encode("utf-8")
+            return {
+                "xml": result["xml"],
+                "uuid": result.get("uuid") or self._extract_uuid(xml_bytes),
+            }
 
         doc = self.pac.stamp(cfdi=comprobante, accept=Accept.XML)
         xml_bytes = doc.xml if isinstance(doc.xml, bytes) else str(doc.xml).encode("utf-8")

@@ -110,10 +110,11 @@ async def test_cart_add_get_fallback(client, db):
     assert follow.status_code == 200
     cart_cookie = next((c for c in client.cookies.jar if c.name == "cart"), None)
     assert cart_cookie is not None
+
+    # The cart cookie is base64(urlsafe) JSON — decode it back.
+    import base64
     import json
 
-    # HTTPX may preserve the cookie value as a JSON-encoded string literal.
     raw = cart_cookie.value
-    if isinstance(raw, str) and raw.startswith('"') and raw.endswith('"'):
-        raw = json.loads(raw)
-    assert json.loads(raw) == {str(product.id): 1}
+    decoded = base64.urlsafe_b64decode(raw.encode("ascii")).decode("utf-8")
+    assert json.loads(decoded) == {str(product.id): 1}

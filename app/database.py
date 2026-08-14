@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from contextlib import asynccontextmanager
 from app.config import settings
 
 
@@ -37,6 +38,7 @@ async def get_db():
             await session.close()
 
 
+@asynccontextmanager
 async def get_db_session() -> AsyncSession:
     """Standalone async context manager for database sessions."""
     session = async_session()
@@ -62,6 +64,9 @@ async def init_db():
 # column to an existing table would otherwise be silently skipped and break
 # runtime queries. This idempotent shim backfills those columns safely.
 _SQLITE_COLUMN_MIGRATIONS = {
+    "users": [
+        ("is_guest", "BOOLEAN DEFAULT 0"),
+    ],
     "orders": [
         ("customer_rfc", "VARCHAR(20)"),
         ("uso_cfdi", "VARCHAR(10) DEFAULT 'G03'"),

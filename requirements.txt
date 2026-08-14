@@ -24,6 +24,9 @@ aiosqlite==0.20.0
 # CFDI 4.0 nativo (generación + firma + timbrado vía PAC)
 satcfdi==4.4.7
 
+# PDF de factura (Python puro, sin dependencias del SO)
+reportlab==4.2.5
+
 # RAG es OPCIONAL: `pip install chromadb` para habilitar la búsqueda semántica
 # del asistente. Sin él, el producto advisor usa keyword search automáticamente.
 # No se incluye por defecto: chromadb es pesado y en Render free el filesystem
