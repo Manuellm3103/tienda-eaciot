@@ -28,4 +28,21 @@
         </div>
     </div>
 </div>
+
+{% if related_products %}
+<div class="mt-16">
+    <h2 class="text-2xl font-bold mb-8">También te podría interesar</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {% for rp in related_products %}
+        <div class="bg-white rounded-lg shadow p-4">
+            {% if rp.image_url %}
+            <img src="{{ rp.image_url }}" alt="{{ rp.title }}" class="w-full h-32 object-cover rounded mb-3">
+            {% endif %}
+            <a href="/products/{{ rp.id }}" class="font-semibold hover:text-blue-600">{{ rp.title }}</a>
+            <p class="text-blue-600 font-bold mt-2">${{ rp.price }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

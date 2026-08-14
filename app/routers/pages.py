@@ -16,6 +16,7 @@ from app.schemas.shipping import ShippingAddressCreate
 from app.dependencies import get_current_user_optional, require_admin
 from app.services.user_event_service import user_event_service
 from app.services.product_service import product_service
+from app.services.recommendation_service import recommendation_service
 from app.services.order_service import order_service
 from app.services.promotion_service import promotion_service
 from app.services.stripe_service import stripe_service
@@ -60,9 +61,15 @@ async def product_detail(request: Request, product_id: str, db: AsyncSession = D
         db, "view", user_id=str(user.id) if user else None, product_id=product_id
     )
     categories = await product_service.get_categories(db)
+    related = await recommendation_service.get_related(db, product_id)
     return templates.TemplateResponse(
         "products/detail.html",
-        {"request": request, "product": product, "categories": categories},
+        {
+            "request": request,
+            "product": product,
+            "categories": categories,
+            "related_products": related,
+        },
     )
 
 
