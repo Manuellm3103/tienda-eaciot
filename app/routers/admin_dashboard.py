@@ -3,8 +3,13 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.services.dashboard_service import dashboard_service
+from app.dependencies import require_admin
 
-router = APIRouter(prefix="/admin", tags=["admin-dashboard"])
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin-dashboard"],
+    dependencies=[Depends(require_admin)],
+)
 from app.templates_instance import templates
 
 

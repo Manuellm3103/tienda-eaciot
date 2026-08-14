@@ -11,8 +11,13 @@ from app.models.congratulation import CongratulationRule
 from app.schemas.promotion import PromotionCreate, PromotionResponse, CongratulationRuleCreate, CongratulationRuleResponse
 from app.services.promotion_service import promotion_service
 from app.middleware import validate_csrf
+from app.dependencies import require_admin
 
-router = APIRouter(prefix="/admin/promotions", tags=["admin-promotions"])
+router = APIRouter(
+    prefix="/admin/promotions",
+    tags=["admin-promotions"],
+    dependencies=[Depends(require_admin)],
+)
 from app.templates_instance import templates
 
 

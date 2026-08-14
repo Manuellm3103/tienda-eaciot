@@ -10,6 +10,7 @@ from app.models.shipping import ShippingAddress, Shipment
 from app.models.refund import Refund
 from app.models.email_queue import EmailQueue
 from app.models.chat import ChatMessage
+from app.models.user_event import UserEvent
 
 __all__ = [
     "User",
@@ -29,4 +30,5 @@ __all__ = [
     "Refund",
     "EmailQueue",
     "ChatMessage",
+    "UserEvent",
 ]

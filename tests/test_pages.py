@@ -1,5 +1,21 @@
 import pytest
+from sqlalchemy import select
 from app.models.product import Product, Category
+from app.models.user import User
+from app.services.auth_service import create_access_token
+
+
+async def _authenticate_admin(client, db) -> None:
+    """Ensure an admin user exists and attach a valid access_token cookie."""
+    result = await db.execute(select(User).where(User.email == "admin@test.com"))
+    user = result.scalar_one_or_none()
+    if not user:
+        user = User(email="admin@test.com", name="Admin", is_admin=True)
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    token = create_access_token({"sub": user.id})
+    client.cookies.set("access_token", token)
 
 
 @pytest.mark.asyncio
@@ -45,14 +61,16 @@ async def test_checkout_redirects_when_not_logged_in(client):
 
 
 @pytest.mark.asyncio
-async def test_admin_dashboard_page(client):
+async def test_admin_dashboard_page(client, db):
+    await _authenticate_admin(client, db)
     response = await client.get("/admin/dashboard")
     assert response.status_code == 200
     assert "Dashboard" in response.text
 
 
 @pytest.mark.asyncio
-async def test_admin_products_page(client):
+async def test_admin_products_page(client, db):
+    await _authenticate_admin(client, db)
     response = await client.get("/admin/products/")
     assert response.status_code == 200
     assert "Administrar Productos" in response.text

@@ -13,7 +13,8 @@ from app.models.order import Order
 from app.models.promotion import Promotion
 from app.schemas.order import OrderCreate, OrderItemCreate
 from app.schemas.shipping import ShippingAddressCreate
-from app.dependencies import get_current_user_optional
+from app.dependencies import get_current_user_optional, require_admin
+from app.services.user_event_service import user_event_service
 from app.services.product_service import product_service
 from app.services.order_service import order_service
 from app.services.promotion_service import promotion_service
@@ -54,6 +55,10 @@ async def product_detail(request: Request, product_id: str, db: AsyncSession = D
     product = await product_service.get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    user = await get_current_user_optional(request, db)
+    await user_event_service.record(
+        db, "view", user_id=str(user.id) if user else None, product_id=product_id
+    )
     categories = await product_service.get_categories(db)
     return templates.TemplateResponse(
         "products/detail.html",
@@ -81,20 +86,37 @@ async def cart_page(request: Request, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/cart/add/{product_id}")
-async def cart_add(product_id: str, request: Request, response: Response):
+async def cart_add(
+    product_id: str,
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
     cart = get_cart_from_cookie(request)
     cart[product_id] = cart.get(product_id, 0) + 1
     set_cart_cookie(response, cart)
+    user = await get_current_user_optional(request, db)
+    await user_event_service.record(
+        db, "cart_add", user_id=str(user.id) if user else None, product_id=product_id
+    )
     return HTMLResponse(content=str(sum(cart.values())))
 
 
 @router.get("/cart/add/{product_id}")
-async def cart_add_get(product_id: str, request: Request):
+async def cart_add_get(
+    product_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
     """Graceful fallback for no-JS clients and CUA/browser automation."""
     cart = get_cart_from_cookie(request)
     cart[product_id] = cart.get(product_id, 0) + 1
     response = RedirectResponse(url="/cart", status_code=302)
     set_cart_cookie(response, cart)
+    user = await get_current_user_optional(request, db)
+    await user_event_service.record(
+        db, "cart_add", user_id=str(user.id) if user else None, product_id=product_id
+    )
     return response
 
 
@@ -298,10 +320,14 @@ async def search_page(
 # ==================== ADMIN ====================
 
 @router.get("/admin/promotions", response_class=HTMLResponse)
-async def admin_promotions_page(request: Request, db: AsyncSession = Depends(get_db)):
+async def admin_promotions_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_admin),
+):
     result = await db.execute(select(Promotion).order_by(Promotion.created_at.desc()))
     promotions = result.scalars().all()
     return templates.TemplateResponse(
         "admin/promotions.html",
-        {"request": request, "promotions": promotions},
+        {"request": request, "promotions": promotions, "user": user},
     )
