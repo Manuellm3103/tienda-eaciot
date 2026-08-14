@@ -7,20 +7,20 @@ from app.database import Base
 
 class Order(Base):
     __tablename__ = "orders"
-    
+
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
-    
+
     subtotal = Column(Numeric(10, 2), nullable=False)
     discount_amount = Column(Numeric(10, 2), default=0.00)
     shipping_amount = Column(Numeric(10, 2), default=0.00)
     total_amount = Column(Numeric(10, 2), nullable=False)
-    
+
     status = Column(String(20), default="pending")
-    
+
     payment_method = Column(String(20))
     payment_id = Column(String(255))
-    
+
     shipping_address = Column(JSON)
     tracking_number = Column(String(255))
 
@@ -30,6 +30,14 @@ class Order(Base):
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships (needed by OrderResponse schema and eager loading)
+    items = relationship(
+        "OrderItem",
+        back_populates="order",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
 
 class OrderItem(Base):
@@ -44,4 +52,6 @@ class OrderItem(Base):
     price_at_purchase = Column(Numeric(10, 2), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    order = relationship("Order", back_populates="items")
     product = relationship("Product", lazy="selectin")
+    variant = relationship("ProductVariant", lazy="selectin")
