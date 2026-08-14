@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Precios Dinámicos - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Precios Dinámicos</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<p class="text-gray-600 mb-6">
+    Recomendaciones de precio basadas en la demanda reciente (vistas y agregados al
+    carrito). Nada se aplica automáticamente: decide tú si quieres aplicar un
+    descuento. Los clientes solo ven un descuento, nunca un "precio IA".
+</p>
+
+<div id="insights" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <p class="text-gray-500 text-sm">Productos analizados</p>
+        <p id="ins-total" class="text-3xl font-bold">—</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <p class="text-gray-500 text-sm">Oportunidades (demanda alta)</p>
+        <p id="ins-opportunity" class="text-3xl font-bold text-emerald-600">—</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <p class="text-gray-500 text-sm">Candidatos a liquidación</p>
+        <p id="ins-clearance" class="text-3xl font-bold text-amber-600">—</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Producto</th>
+                <th class="text-right py-3 px-4">Precio actual</th>
+                <th class="text-right py-3 px-4">Sugerido</th>
+                <th class="text-center py-3 px-4">Señal</th>
+                <th class="text-center py-3 px-4">Vistas 24h</th>
+                <th class="text-center py-3 px-4">Carrito 24h</th>
+                <th class="text-center py-3 px-4">Stock</th>
+            </tr>
+        </thead>
+        <tbody id="pricing-body">
+            <tr><td colspan="7" class="py-4 text-center text-gray-400">Cargando…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+(function() {
+    const SIGNALS = {
+        opportunity: {label: 'Oportunidad', cls: 'bg-emerald-100 text-emerald-700'},
+        clearance: {label: 'Liquidación', cls: 'bg-amber-100 text-amber-700'},
+        hold: {label: 'Mantener', cls: 'bg-gray-100 text-gray-600'}
+    };
+
+    async function load() {
+        try {
+            const res = await fetch('/admin/pricing/recommendations', {credentials: 'same-origin'});
+            const data = await res.json();
+            document.getElementById('ins-total').textContent = data.insights.total_products;
+            document.getElementById('ins-opportunity').textContent = data.insights.signals.opportunity;
+            document.getElementById('ins-clearance').textContent = data.insights.signals.clearance;
+
+            const body = document.getElementById('pricing-body');
+            body.innerHTML = (data.recommendations || []).map(r => {
+                const s = SIGNALS[r.signal] || SIGNALS.hold;
+                const diff = (r.suggested_price - r.current_price).toFixed(2);
+                const diffTxt = diff > 0 ? '(+' + diff + ')' : (diff < 0 ? '(' + diff + ')' : '');
+                return '<tr class="border-b hover:bg-gray-50">' +
+                    '<td class="py-3 px-4">' + r.title + '</td>' +
+                    '<td class="text-right py-3 px-4">$' + r.current_price.toFixed(2) + '</td>' +
+                    '<td class="text-right py-3 px-4 font-semibold">$' + r.suggested_price.toFixed(2) + ' <span class="text-xs text-gray-400">' + diffTxt + '</span></td>' +
+                    '<td class="text-center py-3 px-4"><span class="inline-block px-2 py-1 rounded text-xs font-medium ' + s.cls + '">' + s.label + '</span></td>' +
+                    '<td class="text-center py-3 px-4">' + r.demand_24h_views + '</td>' +
+                    '<td class="text-center py-3 px-4">' + r.demand_24h_cart_adds + '</td>' +
+                    '<td class="text-center py-3 px-4">' + (r.stock < 0 ? '∞' : r.stock) + '</td>' +
+                '</tr>';
+            }).join('') || '<tr><td colspan="7" class="py-4 text-center text-gray-400">No hay productos activos.</td></tr>';
+        } catch (err) {
+            document.getElementById('pricing-body').innerHTML =
+                '<tr><td colspan="7" class="py-4 text-center text-red-500">No se pudo cargar.</td></tr>';
+        }
+    }
+    load();
+})();
+</script>
+{% endblock %}
