@@ -1,0 +1,83 @@
+"""AI product content generation (#6 on the innovation roadmap).
+
+Generates a complete SEO package (SEO title, meta description, persuasive
+description, bullet points, Mexican search terms) through the dual-LLM router.
+Only fields that already exist on the Product model are persisted
+(meta_title, meta_description, description) — no schema migration required.
+"""
+from typing import Optional
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.product import Product
+from app.ai.llm_router import llm_router, TaskType
+
+SYSTEM_PROMPT = (
+    "Eres un especialista SEO de comercio electrónico para Tienda Eaciot, "
+    "una tienda mexicana. Escribes en español de México con un tono cercano y "
+    "persuasivo, optimizado para búsquedas locales. Responde SIEMPRE con JSON "
+    "válido, sin comentarios ni markdown."
+)
+
+
+class ProductContentService:
+    async def generate_content(self, product: Product) -> dict:
+        prompt = (
+            f"Genera el contenido SEO completo para este producto:\n"
+            f"Título: {product.title}\n"
+            f"Descripción actual: {product.description or 'Ninguna'}\n"
+            f"Precio: ${float(product.price):.2f}\n\n"
+            "Devuelve un JSON con exactamente estas claves:\n"
+            '{"seo_title": "...", "meta_description": "...", "description": "...", '
+            '"bullet_points": ["...", "..."], "search_terms": ["...", "..."]}\n\n'
+            "Reglas:\n"
+            "- seo_title: máximo 60 caracteres, incluye palabra clave principal.\n"
+            "- meta_description: máximo 155 caracteres, con gancho comercial.\n"
+            "- description: entre 80 y 180 palabras, persuasiva, en español de México.\n"
+            "- bullet_points: entre 3 y 5 beneficios concretos.\n"
+            "- search_terms: entre 5 y 8 términos de búsqueda mexicanos."
+        )
+        return await llm_router.generate_structured(
+            prompt, system=SYSTEM_PROMPT, task_type=TaskType.PRODUCT_DESCRIPTION
+        )
+
+    async def apply_to_product(self, db: AsyncSession, product: Product) -> dict:
+        """Generate and persist SEO content onto existing Product columns."""
+        content = await self.generate_content(product)
+        usable = any(
+            content.get(k) for k in ("seo_title", "meta_description", "description")
+        )
+        if not usable:
+            return {"status": "unavailable", "content": content}
+
+        if content.get("seo_title"):
+            product.meta_title = str(content["seo_title"])[:255]
+        if content.get("meta_description"):
+            product.meta_description = str(content["meta_description"])[:500]
+        if content.get("description"):
+            product.description = str(content["description"])
+        await db.flush()
+        return {"status": "generated", "content": content}
+
+    async def batch_enrich(self, db: AsyncSession, limit: int = 20) -> dict:
+        """Enrich active products whose description is missing or too short."""
+        result = await db.execute(
+            select(Product).where(Product.is_active == True)
+        )
+        products = result.scalars().all()
+
+        enriched = 0
+        failed = 0
+        for p in products:
+            if p.description and len(p.description) >= 50:
+                continue
+            if enriched >= limit:
+                break
+            res = await self.apply_to_product(db, p)
+            if res["status"] == "generated":
+                enriched += 1
+            else:
+                failed += 1
+        return {"enriched": enriched, "failed": failed}
+
+
+product_content_service = ProductContentService()

@@ -6,9 +6,13 @@
 {% block content %}
 <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold">Administrar Productos</h1>
-    <div class="space-x-2">
+    <div class="space-x-2 flex items-center">
         <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+        <a href="/admin/analytics" class="bg-purple-600 text-white px-4 py-2 rounded">Analítica IA</a>
         <a href="/admin/products/new" class="bg-blue-600 text-white px-4 py-2 rounded">+ Nuevo Producto</a>
+        <button hx-post="/admin/products/batch-enrich" hx-target="#batch-result" hx-swap="innerHTML"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded">Generar Contenido IA</button>
+        <span id="batch-result" class="text-sm text-emerald-700"></span>
     </div>
 </div>
 
@@ -33,7 +37,11 @@
                 <td class="text-center py-3 px-4">{{ product.stock }}</td>
                 <td class="text-center py-3 px-4">{{ 'Sí' if product.is_active else 'No' }}</td>
                 <td class="py-3 px-4">
-                    <div class="flex space-x-2">
+                    <div class="flex space-x-2 items-center">
+                        <button hx-post="/admin/products/{{ product.id }}/generate-content"
+                                hx-target="#content-result-{{ product.id }}" hx-swap="innerHTML"
+                                class="text-purple-600 hover:text-purple-800">Generar IA</button>
+                        <span id="content-result-{{ product.id }}" class="text-xs text-green-600"></span>
                         <a href="/admin/products/{{ product.id }}/edit" class="text-blue-600 hover:text-blue-800">Editar</a>
                         <form action="/admin/products/{{ product.id }}/delete" method="POST" onsubmit="return confirm('¿Eliminar producto?')">
                             {{ csrf_input(request) }}

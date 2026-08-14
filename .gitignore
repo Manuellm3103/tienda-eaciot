@@ -18,3 +18,12 @@ e2e_screenshots/
 .simplicio/
 app.db
 test.db
+chroma_data/
+ruvector.db
+ecommerce.db
+.claude-flow/
+.swarm/
+agentdb.rvf*
+*.rvf
+*.rvf.idmap.json
+*.rvf.lock

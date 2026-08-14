@@ -26,8 +26,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
             "img-src 'self' data: https: http:; "
             "font-src 'self' https:; "
-            "connect-src 'self' https://api.stripe.com https://www.paypal.com; "
-            "frame-src https://js.stripe.com https://www.paypal.com;"
+            "connect-src 'self' https://api.stripe.com; "
+            "frame-src https://js.stripe.com;"
         )
         response.headers["Content-Security-Policy"] = csp
         

@@ -19,10 +19,18 @@ services:
         value: "true"
       - key: ALLOWED_HOSTS
         value: "tienda.eaciot.com,www.tienda.eaciot.com,tienda-eaciot.onrender.com"
+      # AI providers — set the real values in the Render dashboard.
+      # sync:false means Render will NOT overwrite them with a blank value.
       - key: OLLAMA_HOST
-        value: ""
+        sync: false
       - key: OLLAMA_MODEL
-        value: ""
+        sync: false
+      - key: OPENCODE_HOST
+        sync: false
+      - key: OPENCODE_MODEL
+        sync: false
+      - key: OPENCODE_API_KEY
+        sync: false
     disk:
       name: tienda-data
       mountPath: /opt/render/project/src

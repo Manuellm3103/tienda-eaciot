@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
@@ -7,9 +7,15 @@ from decimal import Decimal
 from app.database import get_db
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, CategoryCreate, CategoryResponse
 from app.services.product_service import product_service
+from app.services.product_content_service import product_content_service
 from app.middleware import validate_csrf
+from app.dependencies import require_admin
 
-router = APIRouter(prefix="/admin/products", tags=["admin-products"])
+router = APIRouter(
+    prefix="/admin/products",
+    tags=["admin-products"],
+    dependencies=[Depends(require_admin)],
+)
 from app.templates_instance import templates
 
 
@@ -37,6 +43,34 @@ async def delete_product(product_id: UUID, db: AsyncSession = Depends(get_db)):
 @router.post("/categories/", response_model=CategoryResponse)
 async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_db)):
     return await product_service.create_category(db, data)
+
+
+@router.post("/batch-enrich")
+async def admin_products_batch_enrich(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate AI content for all products with missing/short descriptions."""
+    await validate_csrf(request)
+    result = await product_content_service.batch_enrich(db)
+    await db.commit()
+    return JSONResponse(result)
+
+
+@router.post("/{product_id}/generate-content")
+async def admin_product_generate_content(
+    request: Request,
+    product_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate + persist SEO content for a single product."""
+    await validate_csrf(request)
+    product = await product_service.get_product(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    result = await product_content_service.apply_to_product(db, product)
+    await db.commit()
+    return JSONResponse({"product_id": product_id, **result})
 
 
 # ==================== HTML ADMIN PAGES ====================

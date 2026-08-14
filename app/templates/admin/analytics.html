@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Analítica IA - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Analítica IA</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<p class="text-gray-600 mb-6">
+    Pregunta en español y el asistente consultará tu tienda (solo lectura).
+    Ej: "¿cuál fue el producto más vendido el mes pasado?"
+</p>
+
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <form id="ask-form" class="flex gap-2">
+        <input type="text" id="question" placeholder="Haz una pregunta sobre tu tienda..."
+               class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+               autocomplete="off">
+        <button type="submit" id="ask-btn"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium disabled:opacity-50">
+            Preguntar
+        </button>
+    </form>
+</div>
+
+<div id="result" class="hidden bg-white rounded-lg shadow p-6">
+    <div id="result-meta" class="mb-4"></div>
+    <div id="result-error" class="hidden text-red-600 bg-red-50 border border-red-200 rounded p-4"></div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead id="result-head" class="bg-gray-50"></thead>
+            <tbody id="result-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function() {
+    const form = document.getElementById('ask-form');
+    const input = document.getElementById('question');
+    const btn = document.getElementById('ask-btn');
+    const result = document.getElementById('result');
+    const meta = document.getElementById('result-meta');
+    const errorBox = document.getElementById('result-error');
+    const head = document.getElementById('result-head');
+    const body = document.getElementById('result-body');
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const q = input.value.trim();
+        if (!q) return;
+        btn.disabled = true;
+        btn.textContent = 'Pensando...';
+        errorBox.classList.add('hidden');
+        result.classList.remove('hidden');
+
+        try {
+            const res = await fetch('/admin/analytics/ask', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'same-origin',
+                body: JSON.stringify({question: q})
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                errorBox.textContent = data.error + (data.sql ? ' (SQL: ' + data.sql + ')' : '');
+                errorBox.classList.remove('hidden');
+                head.innerHTML = '';
+                body.innerHTML = '';
+                meta.innerHTML = '';
+                return;
+            }
+
+            meta.innerHTML =
+                '<span class="inline-block bg-purple-100 text-purple-700 text-sm font-medium px-3 py-1 rounded mr-2">' +
+                (data.chart_type || 'table') + '</span>' +
+                '<span class="text-gray-600">' + (data.explanation || '') + '</span>' +
+                '<p class="text-xs text-gray-400 mt-2 font-mono">' + (data.sql || '') + '</p>';
+
+            head.innerHTML = '<tr>' + (data.columns || []).map(c =>
+                '<th class="text-left py-2 px-3 border-b">' + c + '</th>').join('') + '</tr>';
+
+            body.innerHTML = (data.data || []).map(row =>
+                '<tr class="border-b hover:bg-gray-50">' + row.map(cell =>
+                '<td class="py-2 px-3">' + (cell === null ? '' : cell) + '</td>').join('') + '</tr>'
+            ).join('') || '<tr><td class="py-4 text-gray-400">Sin resultados.</td></tr>';
+        } catch (err) {
+            errorBox.textContent = 'No se pudo consultar la analítica IA. Intenta de nuevo.';
+            errorBox.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Preguntar';
+        }
+    });
+})();
+</script>
+{% endblock %}
