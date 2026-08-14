@@ -7,6 +7,7 @@ from app.models.user import User
 from app.schemas.review import ReviewCreate, ReviewResponse
 from app.services.review_service import review_service
 from app.dependencies import get_current_user
+from app.middleware import validate_csrf
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -14,9 +15,11 @@ router = APIRouter(prefix="/reviews", tags=["reviews"])
 @router.post("/", response_model=ReviewResponse)
 async def create_review(
     data: ReviewCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    await validate_csrf(request)
     return await review_service.create_review(db, user.id, data)
 
 
@@ -41,9 +44,11 @@ async def get_my_reviews(
 @router.delete("/{review_id}")
 async def delete_review(
     review_id: UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    await validate_csrf(request)
     success = await review_service.delete_review(db, review_id, user.id)
     if not success:
         raise HTTPException(status_code=404, detail="Review not found")

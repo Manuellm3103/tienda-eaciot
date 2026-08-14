@@ -102,6 +102,20 @@ async def product_detail(request: Request, product_id: str, db: AsyncSession = D
     related = await recommendation_service.get_related(db, product_id)
     variants = await variant_service.list_variants(db, product_id)
     active_variants = [v for v in variants if v.is_active]
+
+    from app.services.review_service import review_service
+    reviews = await review_service.get_product_reviews(db, product_id)
+    rating = await review_service.get_product_rating(db, product_id)
+    reviews_with_author = []
+    for r in reviews:
+        author = await db.get(User, r.user_id)
+        reviews_with_author.append(
+            {
+                "review": r,
+                "author_name": (author.name or author.email) if author else "Cliente",
+            }
+        )
+
     return templates.TemplateResponse(
         "products/detail.html",
         {
@@ -110,6 +124,9 @@ async def product_detail(request: Request, product_id: str, db: AsyncSession = D
             "categories": categories,
             "related_products": related,
             "variants": active_variants,
+            "reviews": reviews_with_author,
+            "rating": rating,
+            "user": user,
         },
     )
 

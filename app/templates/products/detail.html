@@ -75,4 +75,98 @@
     </div>
 </div>
 {% endif %}
+
+<div class="mt-16">
+    <h2 class="text-2xl font-bold mb-4">Reseñas</h2>
+    <p class="text-gray-600 mb-6">
+        {% if rating.count > 0 %}
+        <span class="text-amber-500 text-xl">★</span> {{ "%.1f"|format(rating.average) }} de 5
+        · {{ rating.count }} reseña(s)
+        {% else %}
+        Aún no hay reseñas. ¡Sé el primero en opinar!
+        {% endif %}
+    </p>
+
+    <div class="space-y-4 mb-8">
+        {% for entry in reviews %}
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between mb-1">
+                <span class="font-medium">{{ entry.author_name }}</span>
+                <span class="text-amber-500">{% for i in range(entry.review.rating) %}★{% endfor %}</span>
+            </div>
+            {% if entry.review.title %}<p class="font-semibold text-sm">{{ entry.review.title }}</p>{% endif %}
+            <p class="text-gray-600 text-sm">{{ entry.review.comment }}</p>
+            {% if entry.review.is_verified_purchase %}
+            <span class="inline-block mt-2 text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded">Compra verificada</span>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-sm">No hay reseñas todavía.</p>
+        {% endfor %}
+    </div>
+
+    {% if user %}
+    <form id="review-form" class="bg-white rounded-lg shadow p-6">
+        <h3 class="font-bold mb-3">Deja tu reseña</h3>
+        <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Calificación</label>
+            <select id="review-rating" class="border rounded-md px-3 py-2">
+                <option value="5">★★★★★ (5)</option>
+                <option value="4">★★★★ (4)</option>
+                <option value="3">★★★ (3)</option>
+                <option value="2">★★ (2)</option>
+                <option value="1">★ (1)</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+            <input type="text" id="review-title" class="w-full border rounded-md px-3 py-2" placeholder="Resumen (opcional)">
+        </div>
+        <div class="mb-3">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Comentario</label>
+            <textarea id="review-comment" rows="3" class="w-full border rounded-md px-3 py-2" placeholder="Tu opinión"></textarea>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Publicar</button>
+        <p id="review-status" class="text-sm mt-3"></p>
+    </form>
+    {% else %}
+    <p class="text-sm text-gray-500">
+        <a href="/auth/login?next=/products/{{ product.id }}" class="text-blue-600">Inicia sesión</a> para dejar una reseña.
+    </p>
+    {% endif %}
+</div>
+
+{% if user %}
+<script>
+(function() {
+    function csrfToken() {
+        var m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+    document.getElementById('review-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var body = {
+            product_id: '{{ product.id }}',
+            rating: parseInt(document.getElementById('review-rating').value, 10),
+            title: document.getElementById('review-title').value.trim(),
+            comment: document.getElementById('review-comment').value.trim()
+        };
+        if (!body.comment) {
+            document.getElementById('review-status').textContent = 'Escribe un comentario.';
+            return;
+        }
+        fetch('/reviews/', {
+            method: 'POST', credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken()},
+            body: JSON.stringify(body)
+        }).then(function(r) { return r.json(); }).then(function() {
+            document.getElementById('review-status').textContent = '✅ Gracias por tu reseña.';
+            setTimeout(function() { location.reload(); }, 1200);
+        }).catch(function() {
+            document.getElementById('review-status').textContent = '❌ No se pudo publicar.';
+        });
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}
