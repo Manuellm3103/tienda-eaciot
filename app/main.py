@@ -40,6 +40,7 @@ from app.routers.legal import router as legal_router
 from app.routers.support import router as support_router
 from app.routers.admin_support import router as admin_support_router
 from app.routers.admin_invoices import router as admin_invoices_router
+from app.routers.admin_email_queue import router as admin_email_queue_router
 from app.routers.invoice_validation import router as invoice_validation_router
 
 
@@ -93,6 +94,7 @@ app.include_router(legal_router)
 app.include_router(support_router)
 app.include_router(admin_support_router)
 app.include_router(admin_invoices_router)
+app.include_router(admin_email_queue_router)
 app.include_router(invoice_validation_router)
 app.include_router(auth_router)
 app.include_router(products_router)

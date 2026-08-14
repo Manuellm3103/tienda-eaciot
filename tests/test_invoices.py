@@ -148,3 +148,29 @@ async def test_cancel_rejects_non_issued(db):
     await db.refresh(invoice)
     with pytest.raises(ValueError, match="Solo facturas timbradas"):
         await invoice_service.cancel(db, invoice.id)
+
+
+@pytest.mark.asyncio
+async def test_check_cancel_status_marks_cancelled(db, monkeypatch):
+    order = await _paid_order(db, "inv-cat-7")
+    invoice = Invoice(
+        order_id=order.id, customer_rfc="XAXX010101000", customer_name="Buyer",
+        status="issued", provider="satcfdi",
+        provider_invoice_id="11111111-2222-3333-4444-555555555555",
+    )
+    db.add(invoice)
+    await db.commit()
+    await db.refresh(invoice)
+
+    import app.services.cfdi_finkok as finkok_mod
+
+    def fake_status(**kwargs):
+        return {"estado": "Cancelado", "codestatus": "S - Comprobante obtenido satisfactoriamente"}
+
+    monkeypatch.setattr(finkok_mod.finkok_client, "get_sat_status", fake_status)
+    monkeypatch.setattr("app.services.invoice_service.settings.business_rfc", "EAC2403183F0")
+
+    result = await invoice_service.check_cancel_status(db, invoice.id)
+    await db.commit()
+    assert result["sat_estado"] == "Cancelado"
+    assert result["invoice_status"] == "cancelled"

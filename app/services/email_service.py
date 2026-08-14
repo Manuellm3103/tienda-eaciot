@@ -6,6 +6,82 @@ from app.config import settings
 import secrets
 from datetime import datetime, timedelta
 
+# Rendered templates live at module level so the queue path can reuse them
+# without sending. Keep them in sync with the send_* helpers below.
+VERIFICATION_TEMPLATE = Template("""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+        .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>¡Bienvenido a Tienda Eaciot!</h1>
+        </div>
+        <div class="content">
+            <h2>Hola {{ name }},</h2>
+            <p>Gracias por registrarte en Tienda Eaciot. Para completar tu registro, por favor verifica tu dirección de email.</p>
+            <p style="text-align: center;">
+                <a href="{{ verification_url }}" class="button">Verificar Email</a>
+            </p>
+            <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+            <p style="word-break: break-all; color: #2563eb;">{{ verification_url }}</p>
+            <p><strong>Este enlace expira en 24 horas.</strong></p>
+            <p>Si no creaste esta cuenta, puedes ignorar este email.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
+""")
+
+PASSWORD_RESET_TEMPLATE = Template("""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+        .button { display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Restablecer Contraseña</h1>
+        </div>
+        <div class="content">
+            <h2>Hola {{ name }},</h2>
+            <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+            <p style="text-align: center;">
+                <a href="{{ reset_url }}" class="button">Restablecer Contraseña</a>
+            </p>
+            <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
+            <p style="word-break: break-all; color: #dc2626;">{{ reset_url }}</p>
+            <p><strong>Este enlace expira en 1 hora.</strong></p>
+            <p>Si no solicitaste este cambio, puedes ignorar este email.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>
+""")
+
 
 class EmailService:
     def __init__(self):
@@ -44,108 +120,30 @@ class EmailService:
         """Generate a random verification token"""
         return secrets.token_urlsafe(32)
     
-    async def send_verification_email(self, to_email: str, name: str, token: str):
-        """Send verification email"""
+    def render_verification_email(self, name: str, token: str) -> str:
+        """Render the verification email HTML (no side effects)."""
         verification_url = f"{settings.frontend_url}/auth/verify-email?token={token}"
-        
-        template = Template("""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-                .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
-                .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-                .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>¡Bienvenido a Tienda Eaciot!</h1>
-                </div>
-                <div class="content">
-                    <h2>Hola {{ name }},</h2>
-                    <p>Gracias por registrarte en Tienda Eaciot. Para completar tu registro, por favor verifica tu dirección de email.</p>
-                    <p style="text-align: center;">
-                        <a href="{{ verification_url }}" class="button">Verificar Email</a>
-                    </p>
-                    <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-                    <p style="word-break: break-all; color: #2563eb;">{{ verification_url }}</p>
-                    <p><strong>Este enlace expira en 24 horas.</strong></p>
-                    <p>Si no creaste esta cuenta, puedes ignorar este email.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """)
-        
-        html_content = template.render(
-            name=name,
-            verification_url=verification_url
-        )
-        
+        return VERIFICATION_TEMPLATE.render(name=name, verification_url=verification_url)
+
+    async def send_verification_email(self, to_email: str, name: str, token: str):
+        """Send verification email synchronously (legacy path)."""
         return await self.send_email(
             to_email=to_email,
             subject="Verifica tu email - Tienda Eaciot",
-            html_content=html_content
+            html_content=self.render_verification_email(name, token),
         )
     
-    async def send_password_reset_email(self, to_email: str, name: str, token: str):
-        """Send password reset email"""
+    def render_password_reset_email(self, name: str, token: str) -> str:
+        """Render the password-reset email HTML (no side effects)."""
         reset_url = f"{settings.frontend_url}/auth/reset-password?token={token}"
-        
-        template = Template("""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-                .content { background: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
-                .button { display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-                .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>Restablecer Contraseña</h1>
-                </div>
-                <div class="content">
-                    <h2>Hola {{ name }},</h2>
-                    <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-                    <p style="text-align: center;">
-                        <a href="{{ reset_url }}" class="button">Restablecer Contraseña</a>
-                    </p>
-                    <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-                    <p style="word-break: break-all; color: #dc2626;">{{ reset_url }}</p>
-                    <p><strong>Este enlace expira en 1 hora.</strong></p>
-                    <p>Si no solicitaste este cambio, puedes ignorar este email.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """)
-        
-        html_content = template.render(
-            name=name,
-            reset_url=reset_url
-        )
-        
+        return PASSWORD_RESET_TEMPLATE.render(name=name, reset_url=reset_url)
+
+    async def send_password_reset_email(self, to_email: str, name: str, token: str):
+        """Send password reset email synchronously (legacy path)."""
         return await self.send_email(
             to_email=to_email,
             subject="Restablecer contraseña - Tienda Eaciot",
-            html_content=html_content
+            html_content=self.render_password_reset_email(name, token),
         )
     
     async def send_order_confirmation_email(self, to_email: str, name: str, order_id: str, total: float):

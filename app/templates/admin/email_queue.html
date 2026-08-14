@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Email Outbox - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Email Outbox</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<p class="text-gray-600 mb-6">
+    Correos transaccionales encolados (registro, restablecer contraseña, carritos
+    abandonados). Los entrega el worker <code>scripts/process_emails.py</code> vía
+    cron. Un correo fallido puede reintentarse desde aquí.
+</p>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Destinatario</th>
+                <th class="text-left py-3 px-4">Asunto</th>
+                <th class="text-center py-3 px-4">Estado</th>
+                <th class="text-center py-3 px-4">Intentos</th>
+                <th class="text-center py-3 px-4">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="queue-body">
+            <tr><td colspan="5" class="py-4 text-center text-gray-400">Cargando…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="status" class="mt-4 text-sm text-center"></div>
+
+<script>
+(function() {
+    const BADGE = {
+        pending: 'bg-amber-100 text-amber-700',
+        sent: 'bg-emerald-100 text-emerald-700',
+        failed: 'bg-red-100 text-red-700'
+    };
+    function csrfToken() {
+        const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+    function esc(s) {
+        const d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+    }
+    function render(rows) {
+        const body = document.getElementById('queue-body');
+        body.innerHTML = (rows || []).map(function(e) {
+            const badge = BADGE[e.status] || BADGE.pending;
+            return '<tr class="border-b hover:bg-gray-50">' +
+                '<td class="py-3 px-4 text-sm">' + esc(e.to_email) + '</td>' +
+                '<td class="py-3 px-4 text-sm">' + esc(e.subject) + '</td>' +
+                '<td class="text-center py-3 px-4"><span class="inline-block px-2 py-1 rounded text-xs font-medium ' + badge + '">' + esc(e.status) + '</span>' +
+                (e.last_error ? '<br><span class="text-xs text-red-500">' + esc(e.last_error.slice(0, 50)) + '</span>' : '') + '</td>' +
+                '<td class="text-center py-3 px-4 text-sm">' + e.attempts + '</td>' +
+                '<td class="text-center py-3 px-4">' +
+                (e.status === 'failed'
+                    ? '<button data-id="' + e.id + '" class="retry bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm hover:bg-blue-200">Reintentar</button>'
+                    : '<span class="text-gray-300 text-xs">—</span>') +
+                '</td>' +
+            '</tr>';
+        }).join('') || '<tr><td colspan="5" class="py-4 text-center text-gray-400">No hay correos encolados.</td></tr>';
+
+        body.querySelectorAll('.retry').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const id = btn.getAttribute('data-id');
+                fetch('/admin/email-queue/' + id + '/retry', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: {'X-CSRF-Token': csrfToken()}
+                }).then(r => r.json()).then(function() {
+                    document.getElementById('status').textContent = '✅ Reencolado.';
+                    load();
+                });
+            });
+        });
+    }
+    async function load() {
+        try {
+            const res = await fetch('/admin/email-queue/list', {credentials: 'same-origin'});
+            const data = await res.json();
+            render(data.emails || []);
+        } catch (err) {
+            document.getElementById('queue-body').innerHTML =
+                '<tr><td colspan="5" class="py-4 text-center text-red-500">No se pudo cargar.</td></tr>';
+        }
+    }
+    load();
+})();
+</script>
+{% endblock %}

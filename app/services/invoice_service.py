@@ -130,6 +130,57 @@ class InvoiceService:
         await db.flush()
         return invoice
 
+    async def check_cancel_status(self, db: AsyncSession, invoice_id: str) -> dict:
+        """Query the SAT through the PAC for a CFDI's cancellation state.
+
+        Returns the raw PAC status plus the invoice's updated local status.
+        """
+        invoice = await db.get(Invoice, invoice_id)
+        if not invoice:
+            raise ValueError("Invoice not found")
+        if invoice.status != "issued" or invoice.provider != "satcfdi":
+            raise ValueError("Solo facturas timbradas (satcfdi) pueden verificarse")
+        if not invoice.provider_invoice_id:
+            raise ValueError("La factura no tiene UUID de timbrado")
+
+        order = await db.get(Order, invoice.order_id)
+        if not order:
+            raise ValueError("Order not found")
+
+        import asyncio
+
+        def _run():
+            from app.services.cfdi_finkok import finkok_client
+
+            return finkok_client.get_sat_status(
+                taxpayer_id=settings.business_rfc,
+                uuid=invoice.provider_invoice_id,
+                total=f"{float(order.total_amount or 0):.2f}",
+                rfc_receptor=invoice.customer_rfc or "XAXX010101000",
+            )
+
+        try:
+            result = await asyncio.to_thread(_run)
+        except Exception as exc:
+            invoice.error = f"Verificación fallida: {str(exc)[:400]}"
+            await db.flush()
+            return {"status": "error", "detail": invoice.error, "invoice_status": invoice.status}
+
+        estado = (result.get("estado") or "").lower()
+        if "cancelado" in estado:
+            invoice.status = "cancelled"
+            invoice.error = None
+        elif "vigente" in estado:
+            invoice.status = "issued"  # still valid, not cancelled
+        await db.flush()
+        return {
+            "status": "ok",
+            "sat_estado": result.get("estado"),
+            "codestatus": result.get("codestatus"),
+            "es_cancelable": result.get("es_cancelable"),
+            "invoice_status": invoice.status,
+        }
+
     async def _issue_satcfdi(self, db, invoice: Invoice, order: Order) -> Invoice:
         """Generate + sign + stamp a CFDI 4.0 via satcfdi + PAC."""
         import asyncio

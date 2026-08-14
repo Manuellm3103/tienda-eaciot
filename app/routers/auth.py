@@ -13,6 +13,7 @@ from app.services.auth_service import (
     verify_token,
 )
 from app.services.email_service import email_service
+from app.services.email_queue_service import email_queue_service
 from app.services.oauth_service import oauth_service
 from app.middleware import validate_csrf
 from app.config import settings
@@ -83,13 +84,15 @@ async def register(request: Request, data: UserCreate, db: AsyncSession = Depend
     db.add(user)
     await db.flush()
     
-    # Send verification email
-    await email_service.send_verification_email(
+    # Queue verification email (delivery via cron worker, never blocks register)
+    await email_queue_service.enqueue(
+        db,
         to_email=user.email,
-        name=user.name or "Usuario",
-        token=verification_token
+        subject="Verifica tu email - Tienda Eaciot",
+        html_content=email_service.render_verification_email(user.name or "Usuario", verification_token),
+        dedupe_key="VERIFY",
     )
-    
+
     return user
 
 
@@ -136,14 +139,16 @@ async def resend_verification(email: str, db: AsyncSession = Depends(get_db)):
     user.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
     await db.flush()
     
-    # Send email
-    await email_service.send_verification_email(
+    # Queue email (idempotent: reuses any pending verification email)
+    await email_queue_service.enqueue(
+        db,
         to_email=user.email,
-        name=user.name or "Usuario",
-        token=verification_token
+        subject="Verifica tu email - Tienda Eaciot",
+        html_content=email_service.render_verification_email(user.name or "Usuario", verification_token),
+        dedupe_key="VERIFY",
     )
-    
-    return {"message": "Verification email sent"}
+
+    return {"message": "Verification email queued"}
 
 
 # ==================== LOGIN ====================
@@ -232,13 +237,15 @@ async def forgot_password(request: Request, email: str, db: AsyncSession = Depen
     user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
     await db.flush()
     
-    # Send email
-    await email_service.send_password_reset_email(
+    # Queue email (delivery via cron worker)
+    await email_queue_service.enqueue(
+        db,
         to_email=user.email,
-        name=user.name or "Usuario",
-        token=reset_token
+        subject="Restablecer contraseña - Tienda Eaciot",
+        html_content=email_service.render_password_reset_email(user.name or "Usuario", reset_token),
+        dedupe_key="RESET",
     )
-    
+
     return {"message": "If email exists, reset link was sent"}
 
 

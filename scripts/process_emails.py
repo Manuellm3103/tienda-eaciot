@@ -4,6 +4,7 @@
 import asyncio
 import sys
 import os
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -38,10 +39,10 @@ async def process_pending_emails():
                 )
                 
                 if success:
-                    # Mark as sent
+                    # Mark as sent (SQLite has no NOW(); use a Python timestamp)
                     await db.execute(
-                        text("UPDATE email_queue SET status = 'sent', sent_at = NOW() WHERE id = :id"),
-                        {"id": email_id}
+                        text("UPDATE email_queue SET status = 'sent', sent_at = :now WHERE id = :id"),
+                        {"id": email_id, "now": datetime.now(timezone.utc).isoformat()},
                     )
                 else:
                     # Increment attempts

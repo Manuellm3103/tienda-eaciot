@@ -62,6 +62,18 @@ async def cancel_invoice(invoice_id: str, request: Request, db: AsyncSession = D
     )
 
 
+@router.post("/{invoice_id}/verify-cancel")
+async def verify_cancellation(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Query the SAT (via PAC get_sat_status) for a CFDI's cancellation state."""
+    await validate_csrf(request)
+    try:
+        result = await invoice_service.check_cancel_status(db, invoice_id)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    await db.commit()
+    return JSONResponse(result)
+
+
 @router.get("/{invoice_id}/receipt")
 async def receipt_html(invoice_id: str, db: AsyncSession = Depends(get_db)):
     from app.models.invoice import Invoice
