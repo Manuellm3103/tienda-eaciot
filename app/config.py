@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     # CFDI 4.0 nativo con satcfdi + PAC (sin límite mensual)
     # satcfdi 4.4.7 NO trae conector Finkok; soporta: swsapien, comerciodigital,
     # diverza, prodigia, mysuite. Añadimos 'finkok' como conector SOAP manual.
-    pac_provider: str = "swsapien"  # swsapien | comerciodigital | finkok
+    pac_provider: str = "finkok"  # finkok | swsapien | comerciodigital
     pac_username: str = ""
     pac_password: str = ""
     pac_environment: str = "production"  # production | test

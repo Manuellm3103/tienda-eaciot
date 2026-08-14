@@ -96,3 +96,55 @@ async def test_satcfdi_degrades_gracefully_without_csd(db, monkeypatch):
 async def test_admin_invoices_requires_admin(client):
     resp = await client.get("/admin/invoices/list")
     assert resp.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_cancel_stamped_invoice_updates_status(db, monkeypatch):
+    order = await _paid_order(db, "inv-cat-5")
+    invoice = Invoice(
+        order_id=order.id,
+        customer_rfc="XAXX010101000",
+        customer_name="Buyer",
+        status="issued",
+        provider="satcfdi",
+        provider_invoice_id="11111111-2222-3333-4444-555555555555",
+    )
+    db.add(invoice)
+    await db.commit()
+    await db.refresh(invoice)
+
+    monkeypatch.setattr("app.services.invoice_service.settings.business_rfc", "EAC2403183F0")
+    monkeypatch.setattr("app.services.invoice_service.settings.csd_cert_path", "")
+    monkeypatch.setattr("app.services.invoice_service.settings.csd_key_path", "")
+    monkeypatch.setattr("app.services.invoice_service.settings.csd_password", "")
+
+    def fake_cancel(**kwargs):
+        return {
+            "uuid": "11111111-2222-3333-4444-555555555555",
+            "estatus": "202",
+            "acuse": None,
+            "codestatus": None,
+        }
+
+    import app.services.cfdi_finkok as finkok_mod
+
+    monkeypatch.setattr(finkok_mod.finkok_client, "cancel", fake_cancel)
+
+    result = await invoice_service.cancel(db, invoice.id)
+    await db.commit()
+    assert result.status == "cancelled"
+    assert result.error is None
+
+
+@pytest.mark.asyncio
+async def test_cancel_rejects_non_issued(db):
+    order = await _paid_order(db, "inv-cat-6")
+    invoice = Invoice(
+        order_id=order.id, customer_rfc="XAXX010101000",
+        status="pending", provider="satcfdi",
+    )
+    db.add(invoice)
+    await db.commit()
+    await db.refresh(invoice)
+    with pytest.raises(ValueError, match="Solo facturas timbradas"):
+        await invoice_service.cancel(db, invoice.id)

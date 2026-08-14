@@ -84,6 +84,52 @@ class InvoiceService:
             return await self._issue_facturapi(db, invoice, order)
         return await self._issue_manual(db, invoice, order)
 
+    async def cancel(self, db: AsyncSession, invoice_id: str) -> Invoice:
+        """Cancel a stamped CFDI via the PAC (Finkok).
+
+        Embeds the CSD for immediate cancellation when configured; otherwise
+        queues a pending cancellation (store_pending) for portal confirmation.
+        """
+        invoice = await db.get(Invoice, invoice_id)
+        if not invoice:
+            raise ValueError("Invoice not found")
+        if invoice.status != "issued" or invoice.provider != "satcfdi":
+            raise ValueError("Solo facturas timbradas (satcfdi) pueden cancelarse")
+        if not invoice.provider_invoice_id:
+            raise ValueError("La factura no tiene UUID de timbrado")
+        if not settings.business_rfc:
+            raise ValueError("Falta BUSINESS_RFC para cancelar")
+
+        import asyncio
+
+        def _run():
+            from app.services.cfdi_finkok import finkok_client
+
+            cer_b64 = key_b64 = None
+            if settings.csd_cert_path and settings.csd_key_path and settings.csd_password:
+                cer_b64 = base64.b64encode(open(settings.csd_cert_path, "rb").read()).decode("ascii")
+                key_b64 = base64.b64encode(open(settings.csd_key_path, "rb").read()).decode("ascii")
+            return finkok_client.cancel(
+                uuid=invoice.provider_invoice_id,
+                taxpayer_id=settings.business_rfc,
+                cer_b64=cer_b64,
+                key_b64=key_b64,
+                store_pending=not (cer_b64 and key_b64),
+            )
+
+        try:
+            result = await asyncio.to_thread(_run)
+        except Exception as exc:
+            invoice.error = f"Cancelación fallida: {str(exc)[:400]}"
+            await db.flush()
+            return invoice
+
+        # 202 = cancelado; 201 = pendiente de cancelación (portal).
+        invoice.status = "cancelled" if result.get("estatus") == "202" else "cancel_pending"
+        invoice.error = None
+        await db.flush()
+        return invoice
+
     async def _issue_satcfdi(self, db, invoice: Invoice, order: Order) -> Invoice:
         """Generate + sign + stamp a CFDI 4.0 via satcfdi + PAC."""
         import asyncio

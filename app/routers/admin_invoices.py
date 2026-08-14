@@ -48,6 +48,20 @@ async def issue_invoice(
     )
 
 
+@router.post("/{invoice_id}/cancel")
+async def cancel_invoice(invoice_id: str, request: Request, db: AsyncSession = Depends(get_db)):
+    """Cancel a stamped CFDI through the PAC (Finkok cancel + get_sat_status)."""
+    await validate_csrf(request)
+    try:
+        invoice = await invoice_service.cancel(db, invoice_id)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    await db.commit()
+    return JSONResponse(
+        {"id": str(invoice.id), "status": invoice.status, "error": invoice.error}
+    )
+
+
 @router.get("/{invoice_id}/receipt")
 async def receipt_html(invoice_id: str, db: AsyncSession = Depends(get_db)):
     from app.models.invoice import Invoice
