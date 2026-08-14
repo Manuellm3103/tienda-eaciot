@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Recuperación de Carrito - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Recuperación de Carrito Abandonado</h1>
+    <div class="space-x-2">
+        <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+        <button id="send-all" class="bg-amber-600 text-white px-4 py-2 rounded disabled:opacity-50">Enviar a todos</button>
+    </div>
+</div>
+
+<p class="text-gray-600 mb-6">
+    Clientes identificados que agregaron productos al carrito pero no completaron
+    ninguna compra. Los emails se redactan con IA y se encolan: el envío real lo
+    hace el trabajador de correo (cron) cada 5 minutos. Solo se contacta a usuarios
+    con email registrado.
+</p>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Cliente</th>
+                <th class="text-left py-3 px-4">Productos</th>
+                <th class="text-right py-3 px-4">Valor</th>
+                <th class="text-center py-3 px-4">Inactivo</th>
+                <th class="text-center py-3 px-4">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="candidates-body">
+            <tr><td colspan="5" class="py-4 text-center text-gray-400">Cargando…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="status" class="mt-4 text-sm text-center"></div>
+
+<script>
+(function() {
+    function csrfToken() {
+        const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    async function send(userIds) {
+        const btn = document.getElementById('send-all');
+        btn.disabled = true;
+        document.getElementById('status').textContent = 'Encargando emails…';
+        try {
+            const res = await fetch('/admin/cart-recovery/send', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken()
+                },
+                body: JSON.stringify(userIds === null ? {all: true} : {user_ids: userIds})
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || 'Error');
+            document.getElementById('status').textContent =
+                '✅ ' + data.enqueued + ' email(s) encolados.';
+            load();
+        } catch (err) {
+            document.getElementById('status').textContent = '❌ ' + err.message;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    document.getElementById('send-all').addEventListener('click', function() {
+        send(null);
+    });
+
+    async function load() {
+        try {
+            const res = await fetch('/admin/cart-recovery/candidates', {credentials: 'same-origin'});
+            const data = await res.json();
+            const body = document.getElementById('candidates-body');
+            const rows = (data.candidates || []);
+            document.getElementById('send-all').disabled = rows.length === 0;
+            body.innerHTML = rows.map(c => {
+                const inactive = c.hours_inactive < 24
+                    ? c.hours_inactive + 'h'
+                    : Math.floor(c.hours_inactive / 24) + 'd';
+                const products = c.products.slice(0, 3).join(', ') +
+                    (c.products.length > 3 ? ' +' + (c.products.length - 3) : '');
+                return '<tr class="border-b hover:bg-gray-50">' +
+                    '<td class="py-3 px-4"><span class="font-medium">' + c.name + '</span><br>' +
+                    '<span class="text-xs text-gray-500">' + c.email + '</span></td>' +
+                    '<td class="py-3 px-4 text-sm">' + products + '</td>' +
+                    '<td class="text-right py-3 px-4">$' + c.total_value.toFixed(2) + '</td>' +
+                    '<td class="text-center py-3 px-4"><span class="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">' + inactive + '</span></td>' +
+                    '<td class="text-center py-3 px-4">' +
+                    '<button data-uid="' + c.user_id + '" class="send-one bg-amber-100 text-amber-700 px-3 py-1 rounded text-sm hover:bg-amber-200">Enviar</button>' +
+                    '</td>' +
+                '</tr>';
+            }).join('') || '<tr><td colspan="5" class="py-4 text-center text-gray-400">No hay carritos abandonados por recuperar. 🎉</td></tr>';
+
+            body.querySelectorAll('.send-one').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    send([btn.getAttribute('data-uid')]);
+                });
+            });
+        } catch (err) {
+            document.getElementById('candidates-body').innerHTML =
+                '<tr><td colspan="5" class="py-4 text-center text-red-500">No se pudo cargar.</td></tr>';
+        }
+    }
+    load();
+})();
+</script>
+{% endblock %}
