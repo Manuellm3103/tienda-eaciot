@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     csd_cert_path: str = ""       # ruta al archivo .cer del CSD
     csd_key_path: str = ""        # ruta al archivo .key del CSD
     csd_password: str = ""        # contraseña del CSD
-    business_zip_code: str = ""   # CP del emisor (obligatorio en CFDI 4.0)
+    business_zip_code: str = "62410"  # CP del emisor (Cuernavaca, Morelos)
     business_iva_rate: float = 0.16  # tasa de IVA trasladado (0 para exento)
     
     # SMTP Email

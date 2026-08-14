@@ -101,8 +101,9 @@
                     <div>
                         <label for="customer_rfc" class="block text-sm font-medium text-gray-700">RFC</label>
                         <input type="text" id="customer_rfc" name="customer_rfc" maxlength="13"
-                               placeholder="XAXX010101000"
+                               placeholder="XAXX010101000" autocomplete="off"
                                class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 uppercase">
+                        <p id="rfc-feedback" class="mt-1 text-xs text-gray-500"></p>
                     </div>
                     <div>
                         <label for="uso_cfdi" class="block text-sm font-medium text-gray-700">Uso de CFDI</label>
@@ -116,6 +117,51 @@
                     </div>
                 </div>
             </div>
+
+            <script>
+            (function() {
+                var input = document.getElementById('customer_rfc');
+                var feedback = document.getElementById('rfc-feedback');
+                var timer = null;
+
+                function validateRFC() {
+                    var rfc = input.value.trim();
+                    if (rfc.length < 10) { feedback.textContent = ''; return; }
+                    feedback.textContent = 'Validando RFC…';
+                    fetch('/invoices/validate-rfc', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            rfc: rfc,
+                            name: document.getElementById('name') ? document.getElementById('name').value : '',
+                            cp: document.getElementById('zip_code') ? document.getElementById('zip_code').value : ''
+                        })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var r = data.rfc || {};
+                        if (r.valid && r.exists_at_sat === true) {
+                            feedback.textContent = '✅ ' + (data.suggestion || 'RFC válido.');
+                            feedback.className = 'mt-1 text-xs text-emerald-600';
+                        } else if (r.valid) {
+                            feedback.textContent = 'RFC con formato válido.';
+                            feedback.className = 'mt-1 text-xs text-gray-500';
+                        } else {
+                            feedback.textContent = '⚠️ ' + (data.suggestion || 'Revisa el RFC.');
+                            feedback.className = 'mt-1 text-xs text-amber-600';
+                        }
+                    })
+                    .catch(function() {
+                        feedback.textContent = '';
+                    });
+                }
+
+                input.addEventListener('input', function() {
+                    clearTimeout(timer);
+                    timer = setTimeout(validateRFC, 600);
+                });
+            })();
+            </script>
 
             <button type="submit"
                     class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 font-bold text-lg transition-colors">
