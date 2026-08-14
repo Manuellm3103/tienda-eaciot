@@ -12,6 +12,7 @@ from app.schemas.order import OrderCreate
 
 class OrderService:
     async def create_order(self, db: AsyncSession, user_id: UUID, data: OrderCreate) -> Order:
+        user_id = str(user_id)  # String(36) PK — never bind a UUID object
         # Get products and calculate totals
         items_data = []
         subtotal = Decimal("0")
@@ -61,15 +62,17 @@ class OrderService:
         return order
     
     async def get_user_orders(self, db: AsyncSession, user_id: UUID) -> List[Order]:
+        user_id = str(user_id)  # String(36) PK — never bind a UUID object
         result = await db.execute(
             select(Order).where(Order.user_id == user_id).order_by(Order.created_at.desc())
         )
         return result.scalars().all()
-    
+
     async def get_order(self, db: AsyncSession, order_id: UUID) -> Optional[Order]:
+        order_id = str(order_id)  # String(36) PK — never bind a UUID object
         result = await db.execute(select(Order).where(Order.id == order_id))
         return result.scalar_one_or_none()
-    
+
     async def update_order_status(self, db: AsyncSession, order_id: UUID, status: str) -> Optional[Order]:
         order = await self.get_order(db, order_id)
         if not order:
@@ -77,7 +80,7 @@ class OrderService:
         order.status = status
         await db.flush()
         return order
-    
+
     async def mark_order_paid(self, db: AsyncSession, order_id: UUID, payment_method: str, payment_id: str) -> Optional[Order]:
         order = await self.get_order(db, order_id)
         if not order:
@@ -94,6 +97,7 @@ class OrderService:
         Stock of -1 (or None) means unlimited and is left untouched. Returns
         the number of product rows actually decremented.
         """
+        order_id = str(order_id)  # String(36) PK — never bind a UUID object
         result = await db.execute(
             select(OrderItem).where(OrderItem.order_id == order_id)
         )

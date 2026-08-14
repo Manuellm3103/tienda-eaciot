@@ -18,6 +18,7 @@ e2e_screenshots/
 .simplicio/
 app.db
 test.db
+smoke_test.db
 chroma_data/
 ruvector.db
 ecommerce.db

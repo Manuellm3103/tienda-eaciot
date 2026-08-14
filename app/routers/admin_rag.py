@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import require_admin
 from app.models.chat import ChatMessage
 from app.services.rag_service import rag_service
 
-router = APIRouter(prefix="/admin/rag", tags=["admin-rag"])
+router = APIRouter(
+    prefix="/admin/rag",
+    tags=["admin-rag"],
+    dependencies=[Depends(require_admin)],
+)
 
 # Canned answers emitted when the LLM backend is unavailable (fallback responses).
 FALLBACK_MARKERS = (
@@ -16,19 +20,12 @@ FALLBACK_MARKERS = (
 )
 
 
-async def _require_admin(user) -> None:
-    if not getattr(user, "is_admin", False):
-        raise HTTPException(status_code=403, detail="Admin required")
-
-
 @router.post("/reindex")
 async def reindex_products(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),
 ):
     """Re-index the product catalog into the vector store."""
-    await _require_admin(user)
     count = await rag_service.index_products(db)
     return JSONResponse({"status": "ok", "indexed_products": count})
 
@@ -37,7 +34,6 @@ async def reindex_products(
 async def rag_stats(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),
 ):
     """Intent statistics for the AI shopping assistant.
 
@@ -45,8 +41,6 @@ async def rag_stats(
     (supervisor routes to product_advisor or copywriter), plus conversation
     volume and the current RAG index size.
     """
-    await _require_admin(user)
-
     intent_rows = await db.execute(
         select(ChatMessage.agent_name, func.count(ChatMessage.id))
         .where(ChatMessage.agent_name.isnot(None))
@@ -80,12 +74,9 @@ async def rag_stats(
 async def fallback_responses(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user=Depends(get_current_user),
 ):
     """List recent conversations where the assistant fell back to a canned
     answer (LLM backend unavailable or no products matched)."""
-    await _require_admin(user)
-
     result = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.role == "assistant")

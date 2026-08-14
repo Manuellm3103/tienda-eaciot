@@ -15,7 +15,7 @@ router = APIRouter(prefix="/wishlist", tags=["wishlist"])
 from app.templates_instance import templates
 
 
-async def _get_user_id(request: Request, db: AsyncSession) -> UUID:
+async def _get_user_id(request: Request, db: AsyncSession) -> str:
     token = request.cookies.get("access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -27,7 +27,7 @@ async def _get_user_id(request: Request, db: AsyncSession) -> UUID:
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    return UUID(user_id)
+    return user_id
 
 
 @router.get("/", response_model=List[ProductResponse])

@@ -9,6 +9,7 @@ from app.models.product import Product
 class WishlistService:
     async def add_to_wishlist(self, db: AsyncSession, user_id: UUID, product_id: UUID) -> bool:
         """Add product to wishlist"""
+        user_id, product_id = str(user_id), str(product_id)  # String(36) PKs
         # Check if already in wishlist
         result = await db.execute(
             select(Wishlist).where(
@@ -18,14 +19,15 @@ class WishlistService:
         )
         if result.scalar_one_or_none():
             return False  # Already in wishlist
-        
+
         wishlist_item = Wishlist(user_id=user_id, product_id=product_id)
         db.add(wishlist_item)
         await db.flush()
         return True
-    
+
     async def remove_from_wishlist(self, db: AsyncSession, user_id: UUID, product_id: UUID) -> bool:
         """Remove product from wishlist"""
+        user_id, product_id = str(user_id), str(product_id)  # String(36) PKs
         result = await db.execute(
             delete(Wishlist).where(
                 Wishlist.user_id == user_id,
@@ -34,9 +36,10 @@ class WishlistService:
         )
         await db.flush()
         return result.rowcount > 0
-    
+
     async def get_wishlist(self, db: AsyncSession, user_id: UUID) -> List[Product]:
         """Get all products in wishlist"""
+        user_id = str(user_id)  # String(36) PK
         result = await db.execute(
             select(Product)
             .join(Wishlist, Wishlist.product_id == Product.id)
@@ -44,9 +47,10 @@ class WishlistService:
             .order_by(Wishlist.created_at.desc())
         )
         return result.scalars().all()
-    
+
     async def is_in_wishlist(self, db: AsyncSession, user_id: UUID, product_id: UUID) -> bool:
         """Check if product is in wishlist"""
+        user_id, product_id = str(user_id), str(product_id)  # String(36) PKs
         result = await db.execute(
             select(Wishlist).where(
                 Wishlist.user_id == user_id,

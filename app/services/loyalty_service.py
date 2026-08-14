@@ -31,6 +31,9 @@ class LoyaltyService:
     async def update_user_loyalty(
         self, db: AsyncSession, user_id: UUID, order_total: Decimal, order_id: UUID
     ) -> dict:
+        # PKs are String(36); never bind a UUID object against a SQLite string column.
+        user_id = str(user_id)
+        order_id = str(order_id)
         user = await db.get(User, user_id)
         if not user:
             raise ValueError("User not found")
@@ -64,6 +67,7 @@ class LoyaltyService:
         }
     
     async def get_user_loyalty(self, db: AsyncSession, user_id: UUID) -> dict:
+        user_id = str(user_id)  # String(36) PK — never bind a UUID object
         user = await db.get(User, user_id)
         if not user:
             raise ValueError("User not found")
@@ -91,6 +95,7 @@ class LoyaltyService:
         return max(0, next_threshold - int(total_spent))
     
     async def get_loyalty_history(self, db: AsyncSession, user_id: UUID) -> List[LoyaltyHistory]:
+        user_id = str(user_id)  # String(36) PK — never bind a UUID object
         result = await db.execute(
             select(LoyaltyHistory)
             .where(LoyaltyHistory.user_id == user_id)
