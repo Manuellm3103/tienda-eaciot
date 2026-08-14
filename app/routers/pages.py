@@ -34,9 +34,17 @@ from app.templates_instance import templates
 def get_cart_from_cookie(request: Request) -> dict:
     cart_json = request.cookies.get("cart", "{}")
     try:
-        return json.loads(cart_json)
+        cart = json.loads(cart_json)
     except Exception:
         return {}
+    # Cookie values with special chars ({}, " , ::) can arrive double-encoded
+    # (a JSON string wrapping a JSON object). Normalize both forms to a dict.
+    if isinstance(cart, str):
+        try:
+            cart = json.loads(cart)
+        except Exception:
+            return {}
+    return cart if isinstance(cart, dict) else {}
 
 
 def parse_cart_key(key: str) -> tuple[str, Optional[str]]:

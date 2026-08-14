@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 
 
 class Settings(BaseSettings):
@@ -10,15 +10,27 @@ class Settings(BaseSettings):
     debug: bool = False
     force_https: bool = False
     allowed_hosts: str = "*"
-    
+
     database_url: str = "sqlite+aiosqlite:///./app.db"
-    
+
     @field_validator('database_url', mode='before')
     def force_sqlite_in_production(cls, v):
         # Forzar SQLite para evitar problemas de conexión con PostgreSQL en Render/Supabase
         if v and isinstance(v, str) and ('postgresql' in v or 'postgres' in v):
             return "sqlite+aiosqlite:///./app.db"
         return v
+
+    @model_validator(mode='after')
+    def fail_closed_on_default_secret(self):
+        # A default JWT secret lets anyone forge admin tokens. In production
+        # (force_https on, as set in render.yaml) refuse to boot until a real
+        # APP_SECRET_KEY is set. Local dev/tests keep the placeholder.
+        if self.force_https and self.app_secret_key in ("", "change-me"):
+            raise ValueError(
+                "APP_SECRET_KEY must be set to a strong random value in production. "
+                "Generate one with: python scripts/generate_secret.py"
+            )
+        return self
     
     @property
     def allowed_hosts_list(self) -> list[str]:
