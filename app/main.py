@@ -33,6 +33,7 @@ from app.routers.admin_pricing import router as admin_pricing_router
 from app.routers.admin_cart_recovery import router as admin_cart_recovery_router
 from app.routers.pages import router as pages_router
 from app.routers.chat import router as chat_router
+from app.routers.legal import router as legal_router
 
 
 @asynccontextmanager
@@ -81,6 +82,7 @@ app.middleware("http")(rate_limit_middleware)
 # Register routers
 app.include_router(pages_router)
 app.include_router(chat_router)
+app.include_router(legal_router)
 app.include_router(auth_router)
 app.include_router(products_router)
 app.include_router(admin_products_router)

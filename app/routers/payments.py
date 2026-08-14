@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.user import User
@@ -45,6 +46,23 @@ async def _fulfill_order(
     )
     if not order:
         return None
+
+    # 1b. Decrement inventory (finite-stock products only)
+    await order_service.decrement_stock(db, order_id)
+
+    # 1c. Record purchase events for recommendation/pricing engines
+    from app.models.order import OrderItem
+    from app.services.user_event_service import user_event_service
+    items = (
+        await db.execute(select(OrderItem).where(OrderItem.order_id == order_id))
+    ).scalars().all()
+    for item in items:
+        await user_event_service.record(
+            db,
+            "purchase",
+            user_id=str(order.user_id),
+            product_id=str(item.product_id),
+        )
 
     # 2. Create a pending shipment
     from app.schemas.shipping import ShipmentCreate

@@ -74,5 +74,25 @@ class OrderService:
         await db.flush()
         return order
 
+    async def decrement_stock(self, db: AsyncSession, order_id: UUID) -> int:
+        """Decrement inventory for physical products with finite stock.
+
+        Stock of -1 (or None) means unlimited and is left untouched. Returns
+        the number of product rows actually decremented.
+        """
+        result = await db.execute(
+            select(OrderItem).where(OrderItem.order_id == order_id)
+        )
+        items = result.scalars().all()
+        decremented = 0
+        for item in items:
+            product = await db.get(Product, item.product_id)
+            if not product:
+                continue
+            if product.stock is not None and product.stock > 0:
+                product.stock = max(0, int(product.stock) - int(item.quantity))
+                decremented += 1
+        return decremented
+
 
 order_service = OrderService()
