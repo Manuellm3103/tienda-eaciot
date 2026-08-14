@@ -3,19 +3,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
 from app.database import get_db
+from app.models.user import User
 from app.schemas.review import ReviewCreate, ReviewResponse
 from app.services.review_service import review_service
+from app.dependencies import get_current_user
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
 
 @router.post("/", response_model=ReviewResponse)
-async def create_review(data: ReviewCreate, request: Request, db: AsyncSession = Depends(get_db)):
-    user_id = request.cookies.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    return await review_service.create_review(db, UUID(user_id), data)
+async def create_review(
+    data: ReviewCreate,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return await review_service.create_review(db, user.id, data)
 
 
 @router.get("/product/{product_id}", response_model=List[ReviewResponse])
@@ -29,22 +31,20 @@ async def get_product_rating(product_id: UUID, db: AsyncSession = Depends(get_db
 
 
 @router.get("/me", response_model=List[ReviewResponse])
-async def get_my_reviews(request: Request, db: AsyncSession = Depends(get_db)):
-    user_id = request.cookies.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    return await review_service.get_user_reviews(db, UUID(user_id))
+async def get_my_reviews(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return await review_service.get_user_reviews(db, user.id)
 
 
 @router.delete("/{review_id}")
-async def delete_review(review_id: UUID, request: Request, db: AsyncSession = Depends(get_db)):
-    user_id = request.cookies.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
-    success = await review_service.delete_review(db, review_id, UUID(user_id))
+async def delete_review(
+    review_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    success = await review_service.delete_review(db, review_id, user.id)
     if not success:
         raise HTTPException(status_code=404, detail="Review not found")
-    
     return {"message": "Review deleted"}
