@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Soporte - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold">Tickets de Soporte</h1>
+    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+</div>
+
+<div class="mb-4 space-x-2">
+    <button data-filter="" class="filter bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm hover:bg-gray-300">Todos</button>
+    <button data-filter="open" class="filter bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm hover:bg-gray-300">Abiertos</button>
+    <button data-filter="in_progress" class="filter bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm hover:bg-gray-300">En proceso</button>
+    <button data-filter="resolved" class="filter bg-gray-200 text-gray-800 px-3 py-1 rounded text-sm hover:bg-gray-300">Resueltos</button>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="text-left py-3 px-4">Asunto</th>
+                <th class="text-left py-3 px-4">Cliente</th>
+                <th class="text-center py-3 px-4">Estado</th>
+                <th class="text-left py-3 px-4">Nota admin</th>
+                <th class="text-center py-3 px-4">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tickets-body">
+            <tr><td colspan="5" class="py-4 text-center text-gray-400">Cargando…</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="status" class="mt-4 text-sm text-center"></div>
+
+<script>
+(function() {
+    const STATUS_LABEL = {
+        open: {label: 'Abierto', cls: 'bg-red-100 text-red-700'},
+        in_progress: {label: 'En proceso', cls: 'bg-amber-100 text-amber-700'},
+        resolved: {label: 'Resuelto', cls: 'bg-emerald-100 text-emerald-700'},
+        closed: {label: 'Cerrado', cls: 'bg-gray-100 text-gray-600'}
+    };
+
+    function csrfToken() {
+        const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    function render(tickets) {
+        const body = document.getElementById('tickets-body');
+        body.innerHTML = tickets.map(t => {
+            const s = STATUS_LABEL[t.status] || STATUS_LABEL.open;
+            return '<tr class="border-b hover:bg-gray-50">' +
+                '<td class="py-3 px-4"><span class="font-medium">' + t.subject + '</span><br><span class="text-xs text-gray-500">' + t.message + '</span></td>' +
+                '<td class="py-3 px-4 text-sm">' + (t.name || '—') + '<br><span class="text-xs text-gray-500">' + t.email + '</span></td>' +
+                '<td class="text-center py-3 px-4"><span class="inline-block px-2 py-1 rounded text-xs font-medium ' + s.cls + '">' + s.label + '</span></td>' +
+                '<td class="py-3 px-4"><input type="text" data-id="' + t.id + '" class="note border rounded px-2 py-1 text-sm w-full" placeholder="Nota…" value="' + (t.admin_notes || '') + '"></td>' +
+                '<td class="text-center py-3 px-4">' +
+                    '<select data-id="' + t.id + '" class="status-select border rounded px-2 py-1 text-sm">' +
+                        ['open','in_progress','resolved','closed'].map(o => '<option value="' + o + '"' + (t.status === o ? ' selected' : '') + '>' + (STATUS_LABEL[o].label) + '</option>').join('') +
+                    '</select>' +
+                '</td>' +
+            '</tr>';
+        }).join('') || '<tr><td colspan="5" class="py-4 text-center text-gray-400">Sin tickets. 🎉</td></tr>';
+
+        body.querySelectorAll('.status-select').forEach(sel => {
+            sel.addEventListener('change', function() {
+                const id = sel.getAttribute('data-id');
+                const note = document.querySelector('.note[data-id="' + id + '"]').value;
+                fetch('/admin/support/' + id + '/status', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken()},
+                    body: JSON.stringify({status: sel.value, admin_notes: note})
+                }).then(() => {
+                    document.getElementById('status').textContent = '✅ Actualizado.';
+                });
+            });
+        });
+    }
+
+    async function load(filter) {
+        try {
+            const url = '/admin/support/list' + (filter ? '?status=' + filter : '');
+            const res = await fetch(url, {credentials: 'same-origin'});
+            const data = await res.json();
+            render(data.tickets || []);
+        } catch (err) {
+            document.getElementById('tickets-body').innerHTML =
+                '<tr><td colspan="5" class="py-4 text-center text-red-500">No se pudo cargar.</td></tr>';
+        }
+    }
+
+    document.querySelectorAll('.filter').forEach(btn => {
+        btn.addEventListener('click', function() { load(btn.getAttribute('data-filter')); });
+    });
+    load('');
+})();
+</script>
+{% endblock %}

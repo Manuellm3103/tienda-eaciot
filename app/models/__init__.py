@@ -12,6 +12,7 @@ from app.models.refund import Refund
 from app.models.email_queue import EmailQueue
 from app.models.chat import ChatMessage
 from app.models.user_event import UserEvent
+from app.models.support_ticket import SupportTicket
 
 __all__ = [
     "User",
@@ -33,4 +34,5 @@ __all__ = [
     "EmailQueue",
     "ChatMessage",
     "UserEvent",
+    "SupportTicket",
 ]

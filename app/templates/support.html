@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from 'macros/csrf.html' import csrf_input %}
+
+{% block title %}Soporte - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Contacto y Soporte</h1>
+
+    {% if request.query_params.get('gracias') %}
+    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg p-4 mb-6">
+        ✅ Gracias por tu mensaje. Nuestro equipo te responderá por correo.
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/soporte" class="bg-white rounded-lg shadow p-6 space-y-4">
+        {{ csrf_input(request) }}
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Nombre</label>
+            <input type="text" name="name" class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Correo electrónico *</label>
+            <input type="email" name="email" required class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Asunto *</label>
+            <input type="text" name="subject" required class="mt-1 block w-full border rounded-md px-3 py-2">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Mensaje *</label>
+            <textarea name="message" rows="5" required class="mt-1 block w-full border rounded-md px-3 py-2"></textarea>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Enviar</button>
+    </form>
+</div>
+{% endblock %}
