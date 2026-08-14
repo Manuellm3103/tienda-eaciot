@@ -50,6 +50,24 @@
         Proceder al pago
     </a>
 </div>
+
+{% if cross_sell %}
+<div class="mt-12">
+    <h2 class="text-xl font-bold mb-4">Los clientes también compraron</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {% for cs in cross_sell %}
+        <div class="bg-white rounded-lg shadow p-4">
+            {% if cs.image_url %}
+            <img src="{{ cs.image_url }}" alt="{{ cs.title }}" class="w-full h-32 object-cover rounded mb-3">
+            {% endif %}
+            <a href="/products/{{ cs.id }}" class="font-semibold hover:text-blue-600 text-sm">{{ cs.title }}</a>
+            <p class="text-blue-600 font-bold mt-2">${{ cs.price }}</p>
+            <a href="/cart/add/{{ cs.id }}" class="mt-2 inline-block bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">Añadir</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% else %}
 <div class="text-center py-16">
     <p class="text-xl text-gray-600 mb-4">Tu carrito está vacío</p>

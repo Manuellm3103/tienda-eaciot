@@ -10,6 +10,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.product import Product
 from app.models.user_event import UserEvent
+from app.models.order import OrderItem
 
 
 class RecommendationService:
@@ -105,6 +106,52 @@ class RecommendationService:
                         products.append(product)
                         seen.add(product.id)
         return products
+
+
+    async def get_also_bought(self, db: AsyncSession, product_id: str, limit: int = 4) -> list[Product]:
+        """Market-basket analysis: products most often purchased alongside this one."""
+        order_ids = (
+            await db.execute(
+                select(OrderItem.order_id).where(OrderItem.product_id == product_id)
+            )
+        ).scalars().all()
+        if not order_ids:
+            return []
+
+        rows = (
+            await db.execute(
+                select(OrderItem.product_id, func.count(OrderItem.id))
+                .where(OrderItem.order_id.in_(order_ids))
+                .where(OrderItem.product_id != product_id)
+                .group_by(OrderItem.product_id)
+                .order_by(func.count(OrderItem.id).desc())
+                .limit(limit)
+            )
+        ).all()
+
+        products = []
+        for pid, _count in rows:
+            product = await db.get(Product, pid)
+            if product and product.is_active:
+                products.append(product)
+        return products
+
+    async def get_cart_cross_sell(
+        self, db: AsyncSession, product_ids: list[str], limit: int = 4
+    ) -> list[Product]:
+        """Cross-sell for a whole cart: 'also bought' items not already in it."""
+        already = set(product_ids)
+        candidates: list[Product] = []
+        seen = set()
+        for pid in product_ids:
+            for product in await self.get_also_bought(db, pid, limit=3):
+                if product.id in already or product.id in seen:
+                    continue
+                candidates.append(product)
+                seen.add(product.id)
+                if len(candidates) >= limit:
+                    return candidates
+        return candidates
 
 
 recommendation_service = RecommendationService()

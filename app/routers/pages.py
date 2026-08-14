@@ -138,9 +138,16 @@ async def cart_page(request: Request, db: AsyncSession = Depends(get_db)):
     cart = get_cart_from_cookie(request)
     items = await resolve_cart_items(db, cart)
     total = sum((item["subtotal"] for item in items), Decimal("0"))
+    product_ids = [item["product"].id for item in items]
+    cross_sell = await recommendation_service.get_cart_cross_sell(db, product_ids) if product_ids else []
     return templates.TemplateResponse(
         "cart.html",
-        {"request": request, "items": items, "total": total},
+        {
+            "request": request,
+            "items": items,
+            "total": total,
+            "cross_sell": cross_sell,
+        },
     )
 
 
