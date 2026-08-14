@@ -7,9 +7,8 @@ from app.database import Base
 class Invoice(Base):
     """Electronic invoice (CFDI) tied to a paid order.
 
-    provider is 'facturapi' when issued against the API, or 'manual' when the
-    API key is absent — in which case a printable comprobante is generated so
-    the business can still deliver a receipt while they provision the key.
+    provider is 'satcfdi' (native CFDI 4.0 via a PAC), 'facturapi' (API), or
+    'manual' (printable comprobante) when neither is configured.
     """
 
     __tablename__ = "invoices"
@@ -23,10 +22,11 @@ class Invoice(Base):
 
     status = Column(String(20), default="pending")  # pending, issued, failed, manual
     provider = Column(String(20), default="facturapi")
-    provider_invoice_id = Column(String(255), nullable=True)
+    provider_invoice_id = Column(String(255), nullable=True)  # UUID de la CFDI timbrada
 
     pdf_url = Column(String(500), nullable=True)
     xml_url = Column(String(500), nullable=True)
+    xml_content = Column(Text, nullable=True)  # XML timbrado (satcfdi)
     receipt_html = Column(Text, nullable=True)  # fallback printable comprobante
     error = Column(String(500), nullable=True)
 

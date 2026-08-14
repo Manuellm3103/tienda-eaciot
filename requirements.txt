@@ -21,6 +21,9 @@ aiosmtplib==3.0.1
 email-validator==2.1.0
 aiosqlite==0.20.0
 
+# CFDI 4.0 nativo (generación + firma + timbrado vía PAC)
+satcfdi==4.4.7
+
 # RAG es OPCIONAL: `pip install chromadb` para habilitar la búsqueda semántica
 # del asistente. Sin él, el producto advisor usa keyword search automáticamente.
 # No se incluye por defecto: chromadb es pesado y en Render free el filesystem

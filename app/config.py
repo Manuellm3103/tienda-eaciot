@@ -56,6 +56,19 @@ class Settings(BaseSettings):
     business_rfc: str = ""
     business_name: str = ""
     business_tax_regime: str = "601"  # 601 = General de Ley Personas Morales
+
+    # CFDI 4.0 nativo con satcfdi + PAC (sin límite mensual)
+    # satcfdi 4.4.7 NO trae conector Finkok; soporta: swsapien, comerciodigital,
+    # diverza, prodigia, mysuite. Default: swsapien (SW Sapien, precio por factura).
+    pac_provider: str = "swsapien"  # swsapien | comerciodigital
+    pac_username: str = ""
+    pac_password: str = ""
+    pac_environment: str = "production"  # production | test
+    csd_cert_path: str = ""       # ruta al archivo .cer del CSD
+    csd_key_path: str = ""        # ruta al archivo .key del CSD
+    csd_password: str = ""        # contraseña del CSD
+    business_zip_code: str = ""   # CP del emisor (obligatorio en CFDI 4.0)
+    business_iva_rate: float = 0.16  # tasa de IVA trasladado (0 para exento)
     
     # SMTP Email
     smtp_host: str = "smtp.gmail.com"

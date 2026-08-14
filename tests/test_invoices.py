@@ -71,6 +71,28 @@ async def test_issue_rejects_unpaid_order(db):
 
 
 @pytest.mark.asyncio
+async def test_satcfdi_degrades_gracefully_without_csd(db, monkeypatch):
+    """When satcfdi is 'configured' but CSD files are missing, issue() must
+    not crash — it marks the invoice failed and produces a fallback receipt."""
+    import app.services.invoice_service as mod
+
+    monkeypatch.setattr(mod.settings, "csd_cert_path", "/nonexistent.cer")
+    monkeypatch.setattr(mod.settings, "csd_key_path", "/nonexistent.key")
+    monkeypatch.setattr(mod.settings, "csd_password", "x")
+    monkeypatch.setattr(mod.settings, "pac_username", "u")
+    monkeypatch.setattr(mod.settings, "pac_password", "p")
+    monkeypatch.setattr(mod.settings, "business_rfc", "EAC2403183F0")
+    monkeypatch.setattr(mod.settings, "facturapi_api_key", "")
+
+    order = await _paid_order(db, "inv-cat-4")
+    inv = await invoice_service.issue(db, order.id)
+    await db.commit()
+
+    assert inv.status == "failed"
+    assert inv.receipt_html  # printable fallback still produced
+
+
+@pytest.mark.asyncio
 async def test_admin_invoices_requires_admin(client):
     resp = await client.get("/admin/invoices/list")
     assert resp.status_code in (401, 403)

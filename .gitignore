@@ -27,3 +27,12 @@ agentdb.rvf*
 *.rvf
 *.rvf.idmap.json
 *.rvf.lock
+
+# Secrets — certificados y claves privadas (NUNCA commitear)
+*.key
+*.cer
+*.pem
+*.p12
+*.pfx
+secrets/
+csd/

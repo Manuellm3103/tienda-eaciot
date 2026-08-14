@@ -54,3 +54,18 @@ async def receipt_html(invoice_id: str, db: AsyncSession = Depends(get_db)):
     if not invoice or not invoice.receipt_html:
         raise HTTPException(status_code=404, detail="Receipt not found")
     return Response(content=invoice.receipt_html, media_type="text/html")
+
+
+@router.get("/{invoice_id}/xml")
+async def invoice_xml(invoice_id: str, db: AsyncSession = Depends(get_db)):
+    """Download the stamped CFDI XML."""
+    from app.models.invoice import Invoice
+
+    invoice = await db.get(Invoice, invoice_id)
+    if not invoice or not invoice.xml_content:
+        raise HTTPException(status_code=404, detail="XML not found")
+    return Response(
+        content=invoice.xml_content,
+        media_type="application/xml",
+        headers={"Content-Disposition": f'attachment; filename="{invoice.provider_invoice_id or invoice_id}.xml"'},
+    )

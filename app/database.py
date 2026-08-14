@@ -70,6 +70,9 @@ _SQLITE_COLUMN_MIGRATIONS = {
         ("variant_id", "VARCHAR(36)"),
         ("variant_name", "VARCHAR(255)"),
     ],
+    "invoices": [
+        ("xml_content", "TEXT"),
+    ],
 }
 
 

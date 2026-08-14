@@ -50,7 +50,26 @@ services:
         sync: false
       - key: OPENCODE_API_KEY
         sync: false
-      # CFDI / facturación (Facturapi) — vacío emite comprobante provisional
+      # CFDI nativo (satcfdi + PAC) — sin límite mensual
+      - key: PAC_PROVIDER
+        sync: false
+      - key: PAC_USERNAME
+        sync: false
+      - key: PAC_PASSWORD
+        sync: false
+      - key: PAC_ENVIRONMENT
+        sync: false
+      - key: CSD_CERT_PATH
+        sync: false
+      - key: CSD_KEY_PATH
+        sync: false
+      - key: CSD_PASSWORD
+        sync: false
+      - key: BUSINESS_ZIP_CODE
+        sync: false
+      - key: BUSINESS_IVA_RATE
+        sync: false
+      # CFDI alternativo (Facturapi) — vacío emite comprobante provisional
       - key: FACTURAPI_API_KEY
         sync: false
       - key: FACTURAPI_BASE_URL

@@ -1,10 +1,14 @@
 """CFDI electronic invoicing (#12).
 
-Facturapi-compatible client behind a clean interface. When FACTURAPI_API_KEY
-is configured it issues a real CFDI (PDF + XML). Without a key it degrades to
-a printable HTML comprobante so the business still delivers a receipt while
-provisioning the key — the store never breaks because of missing invoicing.
+Provider precedence:
+1. satcfdi + PAC (native CFDI 4.0, no monthly limits) — when CSD + PAC creds
+   are configured.
+2. Facturapi API — when FACTURAPI_API_KEY is set (capped on free tier).
+3. Manual printable comprobante — always available as a graceful fallback, so
+   the store never breaks because of missing invoicing.
 """
+import base64
+import os
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -16,11 +20,27 @@ from app.models.invoice import Invoice
 from app.models.order import Order, OrderItem
 from app.models.user import User
 
+LOGO_PATH = os.path.join("app", "static", "images", "logo.png")
+
 
 class InvoiceService:
     @property
-    def configured(self) -> bool:
+    def satcfdi_configured(self) -> bool:
+        return bool(
+            settings.csd_cert_path
+            and settings.csd_key_path
+            and settings.pac_username
+            and settings.pac_password
+            and settings.business_rfc
+        )
+
+    @property
+    def facturapi_configured(self) -> bool:
         return bool(settings.facturapi_api_key and settings.business_rfc)
+
+    @property
+    def configured(self) -> bool:
+        return self.satcfdi_configured or self.facturapi_configured
 
     async def get_or_create(self, db: AsyncSession, order_id: str) -> Optional[Invoice]:
         result = await db.execute(select(Invoice).where(Invoice.order_id == order_id))
@@ -33,13 +53,16 @@ class InvoiceService:
             return None
 
         user = await db.get(User, order.user_id)
+        provider = "satcfdi" if self.satcfdi_configured else (
+            "facturapi" if self.facturapi_configured else "manual"
+        )
         invoice = Invoice(
             order_id=order_id,
             customer_rfc=order.customer_rfc,
             customer_name=(user.name or user.email) if user else None,
             uso_cfdi=order.uso_cfdi or "G03",
             status="pending",
-            provider="facturapi" if self.configured else "manual",
+            provider=provider,
         )
         db.add(invoice)
         await db.flush()
@@ -55,9 +78,42 @@ class InvoiceService:
         if order.status != "paid":
             raise ValueError("Solo órdenes pagadas pueden facturarse")
 
-        if self.configured:
+        if self.satcfdi_configured:
+            return await self._issue_satcfdi(db, invoice, order)
+        if self.facturapi_configured:
             return await self._issue_facturapi(db, invoice, order)
         return await self._issue_manual(db, invoice, order)
+
+    async def _issue_satcfdi(self, db, invoice: Invoice, order: Order) -> Invoice:
+        """Generate + sign + stamp a CFDI 4.0 via satcfdi + PAC."""
+        from app.services.cfdi_satcfdi import SATCFDIIssuer
+
+        items = await self._order_items(db, order)
+        try:
+            issuer = SATCFDIIssuer()
+            result = issuer.issue(
+                customer_rfc=invoice.customer_rfc or "XAXX010101000",
+                customer_name=invoice.customer_name or "PUBLICO EN GENERAL",
+                uso_cfdi=invoice.uso_cfdi or "G03",
+                items=items,
+                shipping_amount=order.shipping_amount or Decimal("0"),
+                payment_method=order.payment_method or "stripe",
+            )
+        except Exception as exc:
+            invoice.status = "failed"
+            invoice.error = str(exc)[:500]
+            # still produce a printable fallback receipt for the customer
+            invoice.receipt_html = await self._render_receipt(db, invoice, order)
+            await db.flush()
+            return invoice
+
+        invoice.status = "issued"
+        invoice.provider = "satcfdi"
+        invoice.provider_invoice_id = result.get("uuid")
+        invoice.xml_content = result.get("xml")
+        invoice.receipt_html = await self._render_receipt(db, invoice, order)
+        await db.flush()
+        return invoice
 
     async def _issue_facturapi(self, db, invoice: Invoice, order: Order) -> Invoice:
         payload = await self._build_cfdi_payload(db, order)
@@ -98,6 +154,42 @@ class InvoiceService:
         invoice.receipt_html = await self._render_receipt(db, invoice, order)
         await db.flush()
         return invoice
+
+    async def _order_items(self, db: AsyncSession, order: Order) -> list[dict]:
+        """Line items in satcfdi's expected shape: description/quantity/unit_price."""
+        rows = (
+            await db.execute(
+                select(OrderItem).where(OrderItem.order_id == order.id)
+            )
+        ).scalars().all()
+        from app.models.product import Product
+
+        items = []
+        for it in rows:
+            product = await db.get(Product, str(it.product_id))
+            desc = (product.title if product else "Producto") + (
+                f" · {it.variant_name}" if it.variant_name else ""
+            )
+            items.append(
+                {
+                    "description": desc[:300],
+                    "quantity": it.quantity,
+                    "unit_price": float(it.price_at_purchase or 0),
+                }
+            )
+        return items
+
+    @staticmethod
+    def _logo_data_uri() -> str:
+        """Embed the store logo as a base64 data URI for self-contained receipts."""
+        try:
+            if os.path.exists(LOGO_PATH):
+                with open(LOGO_PATH, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("ascii")
+                return f'<img src="data:image/png;base64,{b64}" alt="Logo" style="height:60px;">'
+        except Exception:
+            pass
+        return ""
 
     async def _build_cfdi_payload(self, db: AsyncSession, order: Order) -> dict:
         items = (
@@ -156,18 +248,25 @@ class InvoiceService:
                 f"<td>${float(it.price_at_purchase or 0):.2f}</td></tr>"
             )
 
+        logo = self._logo_data_uri()
+        footer_note = (
+            "Este es un comprobante provisional. La factura CFDI se emitirá al configurar el proveedor de facturación."
+            if invoice.provider == "manual"
+            else "Comprobante de venta — la CFDI (XML) está disponible en tu cuenta."
+        )
         return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>body{{font-family:Arial,sans-serif;color:#333;}} .c{{max-width:640px;margin:0 auto;padding:20px;}}
 h1{{font-size:22px;}} table{{width:100%;border-collapse:collapse;margin:20px 0;}}
 td,th{{border:1px solid #ddd;padding:8px;text-align:left;}} th{{background:#f5f5f5;}}
 .tot{{font-size:20px;font-weight:bold;}}</style></head><body><div class="c">
+{logo}
 <h1>Comprobante de compra</h1>
 <p><strong>{settings.business_name or 'Tienda Eaciot'}</strong> · RFC: {settings.business_rfc or '—'}</p>
 <p>Orden #{str(order.id)[:8]} · {order.created_at.strftime('%d/%m/%Y') if order.created_at else ''}</p>
 <p>Cliente: {invoice.customer_name or '—'} · RFC: {invoice.customer_rfc or '—'}</p>
 <table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>{''.join(rows)}</table>
 <p class="tot">Total: ${float(order.total_amount or 0):.2f} MXN</p>
-<p style="color:#888;font-size:12px;">Este es un comprobante provisional. La factura CFDI se emitirá al configurar el proveedor de facturación.</p>
+<p style="color:#888;font-size:12px;">{footer_note}</p>
 </div></body></html>"""
 
     async def list_invoices(self, db: AsyncSession, limit: int = 100) -> list[dict]:
@@ -187,6 +286,7 @@ td,th{{border:1px solid #ddd;padding:8px;text-align:left;}} th{{background:#f5f5
                     "provider": inv.provider,
                     "pdf_url": inv.pdf_url,
                     "xml_url": inv.xml_url,
+                    "has_xml": bool(inv.xml_content),
                     "error": inv.error,
                     "total": float(order.total_amount or 0) if order else 0.0,
                     "created_at": inv.created_at.isoformat() if inv.created_at else "",
