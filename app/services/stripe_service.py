@@ -72,5 +72,17 @@ class StripeService:
         except stripe.error.SignatureVerificationError:
             raise ValueError("Invalid signature")
 
+    def retrieve_checkout_session(self, session_id: str):
+        """Server-side confirmation of a Checkout Session.
+
+        Used as a resilience fallback on /checkout/success: if the async
+        webhook is delayed or missed, we confirm with Stripe directly and
+        fulfill the order. Raises stripe.error.InvalidRequestError when the
+        session does not exist / the API key is missing.
+        """
+        if not settings.stripe_secret_key or not session_id:
+            raise ValueError("Stripe not configured or missing session_id")
+        return stripe.checkout.Session.retrieve(session_id)
+
 
 stripe_service = StripeService()

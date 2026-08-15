@@ -68,7 +68,7 @@ async def _fulfill_order(
     from app.schemas.shipping import ShipmentCreate
     try:
         shipment_data = ShipmentCreate(
-            order_id=order.id,
+            order_id=str(order.id),  # String(36) PK — UUID object fails to bind
             carrier="pending",
             tracking_number=None,
             weight=Decimal("0.5"),

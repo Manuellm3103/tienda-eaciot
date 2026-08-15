@@ -27,6 +27,7 @@ from app.services.shipping_service import shipping_service
 from app.services.search_service import search_service
 from app.middleware import validate_csrf
 from app.config import settings
+from app.routers.payments import _fulfill_order
 
 router = APIRouter(tags=["pages"])
 from app.templates_instance import templates
@@ -381,7 +382,27 @@ async def checkout_create(
 
 
 @router.get("/checkout/success", response_class=HTMLResponse)
-async def checkout_success(request: Request, order_id: str):
+async def checkout_success(
+    request: Request,
+    order_id: str,
+    session_id: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    # Resilience fallback: the webhook is the primary fulfillment path, but if
+    # it is delayed or missed, confirm the Stripe Checkout Session server-side
+    # and fulfill the order here. Idempotent — _fulfill_order skips paid orders.
+    if session_id:
+        try:
+            session = stripe_service.retrieve_checkout_session(session_id)
+            if session.get("payment_status") == "paid" or session.get("status") == "complete":
+                meta_order = (session.get("metadata") or {}).get("order_id")
+                if meta_order and meta_order == order_id:
+                    payment_intent = session.get("payment_intent") or session.get("id")
+                    await _fulfill_order(db, order_id, "stripe", payment_intent)
+                    await db.commit()
+        except Exception:
+            pass  # fallback is best-effort; the webhook still fulfills the order
+
     return templates.TemplateResponse("checkout_success.html", {"request": request, "order_id": order_id})
 
 

@@ -80,8 +80,11 @@ class ShippingService:
             }
             tracking_url = carrier_urls.get(data.carrier.lower())
         
+        data_dict = data.model_dump()
+        # String(36) PK in SQLite — always bind order_id as str, never UUID.
+        data_dict["order_id"] = str(data_dict["order_id"])
         shipment = Shipment(
-            **data.model_dump(),
+            **data_dict,
             tracking_url=tracking_url,
         )
         db.add(shipment)
