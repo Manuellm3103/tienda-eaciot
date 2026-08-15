@@ -23,6 +23,11 @@ services:
       # sync:false means Render will NOT overwrite them with a blank value.
       - key: APP_SECRET_KEY
         sync: false
+      # Bootstrap admin (scripts/bootstrap.py creates this account on deploy)
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
