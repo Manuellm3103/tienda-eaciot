@@ -11,11 +11,23 @@ from app.services.auth_service import decode_token
 def cookie_secure(request: Optional[Request] = None) -> bool:
     """Whether cookies should carry the Secure flag.
 
-    Controlled by the deploy flag FORCE_HTTPS (true on Render), NOT by
-    FRONTEND_URL: FRONTEND_URL is https:// even when a developer runs the app
-    over http://localhost, and a Secure cookie set from that mismatch makes the
-    local storefront lose sessions and the cart."""
-    return settings.force_https or (request is not None and request.url.scheme == "https")
+    Authoritative signals (production):
+    * FORCE_HTTPS=true (set in render.yaml / Render dashboard), OR
+    * the request arrived over https.
+
+    Behind Render's TLS-terminating proxy the app may see scheme http, so also
+    honor the standard X-Forwarded-Proto header. FRONTEND_URL is deliberately
+    NOT used: it is https:// even during local HTTP dev and would break the
+    session/cart cookies there.
+    """
+    if settings.force_https:
+        return True
+    if request is None:
+        return False
+    if request.url.scheme == "https":
+        return True
+    proto = request.headers.get("x-forwarded-proto", "")
+    return proto.split(",")[0].strip().lower() == "https"
 
 
 async def get_current_user_optional(request: Request, db: AsyncSession) -> Optional[User]:

@@ -3,6 +3,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.dependencies import cookie_secure
 from app.middleware.csrf import CSRF_COOKIE_NAME, get_csrf_token, set_csrf_cookie
 
 
@@ -12,5 +13,5 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         request.state.csrf_token = token
         response = await call_next(request)
         if request.cookies.get(CSRF_COOKIE_NAME) != token:
-            set_csrf_cookie(response, token, secure=request.url.scheme == "https")
+            set_csrf_cookie(response, token, secure=cookie_secure(request))
         return response
