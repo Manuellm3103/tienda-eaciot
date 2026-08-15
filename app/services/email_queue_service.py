@@ -1,10 +1,13 @@
-"""Transactional email outbox.
+"""Transactional email outbox (cron-free).
 
-`enqueue` drafts an email into EmailQueue and returns immediately — the SMTP
-delivery is done later by scripts/process_emails.py (cron) or the admin retry
-panel. Registration/password-reset use this so a slow SMTP server never blocks
-a customer action.
+`enqueue` drafts an email into EmailQueue and returns immediately; the request
+then schedules `flush_pending()` as a fire-and-forget background task, so SMTP
+delivery never blocks a customer action AND needs no Render cron (free tier
+asks for a card to create cron jobs). The queue remains visible/retryable in
+the admin outbox panel.
 """
+import asyncio
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
@@ -41,6 +44,61 @@ class EmailQueueService:
         db.add(item)
         await db.flush()
         return item
+
+    async def enqueue_and_flush(
+        self,
+        db: AsyncSession,
+        to_email: str,
+        subject: str,
+        html_content: str,
+        dedupe_key: Optional[str] = None,
+    ) -> None:
+        """Enqueue in the CURRENT request transaction (committed by get_db),
+        then deliver in the background using its own session. No cron needed."""
+        await self.enqueue(db, to_email, subject, html_content, dedupe_key)
+        asyncio.get_running_loop().create_task(self.flush_pending())
+
+    async def flush_pending(self, limit: int = 10) -> int:
+        """Deliver pending queued emails via SMTP (new session, own commit).
+
+        Returns the number of emails processed. Failures are recorded with
+        attempts+1 and left for the admin outbox retry button."""
+        from app.database import async_session
+        from app.services.email_service import email_service
+
+        async with async_session() as db:
+            rows = (
+                await db.execute(
+                    select(EmailQueue)
+                    .where(EmailQueue.status == "pending")
+                    .where(EmailQueue.attempts < 3)
+                    .order_by(EmailQueue.created_at.asc())
+                    .limit(limit)
+                )
+            ).scalars().all()
+
+            sent = 0
+            for item in rows:
+                try:
+                    ok = await email_service.send_email(
+                        to_email=item.to_email,
+                        subject=item.subject,
+                        html_content=item.html_content,
+                    )
+                    if ok:
+                        item.status = "sent"
+                        item.sent_at = datetime.now(timezone.utc)
+                        item.last_error = None
+                        sent += 1
+                    else:
+                        item.attempts += 1
+                        item.last_error = "SMTP send returned False"
+                except Exception as exc:  # noqa: BLE001 — record, don't crash
+                    item.attempts += 1
+                    item.last_error = str(exc)[:255]
+
+            await db.commit()
+            return sent
 
     async def list_items(self, db: AsyncSession, limit: int = 100) -> list[dict]:
         rows = (

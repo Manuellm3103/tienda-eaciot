@@ -92,9 +92,11 @@ async def resolve_cart_items(db: AsyncSession, cart: dict) -> list[dict]:
     return items
 
 
-def set_cart_cookie(response: Response, cart: dict):
+def set_cart_cookie(response: Response, cart: dict, request: Request = None):
     # base64(urlsafe) keeps the cookie value free of quotes/braces, which the
     # HTTP cookie layer (and some clients) would otherwise mangle.
+    from app.dependencies import cookie_secure
+
     encoded = base64.urlsafe_b64encode(json.dumps(cart).encode("utf-8")).decode("ascii")
     response.set_cookie(
         key="cart",
@@ -103,7 +105,7 @@ def set_cart_cookie(response: Response, cart: dict):
         max_age=30 * 24 * 60 * 60,
         samesite="lax",  # first-party cart cookie (was 'none', which required Secure)
         path="/",
-        secure=settings.frontend_url.startswith("https"),
+        secure=cookie_secure(request),
     )
 
 
@@ -182,7 +184,7 @@ async def cart_add(
     cart = get_cart_from_cookie(request)
     key = f"{product_id}::{variant_id}" if variant_id else product_id
     cart[key] = cart.get(key, 0) + 1
-    set_cart_cookie(response, cart)
+    set_cart_cookie(response, cart, request)
     user = await get_current_user_optional(request, db)
     await user_event_service.record(
         db, "cart_add", user_id=str(user.id) if user else None, product_id=product_id
@@ -202,7 +204,7 @@ async def cart_add_get(
     key = f"{product_id}::{variant_id}" if variant_id else product_id
     cart[key] = cart.get(key, 0) + 1
     response = RedirectResponse(url="/cart", status_code=302)
-    set_cart_cookie(response, cart)
+    set_cart_cookie(response, cart, request)
     user = await get_current_user_optional(request, db)
     await user_event_service.record(
         db, "cart_add", user_id=str(user.id) if user else None, product_id=product_id
@@ -216,7 +218,7 @@ async def cart_remove(cart_key: str, request: Request, response: Response):
     cart = get_cart_from_cookie(request)
     if cart_key in cart:
         del cart[cart_key]
-    set_cart_cookie(response, cart)
+    set_cart_cookie(response, cart, request)
     return RedirectResponse(url="/cart", status_code=302)
 
 

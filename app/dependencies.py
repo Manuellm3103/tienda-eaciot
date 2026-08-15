@@ -2,9 +2,20 @@ from typing import Optional
 from fastapi import Request, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from app.config import settings
 from app.database import get_db
 from app.models.user import User
 from app.services.auth_service import decode_token
+
+
+def cookie_secure(request: Optional[Request] = None) -> bool:
+    """Whether cookies should carry the Secure flag.
+
+    Controlled by the deploy flag FORCE_HTTPS (true on Render), NOT by
+    FRONTEND_URL: FRONTEND_URL is https:// even when a developer runs the app
+    over http://localhost, and a Secure cookie set from that mismatch makes the
+    local storefront lose sessions and the cart."""
+    return settings.force_https or (request is not None and request.url.scheme == "https")
 
 
 async def get_current_user_optional(request: Request, db: AsyncSession) -> Optional[User]:

@@ -17,15 +17,10 @@ from app.services.email_queue_service import email_queue_service
 from app.services.oauth_service import oauth_service
 from app.middleware import validate_csrf
 from app.config import settings
+from app.dependencies import cookie_secure
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 from app.templates_instance import templates
-
-
-def _cookie_secure() -> bool:
-    """Secure cookies only when HTTPS is expected (prod), so local HTTP dev
-    can keep a session without a TLS-terminating proxy."""
-    return settings.force_https or settings.frontend_url.startswith("https://")
 
 
 # ==================== PAGES ====================
@@ -84,8 +79,8 @@ async def register(request: Request, data: UserCreate, db: AsyncSession = Depend
     db.add(user)
     await db.flush()
     
-    # Queue verification email (delivery via cron worker, never blocks register)
-    await email_queue_service.enqueue(
+    # Queue + fire-and-forget delivery (no cron needed, never blocks register)
+    await email_queue_service.enqueue_and_flush(
         db,
         to_email=user.email,
         subject="Verifica tu email - Tienda Eaciot",
@@ -139,8 +134,8 @@ async def resend_verification(email: str, db: AsyncSession = Depends(get_db)):
     user.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
     await db.flush()
     
-    # Queue email (idempotent: reuses any pending verification email)
-    await email_queue_service.enqueue(
+    # Queue + fire-and-forget delivery (idempotent)
+    await email_queue_service.enqueue_and_flush(
         db,
         to_email=user.email,
         subject="Verifica tu email - Tienda Eaciot",
@@ -154,7 +149,7 @@ async def resend_verification(email: str, db: AsyncSession = Depends(get_db)):
 # ==================== LOGIN ====================
 
 @router.post("/login", response_model=Token)
-async def login(data: UserLogin, response: Response, db: AsyncSession = Depends(get_db)):
+async def login(data: UserLogin, response: Response, request: Request, db: AsyncSession = Depends(get_db)):
     # Find user
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
@@ -179,7 +174,7 @@ async def login(data: UserLogin, response: Response, db: AsyncSession = Depends(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=_cookie_secure(),
+        secure=cookie_secure(request),
         samesite="lax",
         max_age=30 * 24 * 60 * 60,  # 30 days
     )
@@ -210,7 +205,7 @@ async def login_web(request: Request, data: UserLogin, db: AsyncSession = Depend
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=_cookie_secure(),
+        secure=cookie_secure(request),
         samesite="lax",
         max_age=30 * 24 * 60 * 60,
     )
@@ -237,8 +232,8 @@ async def forgot_password(request: Request, email: str, db: AsyncSession = Depen
     user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
     await db.flush()
     
-    # Queue email (delivery via cron worker)
-    await email_queue_service.enqueue(
+    # Queue + fire-and-forget delivery (no cron needed)
+    await email_queue_service.enqueue_and_flush(
         db,
         to_email=user.email,
         subject="Restablecer contraseña - Tienda Eaciot",
@@ -286,7 +281,7 @@ async def google_login(request: Request):
 
 
 @router.get("/google/callback")
-async def google_callback(code: str, state: str = "/", db: AsyncSession = Depends(get_db)):
+async def google_callback(request: Request, code: str, state: str = "/", db: AsyncSession = Depends(get_db)):
     """Handle Google OAuth callback"""
     try:
         # Exchange code for tokens
@@ -327,7 +322,7 @@ async def google_callback(code: str, state: str = "/", db: AsyncSession = Depend
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=_cookie_secure(),
+            secure=cookie_secure(request),
             samesite="none",
             max_age=30 * 24 * 60 * 60,
         )
@@ -350,7 +345,7 @@ async def microsoft_login(request: Request):
 
 
 @router.get("/microsoft/callback")
-async def microsoft_callback(code: str, state: str = "/", db: AsyncSession = Depends(get_db)):
+async def microsoft_callback(request: Request, code: str, state: str = "/", db: AsyncSession = Depends(get_db)):
     """Handle Microsoft OAuth callback"""
     try:
         # Exchange code for tokens
@@ -391,7 +386,7 @@ async def microsoft_callback(code: str, state: str = "/", db: AsyncSession = Dep
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=_cookie_secure(),
+            secure=cookie_secure(request),
             samesite="none",
             max_age=30 * 24 * 60 * 60,
         )
@@ -414,7 +409,7 @@ async def github_login(request: Request):
 
 
 @router.get("/github/callback")
-async def github_callback(code: str, state: str = "/", db: AsyncSession = Depends(get_db)):
+async def github_callback(request: Request, code: str, state: str = "/", db: AsyncSession = Depends(get_db)):
     """Handle GitHub OAuth callback"""
     try:
         # Exchange code for tokens
@@ -460,7 +455,7 @@ async def github_callback(code: str, state: str = "/", db: AsyncSession = Depend
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=_cookie_secure(),
+            secure=cookie_secure(request),
             samesite="none",
             max_age=30 * 24 * 60 * 60,
         )

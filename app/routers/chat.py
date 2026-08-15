@@ -7,15 +7,10 @@ from app.config import settings
 from app.database import get_db
 from app.services.chat_service import chat_service
 from app.services.agent_memory import create_session_id
-from app.dependencies import get_current_user_optional
+from app.dependencies import get_current_user_optional, cookie_secure
 
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
-
-
-def _cookie_secure():
-    """Use secure cookies only when HTTPS is expected."""
-    return settings.force_https or settings.frontend_url.startswith("https://")
 
 
 class ChatMessage(BaseModel):
@@ -45,7 +40,7 @@ async def chat(
         key="chat_session",
         value=session_id,
         httponly=True,
-        secure=_cookie_secure(),
+        secure=cookie_secure(request),
         samesite="lax",
         max_age=86400 * 30,
         path="/",
@@ -72,7 +67,7 @@ async def chat_get(
         key="chat_session",
         value=resolved,
         httponly=True,
-        secure=_cookie_secure(),
+        secure=cookie_secure(request),
         samesite="lax",
         max_age=86400 * 30,
         path="/",

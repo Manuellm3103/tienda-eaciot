@@ -40,6 +40,9 @@ services:
       - key: SMTP_FROM
         sync: false
       # AI providers
+      # NOTE: OLLAMA_HOST must be the API endpoint (e.g. https://api.ollama.com),
+      # NOT the marketing site https://ollama.com — the client POSTs to
+      # {OLLAMA_HOST}/api/generate.
       - key: OLLAMA_HOST
         sync: false
       - key: OLLAMA_MODEL
@@ -50,36 +53,55 @@ services:
         sync: false
       - key: OPENCODE_API_KEY
         sync: false
+      # OAuth (Google / Microsoft / GitHub)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_REDIRECT_URI
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_REDIRECT_URI
+        sync: false
       # CFDI nativo (satcfdi + PAC) — sin límite mensual
       - key: PAC_PROVIDER
-        sync: false
+        value: finkok
       - key: PAC_USERNAME
         sync: false
       - key: PAC_PASSWORD
         sync: false
       - key: PAC_ENVIRONMENT
-        sync: false
+        value: test
       - key: CSD_CERT_PATH
-        sync: false
+        value: /etc/secrets/CSD.cer
       - key: CSD_KEY_PATH
-        sync: false
+        value: /etc/secrets/CSD.key
       - key: CSD_PASSWORD
         sync: false
       - key: BUSINESS_ZIP_CODE
-        sync: false
+        value: "62410"
       - key: BUSINESS_IVA_RATE
-        sync: false
+        value: "0.16"
       # CFDI alternativo (Facturapi) — vacío emite comprobante provisional
       - key: FACTURAPI_API_KEY
         sync: false
       - key: FACTURAPI_BASE_URL
         sync: false
       - key: BUSINESS_RFC
-        sync: false
+        value: EAC2403183F0
       - key: BUSINESS_NAME
-        sync: false
+        value: EMANUEL AZUR CORPORATIVO SAS DE CV
       - key: BUSINESS_TAX_REGIME
-        sync: false
+        value: "601"
     disk:
       name: tienda-data
       mountPath: /opt/render/project/src
