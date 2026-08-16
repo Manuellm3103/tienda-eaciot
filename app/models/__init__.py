@@ -3,6 +3,7 @@ from app.models.product import Category, Product
 from app.models.product_variant import ProductVariant
 from app.models.order import Order, OrderItem
 from app.models.loyalty import LoyaltyHistory
+from app.models.loyalty_quest import LoyaltyQuest
 from app.models.promotion import Promotion, Coupon
 from app.models.congratulation import CongratulationRule, CongratulationHistory
 from app.models.review import Review
@@ -29,6 +30,7 @@ __all__ = [
     "Order",
     "OrderItem",
     "LoyaltyHistory",
+    "LoyaltyQuest",
     "Promotion",
     "Coupon",
     "CongratulationRule",

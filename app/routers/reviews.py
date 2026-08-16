@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.review import ReviewCreate, ReviewResponse
 from app.services.review_service import review_service
+from app.services.ai_loyalty_service import ai_loyalty_service
 from app.dependencies import get_current_user
 from app.middleware import validate_csrf
 
@@ -20,7 +21,12 @@ async def create_review(
     user: User = Depends(get_current_user),
 ):
     await validate_csrf(request)
-    return await review_service.create_review(db, user.id, data)
+    review = await review_service.create_review(db, user.id, data)
+    try:
+        await ai_loyalty_service.record_event(db, str(user.id), "review_created")
+    except Exception:
+        pass
+    return review
 
 
 @router.get("/product/{product_id}", response_model=List[ReviewResponse])

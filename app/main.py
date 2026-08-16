@@ -42,6 +42,7 @@ from app.routers.admin_search import router as admin_search_router
 from app.routers.admin_fraud import router as admin_fraud_router
 from app.routers.admin_inventory import router as admin_inventory_router
 from app.routers.visual_search import router as visual_search_router
+from app.routers.admin_loyalty import router as admin_loyalty_router
 from app.routers.pages import router as pages_router
 from app.routers.chat import router as chat_router
 from app.routers.legal import router as legal_router
@@ -132,6 +133,7 @@ app.include_router(admin_search_router)
 app.include_router(admin_fraud_router)
 app.include_router(admin_inventory_router)
 app.include_router(visual_search_router)
+app.include_router(admin_loyalty_router)
 app.include_router(reviews_router)
 app.include_router(wishlist_router)
 app.include_router(search_router)

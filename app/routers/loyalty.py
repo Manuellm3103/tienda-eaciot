@@ -6,6 +6,7 @@ from uuid import UUID
 from app.database import get_db
 from app.models.user import User
 from app.services.loyalty_service import loyalty_service
+from app.services.ai_loyalty_service import ai_loyalty_service
 from app.services.auth_service import decode_token
 
 router = APIRouter(prefix="/loyalty", tags=["loyalty"])
@@ -42,12 +43,23 @@ async def get_loyalty_history(request: Request, db: AsyncSession = Depends(get_d
     return await loyalty_service.get_loyalty_history(db, user_id)
 
 
+@router.get("/insights")
+async def loyalty_insights(request: Request, db: AsyncSession = Depends(get_db)):
+    user_id = await _get_user_id(request, db)
+    insights = await ai_loyalty_service.get_loyalty_insights(db, user_id)
+    return insights
+
+
 @router.get("/", response_class=HTMLResponse)
 async def loyalty_page(request: Request, db: AsyncSession = Depends(get_db)):
     try:
         user_id = await _get_user_id(request, db)
         status = await loyalty_service.get_user_loyalty(db, user_id)
         history = await loyalty_service.get_loyalty_history(db, user_id)
+        insights = await ai_loyalty_service.get_loyalty_insights(db, user_id)
     except HTTPException:
         return RedirectResponse(url="/auth/login?next=/loyalty/", status_code=302)
-    return templates.TemplateResponse("loyalty.html", {"request": request, "status": status, "history": history})
+    return templates.TemplateResponse(
+        "loyalty.html",
+        {"request": request, "status": status, "history": history, "insights": insights},
+    )

@@ -53,6 +53,7 @@ async def _fulfill_order(
     # 1c. Record purchase events for recommendation/pricing engines
     from app.models.order import OrderItem
     from app.services.user_event_service import user_event_service
+    from app.services.ai_loyalty_service import ai_loyalty_service
     items = (
         await db.execute(select(OrderItem).where(OrderItem.order_id == order_id))
     ).scalars().all()
@@ -63,6 +64,12 @@ async def _fulfill_order(
             user_id=str(order.user_id),
             product_id=str(item.product_id),
         )
+
+    # 1d. Update loyalty quests (best-effort)
+    try:
+        await ai_loyalty_service.record_event(db, str(order.user_id), "order_placed")
+    except Exception:
+        pass
 
     # 2. Create a pending shipment
     from app.schemas.shipping import ShipmentCreate

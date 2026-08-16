@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Lealtad IA - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<h2>Lealtad IA</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Clientes en Riesgo</h5>
+            <p class="card-text">Clientes con riesgo medio/alto de abandono y ofertas sugeridas.</p>
+            <button class="btn btn-primary" hx-get="/admin/loyalty/at-risk" hx-target="#at-risk-list">Cargar</button>
+            <div id="at-risk-list" class="mt-3"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Campaña de Cumpleaños</h5>
+            <p class="card-text">Usuarios con cumpleaños esta semana.</p>
+            <button class="btn btn-primary" hx-get="/admin/loyalty/birthdays" hx-target="#birthday-list">Cargar</button>
+            <div id="birthday-list" class="mt-3"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

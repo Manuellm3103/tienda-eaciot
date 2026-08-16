@@ -36,6 +36,7 @@ class User(Base):
 
     # Personalizaci�n
     favorite_category_id = Column(String(36), ForeignKey("categories.id"), nullable=True)
+    birthday = Column(DateTime, nullable=True)
 
     # Social commerce
     phone = Column(String(50), unique=True, nullable=True, index=True)
