@@ -27,7 +27,12 @@
 
 <div id="result" class="hidden bg-white rounded-lg shadow p-6">
     <div id="result-meta" class="mb-4"></div>
+    <div id="result-actions" class="hidden mb-4 space-x-2">
+        <button id="chart-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">Ver gráfica</button>
+        <button id="save-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded text-sm">Guardar reporte</button>
+    </div>
     <div id="result-error" class="hidden text-red-600 bg-red-50 border border-red-200 rounded p-4"></div>
+    <div id="chart-container" class="hidden mb-4"></div>
     <div class="overflow-x-auto">
         <table class="w-full">
             <thead id="result-head" class="bg-gray-50"></thead>
@@ -35,6 +40,23 @@
         </table>
     </div>
 </div>
+
+{% if saved_reports %}
+<div class="bg-white rounded-lg shadow p-6 mt-8">
+    <h2 class="text-xl font-bold mb-4">Reportes guardados</h2>
+    <ul class="divide-y">
+        {% for report in saved_reports %}
+        <li class="py-3 flex justify-between items-center">
+            <div>
+                <span class="font-medium">{{ report.name }}</span>
+                <span class="text-xs text-gray-500 ml-2">{{ report.chart_type }}</span>
+            </div>
+            <button class="run-saved-report text-blue-600 hover:text-blue-800 text-sm" data-id="{{ report.id }}">Ejecutar</button>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
 
 <script>
 (function() {
@@ -47,6 +69,13 @@
     const head = document.getElementById('result-head');
     const body = document.getElementById('result-body');
 
+    const actions = document.getElementById('result-actions');
+    const chartBtn = document.getElementById('chart-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const chartContainer = document.getElementById('chart-container');
+
+    let lastResult = null;
+
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         const q = input.value.trim();
@@ -54,6 +83,8 @@
         btn.disabled = true;
         btn.textContent = 'Pensando...';
         errorBox.classList.add('hidden');
+        chartContainer.classList.add('hidden');
+        chartContainer.innerHTML = '';
         result.classList.remove('hidden');
 
         try {
@@ -64,6 +95,7 @@
                 body: JSON.stringify({question: q})
             });
             const data = await res.json();
+            lastResult = data;
 
             if (data.error) {
                 errorBox.textContent = data.error + (data.sql ? ' (SQL: ' + data.sql + ')' : '');
@@ -71,9 +103,11 @@
                 head.innerHTML = '';
                 body.innerHTML = '';
                 meta.innerHTML = '';
+                actions.classList.add('hidden');
                 return;
             }
 
+            actions.classList.remove('hidden');
             meta.innerHTML =
                 '<span class="inline-block bg-purple-100 text-purple-700 text-sm font-medium px-3 py-1 rounded mr-2">' +
                 (data.chart_type || 'table') + '</span>' +
@@ -90,10 +124,79 @@
         } catch (err) {
             errorBox.textContent = 'No se pudo consultar la analítica IA. Intenta de nuevo.';
             errorBox.classList.remove('hidden');
+            actions.classList.add('hidden');
         } finally {
             btn.disabled = false;
             btn.textContent = 'Preguntar';
         }
+    });
+
+    chartBtn.addEventListener('click', async function() {
+        if (!lastResult || lastResult.error) return;
+        const q = input.value.trim();
+        chartContainer.innerHTML = '<p class="text-gray-500">Generando gráfica...</p>';
+        chartContainer.classList.remove('hidden');
+        const res = await fetch('/admin/analytics/chart', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({question: q})
+        });
+        if (res.ok && res.headers.get('content-type').includes('image/png')) {
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            chartContainer.innerHTML = '<img src="' + url + '" alt="Gráfica" class="max-w-full rounded border">';
+        } else {
+            const data = await res.json();
+            chartContainer.innerHTML = '<p class="text-red-600">' + (data.error || 'No se pudo generar la gráfica') + '</p>';
+        }
+    });
+
+    saveBtn.addEventListener('click', async function() {
+        if (!lastResult || lastResult.error) return;
+        const name = prompt('Nombre del reporte:');
+        if (!name) return;
+        const res = await fetch('/admin/analytics/reports', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                name: name,
+                question: lastResult.question,
+                sql: lastResult.sql,
+                chart_type: lastResult.chart_type || 'table'
+            })
+        });
+        if (res.ok) {
+            alert('Reporte guardado.');
+            location.reload();
+        } else {
+            alert('Error al guardar el reporte.');
+        }
+    });
+
+    document.querySelectorAll('.run-saved-report').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+            const id = btn.getAttribute('data-id');
+            const res = await fetch('/admin/analytics/reports/' + id + '/run', {
+                method: 'POST', credentials: 'same-origin'
+            });
+            const data = await res.json();
+            lastResult = data;
+            result.classList.remove('hidden');
+            actions.classList.remove('hidden');
+            meta.innerHTML =
+                '<span class="inline-block bg-purple-100 text-purple-700 text-sm font-medium px-3 py-1 rounded mr-2">' +
+                (data.chart_type || 'table') + '</span>' +
+                '<span class="text-gray-600">' + (data.explanation || '') + '</span>' +
+                '<p class="text-xs text-gray-400 mt-2 font-mono">' + (data.sql || '') + '</p>';
+            head.innerHTML = '<tr>' + (data.columns || []).map(c =>
+                '<th class="text-left py-2 px-3 border-b">' + c + '</th>').join('') + '</tr>';
+            body.innerHTML = (data.data || []).map(row =>
+                '<tr class="border-b hover:bg-gray-50">' + row.map(cell =>
+                '<td class="py-2 px-3">' + (cell === null ? '' : cell) + '</td>').join('') + '</tr>'
+            ).join('') || '<tr><td class="py-4 text-gray-400">Sin resultados.</td></tr>';
+        });
     });
 })();
 </script>
