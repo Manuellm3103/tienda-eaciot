@@ -44,6 +44,12 @@ class Product(Base):
     meta_title = Column(String(255))
     meta_description = Column(Text)
 
+    # AI-generated content metadata
+    content_generated_at = Column(DateTime, nullable=True)
+    content_score = Column(Numeric(5, 2), nullable=True)
+    seo_score = Column(Numeric(5, 2), nullable=True)
+    alt_texts = Column(JSON, nullable=True)  # list[str]
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

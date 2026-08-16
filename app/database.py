@@ -81,6 +81,10 @@ _SQLITE_COLUMN_MIGRATIONS = {
     "products": [
         ("specs", "TEXT"),
         ("videos", "TEXT"),
+        ("content_generated_at", "TIMESTAMP"),
+        ("content_score", "NUMERIC(5,2)"),
+        ("seo_score", "NUMERIC(5,2)"),
+        ("alt_texts", "TEXT"),
     ],
 }
 

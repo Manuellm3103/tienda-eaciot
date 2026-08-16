@@ -26,6 +26,8 @@
                 <th class="text-right py-3 px-4">Precio</th>
                 <th class="text-center py-3 px-4">Stock</th>
                 <th class="text-center py-3 px-4">Activo</th>
+                <th class="text-center py-3 px-4">SEO</th>
+                <th class="text-center py-3 px-4">Contenido</th>
                 <th class="py-3 px-4">Acciones</th>
             </tr>
         </thead>
@@ -37,6 +39,8 @@
                 <td class="text-right py-3 px-4">${{ product.price }}</td>
                 <td class="text-center py-3 px-4">{{ product.stock }}</td>
                 <td class="text-center py-3 px-4">{{ 'Sí' if product.is_active else 'No' }}</td>
+                <td class="text-center py-3 px-4">{{ product.seo_score | int if product.seo_score is not none else '-' }}</td>
+                <td class="text-center py-3 px-4">{{ product.content_score | int if product.content_score is not none else '-' }}</td>
                 <td class="py-3 px-4">
                     <div class="flex space-x-2 items-center">
                         <button hx-post="/admin/products/{{ product.id }}/generate-content"

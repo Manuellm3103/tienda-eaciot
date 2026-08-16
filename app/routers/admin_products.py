@@ -70,7 +70,15 @@ async def admin_product_generate_content(
         raise HTTPException(status_code=404, detail="Product not found")
     result = await product_content_service.apply_to_product(db, product)
     await db.commit()
-    return JSONResponse({"product_id": product_id, **result})
+    response_payload = {
+        "product_id": product_id,
+        "status": result["status"],
+    }
+    if "content_score" in result:
+        response_payload["content_score"] = result["content_score"]
+    if "seo_score" in result:
+        response_payload["seo_score"] = result["seo_score"]
+    return JSONResponse(response_payload)
 
 
 # ==================== HTML ADMIN PAGES ====================
