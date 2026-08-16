@@ -19,7 +19,12 @@ class ReviewResponse(BaseModel):
     title: Optional[str]
     comment: Optional[str]
     is_verified_purchase: bool
+    sentiment_score: Optional[float] = None
+    sentiment_label: Optional[str] = None
+    ai_response: Optional[str] = None
+    ai_response_approved: bool = False
+    ai_responded_at: Optional[datetime] = None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True

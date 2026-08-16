@@ -1,8 +1,8 @@
 """initial schema
 
-Revision ID: 9c57af7c3300
+Revision ID: 34b50caba2e8
 Revises: 
-Create Date: 2026-08-16 05:02:51.216936
+Create Date: 2026-08-16 05:14:19.542200
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '9c57af7c3300'
+revision: str = '34b50caba2e8'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -65,6 +65,20 @@ def upgrade() -> None:
     sa.Column('context', sa.JSON(), nullable=True),
     sa.Column('outcome', sa.Text(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('product_bundles',
+    sa.Column('id', sa.String(length=36), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('product_ids', sa.JSON(), nullable=False),
+    sa.Column('discount_type', sa.String(length=20), nullable=False),
+    sa.Column('discount_value', sa.Numeric(precision=10, scale=2), nullable=False),
+    sa.Column('score', sa.Numeric(precision=5, scale=4), nullable=True),
+    sa.Column('ai_generated', sa.Boolean(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('usage_count', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('promotions',
@@ -471,6 +485,11 @@ def upgrade() -> None:
     sa.Column('comment', sa.Text(), nullable=True),
     sa.Column('is_verified_purchase', sa.Boolean(), nullable=True),
     sa.Column('is_approved', sa.Boolean(), nullable=True),
+    sa.Column('sentiment_score', sa.Float(), nullable=True),
+    sa.Column('sentiment_label', sa.String(length=20), nullable=True),
+    sa.Column('ai_response', sa.Text(), nullable=True),
+    sa.Column('ai_response_approved', sa.Boolean(), nullable=True),
+    sa.Column('ai_responded_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['order_id'], ['orders.id'], ),
@@ -562,6 +581,7 @@ def downgrade() -> None:
     op.drop_table('products')
     op.drop_table('saved_reports')
     op.drop_table('promotions')
+    op.drop_table('product_bundles')
     op.drop_table('marketing_decisions')
     op.drop_index(op.f('ix_email_queue_to_email'), table_name='email_queue')
     op.drop_table('email_queue')

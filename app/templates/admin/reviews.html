@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Moderación de Reseñas - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Reseñas y Respuestas IA</h1>
+    <a href="/admin" class="bg-gray-600 text-white px-4 py-2 rounded">Volver al Dashboard</a>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-100">
+            <tr>
+                <th class="text-left p-4">Producto</th>
+                <th class="text-left p-4">Calificación</th>
+                <th class="text-left p-4">Sentimiento IA</th>
+                <th class="text-left p-4">Comentario</th>
+                <th class="text-left p-4">Respuesta IA</th>
+                <th class="text-left p-4">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for review in reviews %}
+            <tr class="border-b" id="review-{{ review.id }}">
+                <td class="p-4">{{ review.product.title }}</td>
+                <td class="p-4">{{ review.rating }} / 5</td>
+                <td class="p-4">
+                    {% if review.sentiment_label == 'positive' %}
+                        <span class="text-green-600 font-semibold">Positivo</span>
+                    {% elif review.sentiment_label == 'negative' %}
+                        <span class="text-red-600 font-semibold">Negativo</span>
+                    {% else %}
+                        <span class="text-gray-600">Neutral</span>
+                    {% endif %}
+                    {% if review.sentiment_score is not none %}
+                        <span class="text-sm text-gray-500">({{ review.sentiment_score }})</span>
+                    {% endif %}
+                </td>
+                <td class="p-4 max-w-xs truncate">{{ review.comment or '-' }}</td>
+                <td class="p-4 max-w-md">
+                    {% if review.ai_response_approved %}
+                        <span class="text-green-600">Aprobada</span>
+                        <p class="text-sm text-gray-700 mt-1">{{ review.ai_response }}</p>
+                    {% elif review.ai_response %}
+                        <p class="text-sm text-gray-700">{{ review.ai_response }}</p>
+                    {% else %}
+                        <span class="text-gray-400">Sin generar</span>
+                    {% endif %}
+                </td>
+                <td class="p-4 space-y-2">
+                    {% if not review.ai_response %}
+                    <button hx-post="/admin/reviews/{{ review.id }}/generate-response"
+                            hx-target="#review-{{ review.id }}"
+                            hx-swap="outerHTML"
+                            class="bg-purple-600 text-white px-3 py-1 rounded text-sm w-full">
+                        Generar respuesta IA
+                    </button>
+                    {% else %}
+                    <button hx-post="/admin/reviews/{{ review.id }}/approve-response"
+                            hx-target="#review-{{ review.id }}"
+                            hx-swap="outerHTML"
+                            class="bg-green-600 text-white px-3 py-1 rounded text-sm w-full">
+                        Aprobar
+                    </button>
+                    <button hx-post="/admin/reviews/{{ review.id }}/reject-response"
+                            hx-target="#review-{{ review.id }}"
+                            hx-swap="outerHTML"
+                            class="bg-red-600 text-white px-3 py-1 rounded text-sm w-full">
+                        Rechazar
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -29,7 +29,7 @@
             <a href="/products/{{ product.id }}">
                 <h3 class="font-bold text-lg mb-2 hover:text-blue-600">{{ product.title }}</h3>
             </a>
-            <p class="text-gray-600 mb-4">{{ product.description[:100] }}...</p>
+            <p class="text-gray-600 mb-4">{{ (product.description or '')[:100] }}{% if product.description %}...{% endif %}</p>
             <div class="flex justify-between items-center">
                 <span class="text-xl font-bold">${{ product.price }}</span>
                 <div class="space-x-2">

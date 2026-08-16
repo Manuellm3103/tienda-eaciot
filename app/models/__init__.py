@@ -22,6 +22,7 @@ from app.models.fraud_score import FraudScore
 from app.models.agent_action import AgentAction
 from app.models.product_embedding import ProductEmbedding
 from app.models.marketing_decision import MarketingDecision
+from app.models.product_bundle import ProductBundle
 
 __all__ = [
     "User",
@@ -52,4 +53,5 @@ __all__ = [
     "AgentAction",
     "ProductEmbedding",
     "MarketingDecision",
+    "ProductBundle",
 ]
