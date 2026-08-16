@@ -68,6 +68,7 @@ _SQLITE_COLUMN_MIGRATIONS = {
         ("is_guest", "BOOLEAN DEFAULT 0"),
         ("favorite_category_id", "VARCHAR(36)"),
         ("phone", "VARCHAR(50)"),
+        ("birthday", "TIMESTAMP"),
     ],
     "orders": [
         ("customer_rfc", "VARCHAR(20)"),
@@ -91,6 +92,15 @@ _SQLITE_COLUMN_MIGRATIONS = {
         ("dynamic_price", "NUMERIC(10,2)"),
         ("dynamic_pricing_enabled", "BOOLEAN DEFAULT 0"),
         ("price_updated_at", "TIMESTAMP"),
+        ("reorder_point", "INTEGER"),
+        ("safety_stock_days", "INTEGER"),
+    ],
+    "reviews": [
+        ("sentiment_score", "FLOAT"),
+        ("sentiment_label", "VARCHAR(20)"),
+        ("ai_response", "TEXT"),
+        ("ai_response_approved", "BOOLEAN DEFAULT 0"),
+        ("ai_responded_at", "TIMESTAMP"),
     ],
 }
 
