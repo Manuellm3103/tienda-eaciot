@@ -15,6 +15,7 @@ from app.routers import (
     auth_router,
     products_router,
     admin_products_router,
+    admin_photos_router,
     orders_router,
     payments_router,
     loyalty_router,
@@ -100,6 +101,7 @@ app.include_router(invoice_validation_router)
 app.include_router(auth_router)
 app.include_router(products_router)
 app.include_router(admin_products_router)
+app.include_router(admin_photos_router)
 app.include_router(orders_router)
 app.include_router(payments_router)
 app.include_router(loyalty_router)

@@ -87,6 +87,21 @@
 
     {% if product %}
     <div class="bg-white rounded-lg shadow p-6 mt-8">
+        <h2 class="text-xl font-bold mb-4">Fotos IA</h2>
+        <p class="text-sm text-gray-500 mb-4">Genera versiones mejoradas de la imagen del producto.</p>
+        <div class="flex space-x-4">
+            <form action="/admin/products/{{ product.id }}/enhance-photo" method="POST" target="_blank">
+                {{ csrf_input(request) }}
+                <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm">Mejorar foto (quitar fondo)</button>
+            </form>
+            <form action="/admin/products/{{ product.id }}/social-square" method="POST" target="_blank">
+                {{ csrf_input(request) }}
+                <button type="submit" class="bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 text-sm">Generar cuadrado redes</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6 mt-8">
         <h2 class="text-xl font-bold mb-4">Variantes</h2>
         <p class="text-sm text-gray-500 mb-4">Talla, color, edición… Cada variante tiene su propio precio (+/-) y stock.</p>
 
