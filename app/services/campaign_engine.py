@@ -172,19 +172,28 @@ class CampaignEngine:
         await db.flush()
         return campaign
 
-    async def create_seasonal_campaigns_for_today(self, db: AsyncSession) -> dict:
-        """Daily check: create seasonal campaigns for holidays within 7 days."""
+    def get_upcoming_holidays(self, days: int = 7) -> dict[str, str]:
+        """Return Mexican holidays within the next N days as {event: date_str}."""
         from datetime import date
 
         today = date.today()
-        created: list[str] = []
+        end = today + timedelta(days=days)
+        upcoming: dict[str, str] = {}
         for event, event_date_str in MEXICAN_HOLIDAYS.items():
             event_date = datetime.strptime(event_date_str, "%Y-%m-%d").date()
             days_until = (event_date - today).days
-            if 0 <= days_until <= 7:
-                campaign = await self.seasonal_campaign(db, event)
-                if campaign:
-                    created.append(event)
+            if 0 <= days_until <= days:
+                upcoming[event] = event_date_str
+        return upcoming
+
+    async def create_seasonal_campaigns_for_today(self, db: AsyncSession) -> dict:
+        """Daily check: create seasonal campaigns for holidays within 7 days."""
+        upcoming = self.get_upcoming_holidays(days=7)
+        created: list[str] = []
+        for event in upcoming:
+            campaign = await self.seasonal_campaign(db, event)
+            if campaign:
+                created.append(event)
         await db.commit()
         return {"created": created}
 

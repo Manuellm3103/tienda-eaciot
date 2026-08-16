@@ -21,6 +21,7 @@ from app.models.campaign import Campaign
 from app.models.fraud_score import FraudScore
 from app.models.agent_action import AgentAction
 from app.models.product_embedding import ProductEmbedding
+from app.models.marketing_decision import MarketingDecision
 
 __all__ = [
     "User",
@@ -50,4 +51,5 @@ __all__ = [
     "Campaign",
     "AgentAction",
     "ProductEmbedding",
+    "MarketingDecision",
 ]
