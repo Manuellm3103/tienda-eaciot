@@ -26,6 +26,7 @@ class ChatService:
             "answer": result.answer,
             "agent": result.agent_name,
             "products": result.products,
+            "metadata": result.metadata,
         }
 
 

@@ -18,6 +18,7 @@ from app.models.saved_report import SavedReport
 from app.models.product_analytics import ProductAnalytics
 from app.models.campaign import Campaign
 from app.models.fraud_score import FraudScore
+from app.models.agent_action import AgentAction
 
 __all__ = [
     "User",
@@ -44,4 +45,5 @@ __all__ = [
     "SavedReport",
     "ProductAnalytics",
     "Campaign",
+    "AgentAction",
 ]

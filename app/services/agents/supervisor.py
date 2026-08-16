@@ -10,6 +10,7 @@ from app.services.llm_gateway import llm_gateway
 from app.services.agents.base import BaseAgent, AgentResult
 from app.services.agents.product_advisor import ProductAdvisorAgent
 from app.services.agents.copywriter import CopywriterAgent
+from app.services.agents.checkout_agent import checkout_agent
 
 
 class SupervisorAgent(BaseAgent):
@@ -26,8 +27,14 @@ class SupervisorAgent(BaseAgent):
             "copy", "copywriting", "anuncio", "publicidad", "frase", "texto",
             "descripción", "descripcion", "marketing", "promocionar", "vender",
         ]
+        checkout_triggers = [
+            "comprar", "pedir", "ordenar", "checkout", "finalizar compra",
+            "hacer pedido", "quiero", "dame", "envíame", "enviame",
+        ]
         if any(t in lower for t in copy_triggers):
             return "copywriter"
+        if any(t in lower for t in checkout_triggers):
+            return "checkout"
         return "product_advisor"
 
     async def run(
@@ -47,8 +54,17 @@ class SupervisorAgent(BaseAgent):
 
         intent = await self._classify_intent(message)
 
+        # If a checkout flow is already in progress, keep routing to the checkout
+        # agent regardless of the current message content.
+        if checkout_agent.is_active(session_id):
+            intent = "checkout"
+
         if intent == "copywriter":
             result = await self.copywriter.run(
+                db, message, session_id=session_id, user_id=user_id, context=context
+            )
+        elif intent == "checkout":
+            result = await checkout_agent.run(
                 db, message, session_id=session_id, user_id=user_id, context=context
             )
         else:

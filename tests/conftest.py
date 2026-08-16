@@ -34,6 +34,10 @@ async def clean_accumulated_test_data(db):
     await db.execute(text("DELETE FROM user_events"))
     await db.execute(text("DELETE FROM product_analytics"))
     await db.execute(text("DELETE FROM saved_reports"))
+    await db.execute(text("DELETE FROM agent_actions"))
+    await db.execute(text("DELETE FROM fraud_scores"))
+    await db.execute(text("DELETE FROM campaigns"))
+    await db.execute(text("DELETE FROM email_queue"))
     await db.execute(text("PRAGMA foreign_keys=ON"))
     await db.commit()
 
