@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Inventario IA - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<h2>Inventario IA</h2>
+<p class="text-muted">Productos con stock bajo o con predicción de agotamiento en los próximos 14 días.</p>
+
+{% if products %}
+<table class="table table-striped mt-4">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Stock Actual</th>
+            <th>Punto de Reorden</th>
+            <th>Días hasta Agotarse</th>
+            <th>Fecha Estimada</th>
+            <th>Reorden Sugerida</th>
+            <th>Confianza</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in products %}
+        <tr>
+            <td>{{ p.title }}</td>
+            <td>{{ p.stock }}</td>
+            <td>{{ p.reorder_point }}</td>
+            <td>
+                {% if p.days_until_stockout is not none %}
+                    {{ p.days_until_stockout }}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>{{ p.predicted_date or "—" }}</td>
+            <td>{{ p.restock_recommendation }}</td>
+            <td>
+                {% if p.confidence == 'high' %}
+                <span class="badge bg-success">Alta</span>
+                {% elif p.confidence == 'medium' %}
+                <span class="badge bg-warning">Media</span>
+                {% else %}
+                <span class="badge bg-secondary">Baja</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info mt-4">No hay productos con riesgo de agotamiento detectado.</div>
+{% endif %}
+{% endblock %}

@@ -56,6 +56,10 @@ class Product(Base):
     dynamic_pricing_enabled = Column(Boolean, default=False)
     price_updated_at = Column(DateTime, nullable=True)
 
+    # Inventory forecasting
+    reorder_point = Column(Integer, default=0)
+    safety_stock_days = Column(Integer, default=7)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
