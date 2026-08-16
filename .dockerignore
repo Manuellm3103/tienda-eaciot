@@ -1,0 +1,29 @@
+# Secrets — NUNCA hornear en la imagen Docker
+.env
+.env.*
+csd/
+secrets/
+*.key
+*.cer
+*.pem
+*.p12
+*.pfx
+
+# Datos y runtime
+*.db
+*.sqlite3
+uploads/
+chroma_data/
+ruvector.db
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# VCS y ruido
+.git
+.gitignore
+.worktrees/
+.venv/
+venv/
+.env.example
+*.md

@@ -17,8 +17,9 @@
             </p>
         </div>
         
-        <!-- OAuth Buttons -->
+        <!-- OAuth Buttons (solo proveedores con credenciales configuradas) -->
         <div class="space-y-3">
+            {% if oauth_google %}
             <a href="/auth/google?next={{ next | urlencode }}"
                class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                 <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -29,7 +30,8 @@
                 </svg>
                 Continuar con Google
             </a>
-            
+            {% endif %}
+            {% if oauth_microsoft %}
             <a href="/auth/microsoft?next={{ next | urlencode }}"
                class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                 <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -40,7 +42,8 @@
                 </svg>
                 Continuar con Microsoft
             </a>
-            
+            {% endif %}
+            {% if oauth_github %}
             <a href="/auth/github?next={{ next | urlencode }}"
                class="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
@@ -48,8 +51,9 @@
                 </svg>
                 Continuar con GitHub
             </a>
+            {% endif %}
         </div>
-        
+        {% if oauth_google or oauth_microsoft or oauth_github %}
         <div class="relative">
             <div class="absolute inset-0 flex items-center">
                 <div class="w-full border-t border-gray-300"></div>
@@ -58,6 +62,7 @@
                 <span class="px-2 bg-white text-gray-500">O continúa con email</span>
             </div>
         </div>
+        {% endif %}
         
         <!-- Email/Password Form -->
         <form id="loginForm" class="space-y-6" action="/auth/login/web" method="POST">

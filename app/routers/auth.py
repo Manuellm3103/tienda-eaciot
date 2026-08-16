@@ -38,7 +38,16 @@ async def login_page(request: Request):
     # (e.g. /admin/dashboard) after logging in.
     next_url = _safe_next(request.query_params.get("next", "/"))
     return templates.TemplateResponse(
-        "auth/login.html", {"request": request, "next": next_url}
+        "auth/login.html",
+        {
+            "request": request,
+            "next": next_url,
+            # La plantilla oculta los botones de proveedores sin credenciales:
+            # un botón que lleva a un flujo OAuth roto es peor que no mostrarlo.
+            "oauth_google": bool(settings.google_client_id and settings.google_client_secret),
+            "oauth_microsoft": bool(settings.microsoft_client_id and settings.microsoft_client_secret),
+            "oauth_github": bool(settings.github_client_id and settings.github_client_secret),
+        },
     )
 
 

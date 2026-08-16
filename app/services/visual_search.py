@@ -13,8 +13,8 @@ import math
 from io import BytesIO
 from typing import Any
 
-import numpy as np
-from PIL import Image
+# numpy/PIL se importan de forma lazy (dentro de los métodos): igual que
+# open_clip/torch, son dependencias opcionales y la app debe arrancar sin ellas.
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -104,6 +104,8 @@ class VisualSearchService:
         self, db: AsyncSession, query_image_bytes: bytes, top_k: int = 10
     ) -> list[dict[str, Any]]:
         """Return the top-k most visually similar products."""
+        import numpy as np
+
         query_emb = await self._encode_image(query_image_bytes)
         if query_emb is None:
             return []
@@ -146,6 +148,7 @@ class VisualSearchService:
         try:
             self._load_model()
             import torch
+            from PIL import Image
 
             image = Image.open(BytesIO(image_bytes)).convert("RGB")
             tensor = self._preprocess(image).unsqueeze(0)

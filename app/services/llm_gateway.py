@@ -78,11 +78,15 @@ class LLMGateway:
             return ""
 
         last_error = None
+        headers = {}
+        if settings.ollama_api_key:
+            headers["Authorization"] = f"Bearer {settings.ollama_api_key}"
         for attempt in range(max_retries + 1):
             try:
                 async with httpx.AsyncClient(timeout=60.0) as client:
                     response = await client.post(
                         f"{self.ollama_host}/api/generate",
+                        headers=headers,
                         json={
                             "model": self.model,
                             "prompt": prompt,

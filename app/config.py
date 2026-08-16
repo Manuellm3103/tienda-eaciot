@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # Ollama
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "ornith:9b"
+    # Clave opcional para Ollama Cloud (https://api.ollama.com). Vacía = sin
+    # cabecera Authorization (self-hosted / modelos locales).
+    ollama_api_key: str = ""
 
     # OpenCode Go (secondary LLM provider — JSON / code / SQL tasks)
     opencode_host: str = "http://localhost:8080"

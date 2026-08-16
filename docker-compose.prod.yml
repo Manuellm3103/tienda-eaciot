@@ -1,24 +1,59 @@
-version: '3.8'
+# Producción (alias de docker-compose.yml — ver ese archivo como canónico).
+# Local:  docker compose -f docker-compose.prod.yml --env-file .env up --build
 
 services:
   app:
     build: .
     ports:
       - "8000:8000"
-    env_file:
-      - .env
-    restart: always
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
     volumes:
-      - ./uploads:/app/uploads
-
-  ollama:
-    image: ollama/ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: always
+      - appdata:/data
+    environment:
+      - APP_NAME=${APP_NAME:-Tienda Eaciot}
+      - APP_SECRET_KEY=${APP_SECRET_KEY:-}
+      - FRONTEND_URL=${FRONTEND_URL:-https://tienda.eaciot.com}
+      - DEBUG=${DEBUG:-false}
+      - FORCE_HTTPS=${FORCE_HTTPS:-true}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-tienda.eaciot.com,www.tienda.eaciot.com,*.nixopus.ai}
+      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:////data/app.db}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SMTP_TLS=${SMTP_TLS:-true}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-https://tienda.eaciot.com/auth/google/callback}
+      - OLLAMA_HOST=${OLLAMA_HOST:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY:-}
+      - PAC_PROVIDER=${PAC_PROVIDER:-finkok}
+      - PAC_ENVIRONMENT=${PAC_ENVIRONMENT:-production}
+      - PAC_USERNAME=${PAC_USERNAME:-}
+      - PAC_PASSWORD=${PAC_PASSWORD:-}
+      - CSD_PASSWORD=${CSD_PASSWORD:-}
+      - FACTURAPI_API_KEY=${FACTURAPI_API_KEY:-}
+      - FACTURAPI_BASE_URL=${FACTURAPI_BASE_URL:-}
+      - BUSINESS_RFC=${BUSINESS_RFC:-}
+      - BUSINESS_NAME=${BUSINESS_NAME:-}
+      - BUSINESS_TAX_REGIME=${BUSINESS_TAX_REGIME:-601}
+      - BUSINESS_ZIP_CODE=${BUSINESS_ZIP_CODE:-}
+      - BUSINESS_IVA_RATE=${BUSINESS_IVA_RATE:-0.16}
+      - UPLOAD_DIR=${UPLOAD_DIR:-./uploads}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-104857600}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
 
 volumes:
-  ollama_data:
+  appdata:
