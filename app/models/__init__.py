@@ -17,6 +17,7 @@ from app.models.invoice import Invoice
 from app.models.saved_report import SavedReport
 from app.models.product_analytics import ProductAnalytics
 from app.models.campaign import Campaign
+from app.models.fraud_score import FraudScore
 
 __all__ = [
     "User",

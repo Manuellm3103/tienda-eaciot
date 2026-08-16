@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Antifraude IA - Tienda Eaciot{% endblock %}
+
+{% block content %}
+<h2>Antifraude IA</h2>
+
+{% if scores %}
+<table class="table table-striped mt-4">
+    <thead>
+        <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Total</th>
+            <th>Riesgo</th>
+            <th>Nivel</th>
+            <th>Decisión</th>
+            <th>Banderas</th>
+            <th>Fecha</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for score in scores %}
+        <tr>
+            <td><a href="/admin/orders/{{ score.order_id }}">{{ score.order_id[:8] }}</a></td>
+            <td>{{ score.customer_email }}</td>
+            <td>${{ "%.2f" | format(score.total) }}</td>
+            <td>{{ "%.2f" | format(score.risk_score) }}</td>
+            <td>
+                {% if score.risk_level == 'high' %}
+                <span class="badge bg-danger">Alto</span>
+                {% elif score.risk_level == 'medium' %}
+                <span class="badge bg-warning">Medio</span>
+                {% else %}
+                <span class="badge bg-success">Bajo</span>
+                {% endif %}
+            </td>
+            <td>{{ score.auto_decision }}</td>
+            <td>{{ score.flags }}</td>
+            <td>{{ score.created_at }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info mt-4">No hay scores de fraude registrados.</div>
+{% endif %}
+{% endblock %}
+

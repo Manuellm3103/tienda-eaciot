@@ -38,3 +38,4 @@ agentdb.rvf*
 *.pfx
 secrets/
 csd/
+.worktrees/

@@ -1,6 +1,8 @@
-{% extends "admin/base.html" %}
+{% extends "base.html" %}
 
-{% block admin_content %}
+{% block title %}Búsqueda IA - Tienda Eaciot{% endblock %}
+
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Búsqueda IA</h2>
     <button class="btn btn-primary" hx-post="/admin/search/reindex" hx-target="#reindex-result">

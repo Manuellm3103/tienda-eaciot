@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
@@ -57,9 +58,14 @@ class OrderService:
         for item_data in items_data:
             order_item = OrderItem(order_id=order.id, **item_data)
             db.add(order_item)
-        
+
         await db.flush()
-        return order
+
+        # Eager-load items so the response can be serialized after the session closes.
+        result = await db.execute(
+            select(Order).where(Order.id == order.id).options(selectinload(Order.items))
+        )
+        return result.scalar_one()
     
     async def get_user_orders(self, db: AsyncSession, user_id: UUID) -> List[Order]:
         user_id = str(user_id)  # String(36) PK — never bind a UUID object
