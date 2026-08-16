@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Búsqueda IA</h2>
+    <button class="btn btn-primary" hx-post="/admin/search/reindex" hx-target="#reindex-result">
+        Reindexar Catálogo
+    </button>
+</div>
+
+<div id="reindex-result" class="mb-4"></div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Estado</h5>
+        <p class="card-text">
+            Motor: <strong>{% if enabled %}Meilisearch{% else %}SQL fallback{% endif %}</strong>
+        </p>
+        <p class="card-text">
+            {% if enabled %}
+            El índice Meilisearch está activo. Reindexa después de grandes cambios de catálogo.
+            {% else %}
+            Meilisearch está deshabilitado; la búsqueda usa SQL con expansión de términos IA.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Facetas disponibles</h5>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+                <strong>Categorías:</strong> {{ facets.categories | join(", ") }}
+            </li>
+            <li class="list-group-item">
+                <strong>Tipos de producto:</strong> {{ facets.product_types | join(", ") }}
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

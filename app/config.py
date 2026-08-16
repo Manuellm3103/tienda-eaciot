@@ -96,6 +96,11 @@ class Settings(BaseSettings):
     # Upload
     upload_dir: str = "./uploads"
     max_file_size: int = 104857600
+
+    # Semantic Search (Meilisearch)
+    meilisearch_url: str = "http://localhost:7700"
+    meilisearch_api_key: str = ""
+    semantic_search_enabled: bool = False
     
     class Config:
         env_file = ".env"

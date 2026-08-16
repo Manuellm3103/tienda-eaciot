@@ -431,13 +431,26 @@ async def account_page(request: Request, db: AsyncSession = Depends(get_db)):
 async def search_page(
     request: Request,
     q: str = "",
+    category: Optional[str] = None,
+    category_id: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    type: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
 ):
     products = []
     ai_expanded = False
     expanded_terms = []
+    categories = await product_service.get_categories(db)
     if q:
-        result = await search_service.search_with_expansion(db, query=q)
+        result = await search_service.search_with_expansion(
+            db,
+            query=q,
+            category_id=category_id,
+            min_price=min_price,
+            max_price=max_price,
+            product_type=type,
+        )
         products = result.get("products", [])
         ai_expanded = result.get("ai_expanded", False)
         expanded_terms = result.get("expanded_terms", [])
@@ -449,6 +462,11 @@ async def search_page(
             "q": q,
             "ai_expanded": ai_expanded,
             "expanded_terms": expanded_terms,
+            "categories": categories,
+            "selected_category": category,
+            "selected_type": type,
+            "min_price": min_price,
+            "max_price": max_price,
         },
     )
 

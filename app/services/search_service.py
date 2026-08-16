@@ -107,12 +107,22 @@ class SearchService:
         db: AsyncSession,
         query: str,
         category_id: Optional[UUID] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        product_type: Optional[str] = None,
         sort_by: str = "relevance",
         per_page: int = 20,
     ) -> dict:
         """Exact search first; on zero hits, fall back to AI-expanded terms."""
         result = await self.search_products(
-            db, query, category_id=category_id, sort_by=sort_by, per_page=per_page
+            db,
+            query,
+            category_id=category_id,
+            min_price=min_price,
+            max_price=max_price,
+            product_type=product_type,
+            sort_by=sort_by,
+            per_page=per_page,
         )
         result["ai_expanded"] = False
         result["expanded_terms"] = []
@@ -127,6 +137,9 @@ class SearchService:
             db,
             "",
             category_id=category_id,
+            min_price=min_price,
+            max_price=max_price,
+            product_type=product_type,
             sort_by=sort_by,
             per_page=per_page,
             extra_terms=terms,
