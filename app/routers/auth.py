@@ -23,11 +23,23 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 from app.templates_instance import templates
 
 
+def _safe_next(value: str) -> str:
+    """Allow only in-site relative redirect targets (no open redirects)."""
+    if not value or not value.startswith("/") or value.startswith("//") or value.startswith("/\\"):
+        return "/"
+    return value
+
+
 # ==================== PAGES ====================
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("auth/login.html", {"request": request})
+    # `next` is used to return the user to the page they tried to visit
+    # (e.g. /admin/dashboard) after logging in.
+    next_url = _safe_next(request.query_params.get("next", "/"))
+    return templates.TemplateResponse(
+        "auth/login.html", {"request": request, "next": next_url}
+    )
 
 
 @router.get("/register", response_class=HTMLResponse)
@@ -199,8 +211,9 @@ async def login_web(request: Request, data: UserLogin, db: AsyncSession = Depend
     # Create token
     access_token = create_access_token(data={"sub": str(user.id)})
 
-    # Redirect with cookie
-    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+    # Redirect to the requested page (or home) with a session cookie.
+    next_url = _safe_next(request.query_params.get("next", "/"))
+    response = RedirectResponse(url=next_url, status_code=status.HTTP_302_FOUND)
     response.set_cookie(
         key="access_token",
         value=access_token,
@@ -275,7 +288,7 @@ async def reset_password(request: Request, token: str, new_password: str, db: As
 @router.get("/google")
 async def google_login(request: Request):
     """Redirect to Google OAuth"""
-    state = request.query_params.get("next", "/")
+    state = _safe_next(request.query_params.get("next", "/"))
     auth_url = await oauth_service.get_google_auth_url(state)
     return RedirectResponse(auth_url)
 
@@ -339,7 +352,7 @@ async def google_callback(request: Request, code: str, state: str = "/", db: Asy
 @router.get("/microsoft")
 async def microsoft_login(request: Request):
     """Redirect to Microsoft OAuth"""
-    state = request.query_params.get("next", "/")
+    state = _safe_next(request.query_params.get("next", "/"))
     auth_url = await oauth_service.get_microsoft_auth_url(state)
     return RedirectResponse(auth_url)
 
@@ -403,7 +416,7 @@ async def microsoft_callback(request: Request, code: str, state: str = "/", db: 
 @router.get("/github")
 async def github_login(request: Request):
     """Redirect to GitHub OAuth"""
-    state = request.query_params.get("next", "/")
+    state = _safe_next(request.query_params.get("next", "/"))
     auth_url = await oauth_service.get_github_auth_url(state)
     return RedirectResponse(auth_url)
 

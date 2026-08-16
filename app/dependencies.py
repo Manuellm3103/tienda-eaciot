@@ -49,9 +49,33 @@ async def get_current_user(request: Request, db: AsyncSession = Depends(get_db))
     return user
 
 
+class LoginRequired(HTTPException):
+    """Anonymous browser hit a protected page.
+
+    FastAPI exception handlers DO propagate through the middleware stack
+    (returning a Response from a plain dependency does NOT — the handler
+    still runs and silently discards it, leaking the page). The app registers
+    a handler that converts this into a 303 redirect to the login page.
+    """
+
+
+def _wants_html(request: Request) -> bool:
+    accept = request.headers.get("accept", "")
+    return "text/html" in accept or not accept
+
+
 async def require_admin(request: Request, db: AsyncSession = Depends(get_db)) -> User:
-    """Require an authenticated admin user, otherwise raise 401/403."""
-    user = await get_current_user(request, db)
+    """Require an authenticated admin user, otherwise raise 401/403.
+
+    Anonymous browsers hitting admin pages are redirected to the login page
+    (with a `next` param) instead of seeing a bare 401; API/JSON callers keep
+    the 401/403 status.
+    """
+    user = await get_current_user_optional(request, db)
+    if not user:
+        if request.url.path.startswith("/api/") or not _wants_html(request):
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        raise LoginRequired(status_code=401, detail="Not authenticated")
     if not getattr(user, "is_admin", False):
         raise HTTPException(status_code=403, detail="Admin required")
     return user

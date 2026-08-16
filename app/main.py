@@ -12,7 +12,7 @@ from app.services.product_service import product_service
 from app.services.recommendation_service import recommendation_service
 from app.services.personalization_service import personalization_service
 from app.scheduler import start_scheduler
-from app.dependencies import get_current_user_optional
+from app.dependencies import get_current_user_optional, LoginRequired
 from app.routers import (
     auth_router,
     products_router,
@@ -209,6 +209,19 @@ async def products_page(request: Request, db: AsyncSession = Depends(get_db)):
     return templates.TemplateResponse(
         "products/list.html",
         {"request": request, "products": products, "categories": categories, "user": user},
+    )
+
+
+@app.exception_handler(LoginRequired)
+async def login_required_handler(request: Request, exc):
+    """Anonymous browser hit a protected page -> 303 to the login page."""
+    from urllib.parse import quote
+
+    next_url = request.url.path
+    if request.url.query:
+        next_url += "?" + request.url.query
+    return RedirectResponse(
+        url=f"/auth/login?next={quote(next_url)}", status_code=303
     )
 
 

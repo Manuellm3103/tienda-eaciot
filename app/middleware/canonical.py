@@ -18,6 +18,10 @@ class CanonicalDomainMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         canonical = allowed[0].lower()
+        # Health probes must never be redirected: Render (and uptime monitors)
+        # hit the onrender.com host and expect a direct 2xx.
+        if request.url.path in ("/health", "/healthz"):
+            return await call_next(request)
         if host and host != canonical and canonical != "*":
             # Only redirect if the current host is in allowed list but not canonical.
             if host in [h.lower() for h in allowed]:
