@@ -66,6 +66,7 @@ async def init_db():
 _SQLITE_COLUMN_MIGRATIONS = {
     "users": [
         ("is_guest", "BOOLEAN DEFAULT 0"),
+        ("favorite_category_id", "VARCHAR(36)"),
     ],
     "orders": [
         ("customer_rfc", "VARCHAR(20)"),

@@ -19,6 +19,21 @@ async def reset_rate_limiter():
 
 
 @pytest_asyncio.fixture(autouse=True)
+async def clean_accumulated_test_data(db):
+    """Truncate tables that accumulate rows across tests so each test sees
+    only the data it creates."""
+    yield
+    from sqlalchemy import text
+
+    await db.execute(text("PRAGMA foreign_keys=OFF"))
+    await db.execute(text("DELETE FROM user_events"))
+    await db.execute(text("DELETE FROM product_analytics"))
+    await db.execute(text("DELETE FROM saved_reports"))
+    await db.execute(text("PRAGMA foreign_keys=ON"))
+    await db.commit()
+
+
+@pytest_asyncio.fixture(autouse=True)
 async def no_background_email(monkeypatch):
     """Tests must not schedule real SMTP delivery or write to the real app.db.
 

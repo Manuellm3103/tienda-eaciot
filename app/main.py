@@ -10,6 +10,7 @@ from app.database import init_db, get_db
 from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors, CSRFMiddleware, CanonicalDomainMiddleware
 from app.services.product_service import product_service
 from app.services.recommendation_service import recommendation_service
+from app.services.personalization_service import personalization_service
 from app.dependencies import get_current_user_optional
 from app.routers import (
     auth_router,
@@ -153,12 +154,18 @@ async def root(request: Request, db: AsyncSession = Depends(get_db)):
     products = await product_service.get_products(db, None)
     featured = products[:3] if products else []
     trending = await recommendation_service.get_trending(db)
+    personalized = await personalization_service.recommend_for_user(
+        db, str(user.id) if user else None, n=8
+    )
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "featured_products": featured,
             "trending_products": trending,
+            "personalized_products": personalized["products"],
+            "personalized_reason": personalized.get("reason"),
+            "personalized": personalized["personalized"],
             "user": user,
         },
     )

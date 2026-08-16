@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, Integer, Numeric, DateTime
+from sqlalchemy import Column, String, Boolean, Integer, Numeric, DateTime, ForeignKey
 from app.database import Base
 
 
@@ -33,6 +33,9 @@ class User(Base):
     total_spent = Column(Numeric(10, 2), default=0.00)
     purchase_count = Column(Integer, default=0)
     last_purchase_at = Column(DateTime)
+
+    # Personalizaci�n
+    favorite_category_id = Column(String(36), ForeignKey("categories.id"), nullable=True)
     
     # IA
     is_fidel = Column(Boolean, default=False)
