@@ -2,7 +2,12 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from app.database import Base, get_db
 from app.main import app
+from app.config import settings
 from httpx import AsyncClient, ASGITransport
+
+# Disable the background scheduler during tests so it does not create campaigns
+# or enqueue emails unexpectedly while the suite runs.
+settings.scheduler_enabled = False
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 

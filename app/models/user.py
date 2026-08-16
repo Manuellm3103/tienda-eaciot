@@ -36,6 +36,9 @@ class User(Base):
 
     # Personalizaci�n
     favorite_category_id = Column(String(36), ForeignKey("categories.id"), nullable=True)
+
+    # Social commerce
+    phone = Column(String(50), unique=True, nullable=True, index=True)
     
     # IA
     is_fidel = Column(Boolean, default=False)

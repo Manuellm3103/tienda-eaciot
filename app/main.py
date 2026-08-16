@@ -11,6 +11,7 @@ from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, set
 from app.services.product_service import product_service
 from app.services.recommendation_service import recommendation_service
 from app.services.personalization_service import personalization_service
+from app.scheduler import start_scheduler
 from app.dependencies import get_current_user_optional
 from app.routers import (
     auth_router,
@@ -45,12 +46,16 @@ from app.routers.support import router as support_router
 from app.routers.admin_support import router as admin_support_router
 from app.routers.admin_invoices import router as admin_invoices_router
 from app.routers.admin_email_queue import router as admin_email_queue_router
+from app.routers.admin_campaigns import router as admin_campaigns_router
+from app.routers.admin_whatsapp import router as admin_whatsapp_router
+from app.routers.webhooks import router as webhooks_router
 from app.routers.invoice_validation import router as invoice_validation_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await start_scheduler()
     yield
 
 
@@ -99,7 +104,10 @@ app.include_router(support_router)
 app.include_router(admin_support_router)
 app.include_router(admin_invoices_router)
 app.include_router(admin_email_queue_router)
+app.include_router(admin_campaigns_router)
+app.include_router(admin_whatsapp_router)
 app.include_router(invoice_validation_router)
+app.include_router(webhooks_router)
 app.include_router(auth_router)
 app.include_router(products_router)
 app.include_router(admin_products_router)

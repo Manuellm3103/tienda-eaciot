@@ -101,6 +101,14 @@ class Settings(BaseSettings):
     meilisearch_url: str = "http://localhost:7700"
     meilisearch_api_key: str = ""
     semantic_search_enabled: bool = False
+
+    # Background scheduler (disabled in tests by default)
+    scheduler_enabled: bool = True
+
+    # WhatsApp Business API (Cloud API via Meta)
+    whatsapp_verify_token: str = ""
+    whatsapp_phone_number_id: str = ""
+    whatsapp_access_token: str = ""
     
     class Config:
         env_file = ".env"
