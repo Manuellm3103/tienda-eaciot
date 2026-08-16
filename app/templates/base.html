@@ -32,8 +32,13 @@
                     <a href="/products" class="hover:text-blue-600">Productos</a>
                     <a href="/wishlist/page" class="hover:text-blue-600">Wishlist</a>
                     <a href="/cart" class="hover:text-blue-600">Carrito <span id="cart-count" class="bg-red-500 text-white text-xs rounded-full px-2 py-1"></span></a>
-                    <form action="/search" method="GET" class="flex">
-                        <input type="text" name="q" placeholder="Buscar..." class="border rounded-l-md px-3 py-1 text-sm">
+                    <form action="/search" method="GET" class="flex items-center" id="nav-search-form">
+                        <input type="text" name="q" id="nav-search-input" placeholder="Buscar..." class="border rounded-l-md px-3 py-1 text-sm">
+                        <button type="button" id="voice-search-btn" class="bg-gray-200 text-gray-700 px-2 py-1 border-y border-gray-300" title="Buscar por voz">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                        </button>
                         <button type="submit" class="bg-blue-600 text-white px-3 py-1 rounded-r-md text-sm">Buscar</button>
                     </form>
                     {% if user %}
@@ -190,6 +195,89 @@
                 } finally {
                     sendBtn.disabled = false;
                     input.focus();
+                }
+            });
+        })();
+
+        // Voice search
+        (function() {
+            const btn = document.getElementById('voice-search-btn');
+            const input = document.getElementById('nav-search-input');
+            const form = document.getElementById('nav-search-form');
+            if (!btn || !input || !form) return;
+
+            // Prefer browser Web Speech API when available
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'es-MX';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                btn.addEventListener('click', () => {
+                    btn.classList.add('text-blue-600');
+                    try {
+                        recognition.start();
+                    } catch (err) {
+                        console.error('Speech recognition error:', err);
+                        btn.classList.remove('text-blue-600');
+                    }
+                });
+
+                recognition.addEventListener('result', (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    input.value = transcript;
+                    form.submit();
+                });
+
+                recognition.addEventListener('end', () => {
+                    btn.classList.remove('text-blue-600');
+                });
+
+                recognition.addEventListener('error', () => {
+                    btn.classList.remove('text-blue-600');
+                });
+                return;
+            }
+
+            // Fallback: server-side transcription via /api/voice/search
+            btn.addEventListener('click', async () => {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert('Tu navegador no soporta búsqueda por voz.');
+                    return;
+                }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mediaRecorder = new MediaRecorder(stream);
+                    const chunks = [];
+                    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+                    mediaRecorder.onstop = async () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        const fd = new FormData();
+                        fd.append('audio', blob, 'voice.webm');
+                        btn.classList.add('animate-pulse', 'text-blue-600');
+                        try {
+                            const res = await fetch('/api/voice/search', {
+                                method: 'POST',
+                                body: fd,
+                                credentials: 'same-origin',
+                            });
+                            const data = await res.json();
+                            if (data.query) {
+                                input.value = data.query;
+                                form.submit();
+                            } else {
+                                alert('No se pudo entender el audio. Intenta de nuevo.');
+                            }
+                        } finally {
+                            btn.classList.remove('animate-pulse', 'text-blue-600');
+                        }
+                    };
+                    mediaRecorder.start();
+                    setTimeout(() => mediaRecorder.stop(), 4000);
+                } catch (err) {
+                    console.error('Microphone access error:', err);
+                    alert('No se pudo acceder al micrófono.');
                 }
             });
         })();

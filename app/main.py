@@ -24,6 +24,7 @@ from app.routers import (
     reviews_router,
     wishlist_router,
     search_router,
+    voice_router,
     shipping_router,
     refunds_router,
 )
@@ -115,6 +116,7 @@ app.include_router(admin_variants_router)
 app.include_router(reviews_router)
 app.include_router(wishlist_router)
 app.include_router(search_router)
+app.include_router(voice_router)
 app.include_router(shipping_router)
 app.include_router(refunds_router)
 
