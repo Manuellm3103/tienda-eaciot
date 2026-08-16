@@ -85,6 +85,10 @@ _SQLITE_COLUMN_MIGRATIONS = {
         ("content_score", "NUMERIC(5,2)"),
         ("seo_score", "NUMERIC(5,2)"),
         ("alt_texts", "TEXT"),
+        ("base_price", "NUMERIC(10,2)"),
+        ("dynamic_price", "NUMERIC(10,2)"),
+        ("dynamic_pricing_enabled", "BOOLEAN DEFAULT 0"),
+        ("price_updated_at", "TIMESTAMP"),
     ],
 }
 

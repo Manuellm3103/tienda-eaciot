@@ -5,7 +5,10 @@
 {% block content %}
 <div class="flex justify-between items-center mb-8">
     <h1 class="text-3xl font-bold">Precios Dinámicos</h1>
-    <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+    <div class="space-x-2">
+        <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Actualizar analytics</button>
+        <a href="/admin/dashboard" class="bg-gray-600 text-white px-4 py-2 rounded">Dashboard</a>
+    </div>
 </div>
 
 <p class="text-gray-600 mb-6">
@@ -40,6 +43,8 @@
                 <th class="text-center py-3 px-4">Vistas 24h</th>
                 <th class="text-center py-3 px-4">Carrito 24h</th>
                 <th class="text-center py-3 px-4">Stock</th>
+                <th class="text-center py-3 px-4">Auto</th>
+                <th class="py-3 px-4">Acciones</th>
             </tr>
         </thead>
         <tbody id="pricing-body">
@@ -74,16 +79,73 @@
                     '<td class="text-right py-3 px-4">$' + r.current_price.toFixed(2) + '</td>' +
                     '<td class="text-right py-3 px-4 font-semibold">$' + r.suggested_price.toFixed(2) + ' <span class="text-xs text-gray-400">' + diffTxt + '</span></td>' +
                     '<td class="text-center py-3 px-4"><span class="inline-block px-2 py-1 rounded text-xs font-medium ' + s.cls + '">' + s.label + '</span></td>' +
-                    '<td class="text-center py-3 px-4">' + r.demand_24h_views + '</td>' +
-                    '<td class="text-center py-3 px-4">' + r.demand_24h_cart_adds + '</td>' +
-                    '<td class="text-center py-3 px-4">' + (r.stock < 0 ? '∞' : r.stock) + '</td>' +
-                '</tr>';
+                '<td class="text-center py-3 px-4">' + r.demand_24h_views + '</td>' +
+                '<td class="text-center py-3 px-4">' + r.demand_24h_cart_adds + '</td>' +
+                '<td class="text-center py-3 px-4">' + (r.stock < 0 ? '∞' : r.stock) + '</td>' +
+                '<td class="text-center py-3 px-4">' + (r.dynamic_pricing_enabled ? 'Sí' : 'No') + '</td>' +
+                '<td class="py-3 px-4">' +
+                    '<button class="apply-price text-emerald-600 hover:text-emerald-800 text-sm mr-2" data-id="' + r.product_id + '" data-price="' + r.suggested_price + '">Aplicar</button>' +
+                    '<button class="toggle-auto text-blue-600 hover:text-blue-800 text-sm" data-id="' + r.product_id + '" data-enabled="' + (r.dynamic_pricing_enabled ? 'false' : 'true') + '">' + (r.dynamic_pricing_enabled ? 'Desactivar auto' : 'Activar auto') + '</button>' +
+                '</td>' +
+            '</tr>';
             }).join('') || '<tr><td colspan="7" class="py-4 text-center text-gray-400">No hay productos activos.</td></tr>';
         } catch (err) {
             document.getElementById('pricing-body').innerHTML =
                 '<tr><td colspan="7" class="py-4 text-center text-red-500">No se pudo cargar.</td></tr>';
         }
     }
+    async function postJson(url, body) {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+        });
+        return await res.json();
+    }
+
+    function csrfToken() {
+        const m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    function bindActions() {
+        document.querySelectorAll('.apply-price').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const id = btn.getAttribute('data-id');
+                const price = parseFloat(btn.getAttribute('data-price'));
+                if (!confirm('¿Aplicar precio sugerido $' + price.toFixed(2) + '?')) return;
+                await postJson('/admin/pricing/apply', {
+                    product_id: id,
+                    new_price: price,
+                    _csrf_token: csrfToken()
+                });
+                load();
+            });
+        });
+        document.querySelectorAll('.toggle-auto').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const id = btn.getAttribute('data-id');
+                const enabled = btn.getAttribute('data-enabled') === 'true';
+                await postJson('/admin/pricing/toggle', {
+                    product_id: id,
+                    enabled: enabled,
+                    _csrf_token: csrfToken()
+                });
+                load();
+            });
+        });
+    }
+
+    document.getElementById('refresh-btn').addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = 'Actualizando...';
+        await postJson('/admin/pricing/refresh-analytics', {_csrf_token: csrfToken()});
+        this.disabled = false;
+        this.textContent = 'Actualizar analytics';
+        load();
+    });
+
     load();
 })();
 </script>

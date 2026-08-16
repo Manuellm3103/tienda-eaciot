@@ -50,6 +50,12 @@ class Product(Base):
     seo_score = Column(Numeric(5, 2), nullable=True)
     alt_texts = Column(JSON, nullable=True)  # list[str]
 
+    # Dynamic pricing
+    base_price = Column(Numeric(10, 2), nullable=True)
+    dynamic_price = Column(Numeric(10, 2), nullable=True)
+    dynamic_pricing_enabled = Column(Boolean, default=False)
+    price_updated_at = Column(DateTime, nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

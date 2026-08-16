@@ -15,6 +15,7 @@ from app.models.user_event import UserEvent
 from app.models.support_ticket import SupportTicket
 from app.models.invoice import Invoice
 from app.models.saved_report import SavedReport
+from app.models.product_analytics import ProductAnalytics
 
 __all__ = [
     "User",
@@ -39,4 +40,5 @@ __all__ = [
     "SupportTicket",
     "Invoice",
     "SavedReport",
+    "ProductAnalytics",
 ]

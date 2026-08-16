@@ -8,6 +8,17 @@ TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 
 
 @pytest_asyncio.fixture(autouse=True)
+async def reset_rate_limiter():
+    """Reset the in-memory rate limiter between tests so the global request
+    budget is not exhausted by previous tests."""
+    from app.middleware.rate_limit import rate_limiter
+
+    rate_limiter.requests.clear()
+    yield
+    rate_limiter.requests.clear()
+
+
+@pytest_asyncio.fixture(autouse=True)
 async def no_background_email(monkeypatch):
     """Tests must not schedule real SMTP delivery or write to the real app.db.
 
