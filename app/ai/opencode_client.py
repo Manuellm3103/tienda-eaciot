@@ -20,51 +20,60 @@ class OpenCodeClient:
         self.model = getattr(settings, "opencode_model", "opencode-go")
         self.api_key = getattr(settings, "opencode_api_key", "")
 
+    def _endpoint(self, path: str) -> str:
+        """Build an OpenAI-compatible endpoint URL.
+
+        Algunos proveedores dan la raíz de la API CON el prefijo /v1
+        (p. ej. https://opencode.ai/zen/go/v1); otros dan solo el host.
+        """
+        base = self.host.rstrip("/")
+        if not base.endswith("/v1"):
+            base += "/v1"
+        return f"{base}{path}"
+
+    def _headers(self) -> dict:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
+
     async def generate(self, prompt: str, system: str = "") -> str:
         """Generate a completion via OpenAI-compatible /v1/chat/completions.
 
         The `system` message is passed as a chat role; the legacy
         /v1/completions endpoint does not accept a system field.
         """
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
             response = await client.post(
-                f"{self.host}/v1/chat/completions",
+                self._endpoint("/chat/completions"),
                 json={
                     "model": self.model,
                     "messages": messages,
                     "max_tokens": 1024,
                     "temperature": 0.7,
                 },
-                headers=headers,
+                headers=self._headers(),
             )
             response.raise_for_status()
             return response.json()["choices"][0]["message"]["content"]
 
     async def chat(self, messages: list[dict]) -> str:
         """Chat completion via OpenAI-compatible /v1/chat/completions."""
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-
-        async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
             response = await client.post(
-                f"{self.host}/v1/chat/completions",
+                self._endpoint("/chat/completions"),
                 json={
                     "model": self.model,
                     "messages": messages,
                     "max_tokens": 1024,
                     "temperature": 0.7,
                 },
-                headers=headers,
+                headers=self._headers(),
             )
             response.raise_for_status()
             return response.json()["choices"][0]["message"]["content"]
@@ -76,11 +85,11 @@ class OpenCodeClient:
         falls back to `/health` for servers that only expose a health route.
         """
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(f"{self.host}/v1/models")
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(self._endpoint("/models"))
                 if resp.status_code == 200:
                     return True
-                resp = await client.get(f"{self.host}/health")
+                resp = await client.get(f"{self.host.rstrip('/')}/health")
                 return resp.status_code == 200
         except Exception:
             return False
