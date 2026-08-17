@@ -129,7 +129,8 @@ def _parse_videos(text: str) -> Optional[list]:
 
 @router.get("/", response_class=HTMLResponse)
 async def admin_products_list(request: Request, db: AsyncSession = Depends(get_db)):
-    products = await product_service.get_products(db, active_only=True)
+    # Mostrar TODOS (activos e inactivos): los inactivos llevan botón Reactivar.
+    products = await product_service.get_products(db, active_only=False)
     categories = await product_service.get_categories(db)
     return templates.TemplateResponse(
         "admin/products.html",
@@ -233,6 +234,22 @@ async def admin_product_update(
 async def admin_product_delete(request: Request, product_id: str, db: AsyncSession = Depends(get_db)):
     await validate_csrf(request)
     await product_service.delete_product(db, product_id)
+    await db.commit()
+    return RedirectResponse(url="/admin/products/", status_code=302)
+
+
+@router.post("/{product_id}/reactivate")
+async def admin_product_reactivate(request: Request, product_id: str, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
+    await product_service.reactivate_product(db, product_id)
+    await db.commit()
+    return RedirectResponse(url="/admin/products/", status_code=302)
+
+
+@router.post("/reactivate-all")
+async def admin_products_reactivate_all(request: Request, db: AsyncSession = Depends(get_db)):
+    await validate_csrf(request)
+    count = await product_service.reactivate_all(db)
     await db.commit()
     return RedirectResponse(url="/admin/products/", status_code=302)
 

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from typing import List, Optional
 from uuid import UUID
 from app.models.product import Product, Category
@@ -62,6 +62,22 @@ class ProductService:
             product.is_active = False
             await db.flush()
             return True
+
+    async def reactivate_product(self, db: AsyncSession, product_id: UUID) -> bool:
+        """Reactivar un producto desactivado por el botón Eliminar."""
+        product = await self.get_product(db, product_id)
+        if not product:
+            return False
+        product.is_active = True
+        await db.flush()
+        return True
+
+    async def reactivate_all(self, db: AsyncSession) -> int:
+        """Reactivar TODOS los productos inactivos (recuperación masiva)."""
+        result = await db.execute(
+            update(Product).where(Product.is_active == False).values(is_active=True)  # noqa: E712
+        )
+        return result.rowcount
     
     async def get_categories(self, db: AsyncSession) -> List[Category]:
         result = await db.execute(select(Category).where(Category.is_active == True))
