@@ -92,8 +92,13 @@ class ProductContentService:
             "seo_score": seo_score,
         }
 
-    async def batch_enrich(self, db: AsyncSession, limit: int = 20) -> dict:
-        """Enrich active products whose description is missing or too short."""
+    async def batch_enrich(self, db: AsyncSession, limit: int = 20, force: bool = False) -> dict:
+        """Enrich active products.
+
+        force=False: solo productos sin descripción o con descripción corta.
+        force=True: reescribe TODOS los productos activos (lo que pide el
+        dueño cuando quiere que el depto de marketing refresque el catálogo).
+        """
         result = await db.execute(
             select(Product).where(Product.is_active == True)
         )
@@ -102,7 +107,7 @@ class ProductContentService:
         enriched = 0
         failed = 0
         for p in products:
-            if p.description and len(p.description) >= 50:
+            if not force and p.description and len(p.description) >= 50:
                 continue
             if enriched >= limit:
                 break

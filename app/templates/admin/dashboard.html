@@ -47,6 +47,32 @@
     </div>
 </div>
 
+<!-- Departamento de Marketing IA -->
+<div class="bg-white rounded-lg shadow p-6 mb-8 border-l-4 border-cyan-500">
+    <h2 class="text-xl font-bold mb-2">🤖 Departamento de Marketing IA</h2>
+    <p class="text-gray-600 text-sm mb-4">
+        Dale órdenes y las ejecuta: contenido SEO de productos, campañas, keywords o reportes.
+        Ejemplos: "reescribe el catálogo", "campaña para el Buen Fin", "keywords para camisetas".
+    </p>
+    <div class="flex gap-2 mb-3">
+        <input type="text" id="marketing-input" class="flex-1 border border-gray-300 rounded px-3 py-2"
+               placeholder="Ej: mejora las descripciones de mis productos">
+        <button id="marketing-submit" class="bg-cyan-600 text-white px-4 py-2 rounded shrink-0">Enviar</button>
+    </div>
+    <div id="marketing-response" class="text-sm text-gray-800 whitespace-pre-wrap mb-4"></div>
+
+    <div class="flex flex-wrap gap-2">
+        <button id="btn-enrich" class="bg-emerald-600 text-white px-4 py-2 rounded">
+            ✨ Re-escribir TODOS los productos con IA
+        </button>
+        <a href="/admin/products/new" class="bg-blue-600 text-white px-4 py-2 rounded">+ Subir producto</a>
+        <a href="/admin/products/" class="bg-indigo-600 text-white px-4 py-2 rounded">Catálogo</a>
+        <a href="/admin/campaigns" class="bg-pink-600 text-white px-4 py-2 rounded">Campañas</a>
+        <a href="/admin/marketing" class="bg-cyan-700 text-white px-4 py-2 rounded">Depto completo</a>
+    </div>
+    <div id="enrich-response" class="text-sm text-emerald-700 font-medium mt-3"></div>
+</div>
+
 <!-- Sugerencias IA -->
 <div class="bg-white rounded-lg shadow p-6 mb-8">
     <h2 class="text-xl font-bold mb-4">Sugerencias de IA</h2>
@@ -75,4 +101,46 @@
         </tbody>
     </table>
 </div>
+
+<script>
+// Chat con el depto de marketing IA (agentes: contenido, SEO, campañas, analítica)
+document.getElementById('marketing-submit').addEventListener('click', async () => {
+    const input = document.getElementById('marketing-input');
+    const resp = document.getElementById('marketing-response');
+    const msg = input.value.trim();
+    if (!msg) { resp.textContent = 'Escribe qué quieres que haga.'; return; }
+    resp.textContent = 'El depto está pensando...';
+    try {
+        const r = await fetch('/admin/marketing/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': window.getCsrfToken() },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await r.json();
+        resp.textContent = (data.agent ? '[' + data.agent + '] ' : '') + (data.answer || JSON.stringify(data));
+    } catch (e) {
+        resp.textContent = 'Error: ' + e.message;
+    }
+});
+
+// Re-escribir todos los productos con IA (force=true)
+document.getElementById('btn-enrich').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-enrich');
+    const resp = document.getElementById('enrich-response');
+    btn.disabled = true;
+    resp.textContent = 'El depto de marketing está reescribiendo el catálogo (puede tardar ~1 min)...';
+    try {
+        const r = await fetch('/admin/products/batch-enrich?force=true', {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': window.getCsrfToken() }
+        });
+        const data = await r.json();
+        resp.textContent = `✅ Productos reescritos: ${data.enriched} | Fallidos (¿IA sin key?): ${data.failed}`;
+    } catch (e) {
+        resp.textContent = 'Error: ' + e.message;
+    } finally {
+        btn.disabled = false;
+    }
+});
+</script>
 {% endblock %}

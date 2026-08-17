@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Form
+from fastapi import APIRouter, Depends, HTTPException, Request, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
@@ -49,10 +49,15 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
 async def admin_products_batch_enrich(
     request: Request,
     db: AsyncSession = Depends(get_db),
+    force: bool = Query(False),
 ):
-    """Generate AI content for all products with missing/short descriptions."""
+    """Generate AI content for products.
+
+    force=false: solo los que tienen descripción corta o vacía.
+    force=true: reescribe TODOS los productos activos.
+    """
     await validate_csrf(request)
-    result = await product_content_service.batch_enrich(db)
+    result = await product_content_service.batch_enrich(db, force=force)
     await db.commit()
     return JSONResponse(result)
 
