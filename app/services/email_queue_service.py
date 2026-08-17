@@ -56,7 +56,24 @@ class EmailQueueService:
         """Enqueue in the CURRENT request transaction (committed by get_db),
         then deliver in the background using its own session. No cron needed."""
         await self.enqueue(db, to_email, subject, html_content, dedupe_key)
-        asyncio.get_running_loop().create_task(self.flush_pending())
+        asyncio.get_running_loop().create_task(self._flush_after_commit())
+
+    async def _flush_after_commit(self, limit: int = 10) -> int:
+        """Deliver after the request transaction commits.
+
+        enqueue_and_flush runs inside the request's transaction: the queued row
+        only becomes visible to OTHER sessions after get_db commits (which
+        happens after the response). A flush scheduled immediately would open
+        its own session, see an empty queue and leave the email pending
+        forever. Sleep first, and retry once if nothing went out (slow commit
+        or transient SMTP failure).
+        """
+        await asyncio.sleep(1.0)
+        sent = await self.flush_pending(limit)
+        if sent == 0:
+            await asyncio.sleep(3.0)
+            sent = await self.flush_pending(limit)
+        return sent
 
     async def flush_pending(self, limit: int = 10) -> int:
         """Deliver pending queued emails via SMTP (new session, own commit).

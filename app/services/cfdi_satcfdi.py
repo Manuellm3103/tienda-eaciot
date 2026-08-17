@@ -137,7 +137,12 @@ class SATCFDIIssuer:
                 )
             )
 
-        base = sum((c.valor_unitario * c.cantidad for c in concepts), Decimal("0"))
+        # satcfdi's Concepto is a ScalarMap (dict-like): values live under
+        # 'ValorUnitario' / 'Cantidad', not as attributes.
+        base = sum(
+            (Decimal(str(c["ValorUnitario"])) * Decimal(str(c["Cantidad"])) for c in concepts),
+            Decimal("0"),
+        )
         impuestos = None
         iva_rate = Decimal(str(settings.business_iva_rate or 0))
         if iva_rate > 0:
