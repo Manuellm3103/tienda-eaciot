@@ -109,7 +109,12 @@ class EmailService:
                 port=self.smtp_port,
                 username=self.smtp_user,
                 password=self.smtp_password,
-                use_tls=self.smtp_tls,
+                # Puerto 587 (SendGrid): SMTP plano + upgrade STARTTLS.
+                # use_tls=True es TLS IMPLÍCITO (solo puerto 465) y contra el
+                # 587 produce [SSL: WRONG_VERSION_NUMBER] — los emails nunca
+                # saldrían. Elegir el modo según el puerto.
+                use_tls=(self.smtp_port == 465),
+                start_tls=(self.smtp_port == 587),
             )
             return True
         except Exception as e:
