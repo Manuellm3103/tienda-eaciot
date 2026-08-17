@@ -47,12 +47,17 @@ def main() -> None:
     to = "lmmo151253@gmail.com"  # buzón real del usuario para confirmar entrega
 
     print(f"Conectando a {host}:{port} ...")
-    smtp = smtplib.SMTP(host, port, timeout=30)
+    if port == 465:
+        # SSL implícito (HostGator): TLS desde el primer byte, sin STARTTLS.
+        smtp = smtplib.SMTP_SSL(host, port, timeout=30)
+    else:
+        smtp = smtplib.SMTP(host, port, timeout=30)
     try:
+        if port != 465:
+            show("EHLO", smtp.ehlo())
+            if smtp.has_extn("starttls"):
+                show("STARTTLS", smtp.starttls())
         show("EHLO", smtp.ehlo())
-        if smtp.has_extn("starttls"):
-            show("STARTTLS", smtp.starttls())
-            show("EHLO(2)", smtp.ehlo())
         try:
             show("AUTH LOGIN", smtp.login(user, pwd))
         except smtplib.SMTPAuthenticationError as exc:
