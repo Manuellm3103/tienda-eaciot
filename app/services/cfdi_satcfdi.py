@@ -111,13 +111,19 @@ class SATCFDIIssuer:
         payment_method: str = "stripe",
     ) -> dict:
         """Build, sign and stamp. `items` = [{description, quantity, unit_price}]."""
-        # IVA trasladado POR CONCEPTO. En satcfdi 4.4.7 cada Concepto lleva sus
-        # Impuestos (dict con claves 'Traslados') y compute()/process() calculan
-        # la Base e Importe de cada Traslado y los totales del Comprobante.
-        # El Comprobante NO acepta el kwarg 'impuestos': se agregan solos.
+        # IVA trasladado. Dos modos:
+        #  - RFC normal: traslado POR CONCEPTO (satcfdi calcula Base/Importe).
+        #  - Público en General (XAXX010101000): factura GLOBAL — los conceptos
+        #    van SIN impuestos (ObjetoImp 01) y el IVA se traslada a nivel
+        #    comprobante con el nodo InformacionGlobal (regla del SAT).
         iva_rate = Decimal(str(settings.business_iva_rate or 0))
+
+        rfc = (customer_rfc or "").strip().upper() or PUBLICO_EN_GENERAL_RFC
+        name = customer_name or PUBLICO_EN_GENERAL_NAME
+        es_global = rfc == PUBLICO_EN_GENERAL_RFC
+
         concept_impuestos = None
-        if iva_rate > 0:
+        if iva_rate > 0 and not es_global:
             concept_impuestos = {
                 "Traslados": [
                     {"Impuesto": "002", "TipoFactor": "Tasa", "TasaOCuota": iva_rate}
@@ -150,12 +156,18 @@ class SATCFDIIssuer:
                 )
             )
 
-        rfc = (customer_rfc or "").strip().upper() or PUBLICO_EN_GENERAL_RFC
-        name = customer_name or PUBLICO_EN_GENERAL_NAME
-
         forma_pago = FormaPago.TARJETA_DE_CREDITO
         if payment_method not in ("stripe", "card"):
             forma_pago = FormaPago.TRANSFERENCIA_ELECTRONICA_DE_FONDOS
+
+        informacion_global = None
+        if es_global:
+            ahora = datetime.now()
+            informacion_global = cfdi40.InformacionGlobal(
+                periodicidad="01",  # diario — venta puntual
+                meses=str(ahora.month).zfill(2),
+                ano=ahora.year,
+            )
 
         comprobante = cfdi40.Comprobante(
             fecha=datetime.now(),
@@ -165,6 +177,7 @@ class SATCFDIIssuer:
             lugar_expedicion=settings.business_zip_code or "62000",
             metodo_pago=MetodoPago.PAGO_EN_UNA_SOLA_EXHIBICION,
             forma_pago=forma_pago,
+            informacion_global=informacion_global,
             emisor=cfdi40.Emisor(
                 rfc=settings.business_rfc,
                 nombre=settings.business_name or "Tienda Eaciot",
@@ -179,6 +192,27 @@ class SATCFDIIssuer:
             ),
             conceptos=concepts,
         )
+
+        if es_global and iva_rate > 0:
+            # En factura global los conceptos van sin impuestos y el IVA se
+            # traslada a nivel comprobante (Base e Importe globales). compute()
+            # dejó Impuestos=None y Total=SubTotal — se ajustan antes de firmar
+            # (sign() serializa tal cual, no re-ejecuta compute).
+            subtotal = Decimal(str(comprobante["SubTotal"]))
+            iva_importe = (subtotal * iva_rate).quantize(Decimal("0.01"))
+            comprobante["Impuestos"] = {
+                "Traslados": [
+                    {
+                        "Base": subtotal,
+                        "Impuesto": "002",
+                        "TipoFactor": "Tasa",
+                        "TasaOCuota": iva_rate,
+                        "Importe": iva_importe,
+                    }
+                ],
+                "TotalImpuestosTrasladados": iva_importe,
+            }
+            comprobante["Total"] = (subtotal + iva_importe).quantize(Decimal("0.01"))
 
         comprobante.sign(self.signer)
         comprobante = comprobante.process()
