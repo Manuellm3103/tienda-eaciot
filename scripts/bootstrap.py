@@ -22,7 +22,7 @@ from sqlalchemy import select  # noqa: E402
 from app.database import async_session, init_db  # noqa: E402
 from app.models.product import Category, Product  # noqa: E402
 from app.models.user import User  # noqa: E402
-from app.services.auth_service import get_password_hash  # noqa: E402
+from app.services.auth_service import get_password_hash, verify_password  # noqa: E402
 
 DEMO_PRODUCTS = [
     # (title, description, price, product_type, stock, category_slug, category_name)
@@ -95,10 +95,28 @@ async def create_admin_from_env() -> bool:
     async with async_session() as db:
         existing = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
         if existing:
+            # UPSERT del admin: el .env es la fuente de verdad. Garantiza
+            # admin + activo + contraseña exactamente igual a ADMIN_PASSWORD
+            # (esto arregla el caso "existía un admin con otra contraseña y
+            # ya no podías entrar").
+            changed = False
             if not existing.is_admin:
                 existing.is_admin = True
+                changed = True
+            if not existing.is_active:
                 existing.is_active = True
+                changed = True
+            if not existing.email_verified:
+                existing.email_verified = True
+                changed = True
+            if not existing.hashed_password or not verify_password(password, existing.hashed_password):
+                existing.hashed_password = get_password_hash(password)
+                changed = True
+            if changed:
                 await db.commit()
+                print(f"Bootstrap: admin {email} sincronizado (contraseña = ADMIN_PASSWORD)")
+            else:
+                print(f"Bootstrap: admin {email} ya estaba al día")
             return True
         db.add(
             User(
