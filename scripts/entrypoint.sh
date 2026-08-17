@@ -11,6 +11,9 @@ alembic upgrade head
 echo "== Tienda Eaciot: bootstrap (productos demo + admin, idempotente) =="
 python scripts/bootstrap.py
 
+echo "== Tienda Eaciot: enrich con el depto de marketing IA (best-effort) =="
+python scripts/enrich_products.py || echo "Enrich skipped (never blocks startup)"
+
 echo "== Tienda Eaciot: arrancando =="
 # --proxy-headers + --forwarded-allow-ips: el proxy de la plataforma (Nixopus
 # Caddy / Render / Traefik) termina TLS y reenvía en HTTP plano con
