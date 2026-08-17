@@ -157,41 +157,36 @@ def wait_health(max_wait: int = 300) -> bool:
     return False
 
 
-def _revive_products(api_key: str, service_id: str) -> None:
+def _revive_products(api_key: str, service_id: str, env_file: str) -> None:
     """Recupera los productos apagados por el botón Eliminar viejo.
 
-    El plan gratuito de Render NO incluye Shell, así que no se puede ejecutar
-    SQL directo. En su lugar: se inyecta AUTO_REVIVE_PRODUCTS=true en las
-    variables, se dispara un deploy y scripts/release.sh corre
-    revive_products.py en la base de datos real de Render (idempotente:
-    reactivar productos ya activos no hace nada).
+    Render free no incluye Shell, así que la reactivación corre en el release:
+    se inyecta AUTO_REVIVE_PRODUCTS=true y se dispara un deploy.
+
+    IMPORTANTE: la fuente de verdad es el .env completo (render.env). Se
+    RESTAURA TODO el bloque de variables, no solo la flag — un GET+PUT parcial
+    con el formato envuelto del API de Render había dejado el servicio con una
+    sola variable (lección aprendida).
     """
     print("♻ Recuperación de productos (sin Shell, vía release del deploy)...")
-    current = api("GET", f"/services/{service_id}/env-vars", api_key)
-    current = current if isinstance(current, list) else []
-    merged = {v.get("key"): v.get("value", "") for v in current if v.get("key")}
-    merged["AUTO_REVIVE_PRODUCTS"] = "true"
-    payload = [{"key": k, "value": v} for k, v in merged.items() if k and v != ""]
+    env = load_env(env_file)
+    env["AUTO_REVIVE_PRODUCTS"] = "true"
+    payload = [{"key": k, "value": v} for k, v in env.items() if k and v != ""]
     api("PUT", f"/services/{service_id}/env-vars", api_key, body=payload)
-    print(f"✓ AUTO_REVIVE_PRODUCTS=true inyectada ({len(payload)} variables en total)")
+    print(f"✓ {len(payload)} variables restauradas + AUTO_REVIVE_PRODUCTS=true")
     trigger_deploy(api_key, service_id)
-    print("⏳ El deploy corre revive_products.py en Render y reactiva TODOS los inactivos.")
-    print("   Después: revisa /products/ en tu tienda. Para quitar el modo revive:")
-    print("   python scripts\\render_deploy.py --unrevive")
+    print("⏳ El deploy corre revive_products.py (reactiva los inactivos) y")
+    print("   bootstrap.py (sincroniza el admin con ADMIN_EMAIL/ADMIN_PASSWORD).")
+    print("   Para quitar el modo revive después: python scripts\\render_deploy.py --unrevive")
     wait_health()
 
 
-def _unrevive_products(api_key: str, service_id: str) -> None:
-    """Quita AUTO_REVIVE_PRODUCTS y redeploya (limpieza tras la recuperación)."""
-    current = api("GET", f"/services/{service_id}/env-vars", api_key)
-    current = current if isinstance(current, list) else []
-    payload = [
-        {"key": v.get("key"), "value": v.get("value", "")}
-        for v in current
-        if v.get("key") and v.get("key") != "AUTO_REVIVE_PRODUCTS" and v.get("value", "") != ""
-    ]
+def _unrevive_products(api_key: str, service_id: str, env_file: str) -> None:
+    """Restaura el .env completo SIN la flag de revive y redeploya."""
+    env = load_env(env_file)
+    payload = [{"key": k, "value": v} for k, v in env.items() if k and v != ""]
     api("PUT", f"/services/{service_id}/env-vars", api_key, body=payload)
-    print("✓ AUTO_REVIVE_PRODUCTS eliminada")
+    print(f"✓ Modo revive quitado ({len(payload)} variables restauradas)")
     trigger_deploy(api_key, service_id)
     wait_health()
 
@@ -242,11 +237,11 @@ def main() -> None:
     print(f"Servicio: {service_id}")
 
     if args.revive_products:
-        _revive_products(api_key, service_id)
+        _revive_products(api_key, service_id, args.env_file)
         return
 
     if args.unrevive:
-        _unrevive_products(api_key, service_id)
+        _unrevive_products(api_key, service_id, args.env_file)
         return
 
     env = load_env(args.env_file)

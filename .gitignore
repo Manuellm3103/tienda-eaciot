@@ -39,3 +39,6 @@ agentdb.rvf*
 secrets/
 csd/
 .worktrees/
+
+# Carpeta ajena al proyecto (evita que git add -A la meta de nuevo)
+Domain-Control-Panel/
