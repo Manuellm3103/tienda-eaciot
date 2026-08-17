@@ -97,12 +97,15 @@ async def _fulfill_order(
 
     # 5. Send confirmation email (best-effort)
     if user:
-        await email_service.send_order_confirmation_email(
-            to_email=user.email,
-            name=user.name or user.email,
-            order_id=str(order.id),
-            total=float(order.total_amount),
-        )
+        try:
+            await email_service.send_order_confirmation_email(
+                to_email=user.email,
+                name=user.name or user.email,
+                order_id=str(order.id),
+                total=float(order.total_amount),
+            )
+        except Exception:
+            pass  # SMTP caído nunca debe romper el fulfillment (webhook es la fuente de verdad)
 
     # 6. Create a pending invoice (CFDI) — issuance is manual/admin-driven
     try:

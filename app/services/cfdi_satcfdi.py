@@ -19,8 +19,6 @@ from satcfdi.create.cfd.catalogos import (
     RegimenFiscal,
     UsoCFDI,
     MetodoPago,
-    Impuesto,
-    TipoFactor,
     TipoDeComprobante,
     FormaPago,
     ObjetoImp,
@@ -113,6 +111,19 @@ class SATCFDIIssuer:
         payment_method: str = "stripe",
     ) -> dict:
         """Build, sign and stamp. `items` = [{description, quantity, unit_price}]."""
+        # IVA trasladado POR CONCEPTO. En satcfdi 4.4.7 cada Concepto lleva sus
+        # Impuestos (dict con claves 'Traslados') y compute()/process() calculan
+        # la Base e Importe de cada Traslado y los totales del Comprobante.
+        # El Comprobante NO acepta el kwarg 'impuestos': se agregan solos.
+        iva_rate = Decimal(str(settings.business_iva_rate or 0))
+        concept_impuestos = None
+        if iva_rate > 0:
+            concept_impuestos = {
+                "Traslados": [
+                    {"Impuesto": "002", "TipoFactor": "Tasa", "TasaOCuota": iva_rate}
+                ]
+            }
+
         concepts = []
         for it in items:
             concepts.append(
@@ -123,6 +134,7 @@ class SATCFDIIssuer:
                     descripcion=str(it["description"])[:300],
                     valor_unitario=Decimal(str(it["unit_price"])),
                     objeto_imp=ObjetoImp.SI_OBJETO_DE_IMPUESTO,
+                    impuestos=concept_impuestos,
                 )
             )
         if shipping_amount and shipping_amount > 0:
@@ -134,28 +146,8 @@ class SATCFDIIssuer:
                     descripcion="Envío",
                     valor_unitario=Decimal(str(shipping_amount)),
                     objeto_imp=ObjetoImp.SI_OBJETO_DE_IMPUESTO,
+                    impuestos=concept_impuestos,
                 )
-            )
-
-        # satcfdi's Concepto is a ScalarMap (dict-like): values live under
-        # 'ValorUnitario' / 'Cantidad', not as attributes.
-        base = sum(
-            (Decimal(str(c["ValorUnitario"])) * Decimal(str(c["Cantidad"])) for c in concepts),
-            Decimal("0"),
-        )
-        impuestos = None
-        iva_rate = Decimal(str(settings.business_iva_rate or 0))
-        if iva_rate > 0:
-            impuestos = cfdi40.Impuestos(
-                traslados=[
-                    cfdi40.Traslado(
-                        impuesto=Impuesto.IVA,
-                        tipo_factor=TipoFactor.TASA,
-                        tasa_o_cuota=iva_rate,
-                        base=base,
-                        importe=(base * iva_rate).quantize(Decimal("0.01")),
-                    )
-                ]
             )
 
         rfc = (customer_rfc or "").strip().upper() or PUBLICO_EN_GENERAL_RFC
@@ -186,7 +178,6 @@ class SATCFDIIssuer:
                 uso_cfdi=_uso_cfdi(uso_cfdi),
             ),
             conceptos=concepts,
-            impuestos=impuestos,
         )
 
         comprobante.sign(self.signer)

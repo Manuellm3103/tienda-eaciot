@@ -113,8 +113,11 @@ class EmailService:
             )
             return True
         except Exception as e:
+            # Re-lanzar: la cola (flush_pending) atrapa la excepción y guarda el
+            # motivo REAL en last_error (retryable desde el admin). El print deja
+            # traza en docker logs.
             print(f"Error sending email: {e}")
-            return False
+            raise
     
     def generate_verification_token(self) -> str:
         """Generate a random verification token"""
