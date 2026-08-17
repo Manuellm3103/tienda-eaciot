@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Form, Query
+import os
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Form, Query, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
 from app.database import get_db
+from app.config import settings
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, CategoryCreate, CategoryResponse
 from app.services.product_service import product_service
 from app.services.product_content_service import product_content_service
@@ -125,7 +129,7 @@ def _parse_videos(text: str) -> Optional[list]:
 
 @router.get("/", response_class=HTMLResponse)
 async def admin_products_list(request: Request, db: AsyncSession = Depends(get_db)):
-    products = await product_service.get_products(db, active_only=False)
+    products = await product_service.get_products(db, active_only=True)
     categories = await product_service.get_categories(db)
     return templates.TemplateResponse(
         "admin/products.html",
@@ -168,7 +172,13 @@ async def admin_product_create(
         specs=_parse_specs(specs),
         videos=_parse_videos(videos),
     )
-    await product_service.create_product(db, data)
+    product = await product_service.create_product(db, data)
+    # El depto de marketing reescribe el contenido al instante (best-effort:
+    # si la IA no responde, el producto se crea igual con lo que puso el admin).
+    try:
+        await product_content_service.apply_to_product(db, product)
+    except Exception:
+        pass
     await db.commit()
     return RedirectResponse(url="/admin/products/", status_code=302)
 
@@ -225,3 +235,42 @@ async def admin_product_delete(request: Request, product_id: str, db: AsyncSessi
     await product_service.delete_product(db, product_id)
     await db.commit()
     return RedirectResponse(url="/admin/products/", status_code=302)
+
+
+@router.post("/{product_id}/upload-video")
+async def admin_product_upload_video(
+    request: Request,
+    product_id: str,
+    video: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Subir un video DESDE LA PC y enlazarlo al producto (publica el comprador)."""
+    await validate_csrf(request)
+    product = await product_service.get_product(db, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    ctype = (video.content_type or "").lower()
+    if not ctype.startswith("video/"):
+        raise HTTPException(status_code=400, detail="Solo se aceptan archivos de video")
+
+    ext = os.path.splitext(video.filename or "")[1].lower()
+    if ext not in (".mp4", ".webm", ".mov", ".m4v"):
+        ext = ".mp4"
+    fname = f"{uuid.uuid4().hex}{ext}"
+
+    vdir = os.path.join(settings.upload_dir, "videos")
+    os.makedirs(vdir, exist_ok=True)
+    path = os.path.join(vdir, fname)
+    content = await video.read()
+    if len(content) > 200 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Máximo 200 MB por video")
+    with open(path, "wb") as fh:
+        fh.write(content)
+
+    url = f"/uploads/videos/{fname}"
+    vids = list(product.videos or [])
+    vids.append(url)
+    product.videos = vids
+    await db.commit()
+    return JSONResponse({"url": url, "videos": vids})

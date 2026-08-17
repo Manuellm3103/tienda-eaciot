@@ -81,6 +81,10 @@ class LLMRouter:
             Generated text response
         """
         preferred = force_provider or TASK_ROUTING.get(task_type, "ollama")
+        # Sin key de Ollama Cloud, NO intentar ollama: ir directo a OpenCode Go
+        # (el dueño opera SOLO con OpenCode Go + minimax).
+        if preferred == "ollama" and not settings.ollama_api_key and not force_provider:
+            preferred = "opencode"
         fallback = "opencode" if preferred == "ollama" else "ollama"
 
         # Try preferred provider first

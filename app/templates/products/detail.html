@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}{{ product.title }} - Tienda Eaciot{% endblock %}
+{% block title %}{{ product.meta_title or product.title }} - Tienda Eaciot{% endblock %}
+
+{% block meta %}
+{% if product.meta_description %}<meta name="description" content="{{ product.meta_description }}">{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -77,8 +81,12 @@
     <h2 class="text-2xl font-bold mb-8">Videos oficiales</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         {% for url in product.videos %}
-        <div class="aspect-video rounded-lg overflow-hidden shadow">
+        <div class="aspect-video rounded-lg overflow-hidden shadow bg-black">
+            {% if url.startswith('/uploads/') %}
+            <video class="w-full h-full" src="{{ url }}" controls preload="metadata"></video>
+            {% else %}
             <iframe class="w-full h-full" src="{{ url }}" title="Video oficial del producto" frameborder="0" allowfullscreen></iframe>
+            {% endif %}
         </div>
         {% endfor %}
     </div>

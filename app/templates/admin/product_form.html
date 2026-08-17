@@ -66,9 +66,58 @@
 
         <div>
             <label class="block text-sm font-medium text-gray-700">Videos oficiales</label>
-            <p class="text-xs text-gray-400 mb-1">Una URL por línea (YouTube)</p>
+            <p class="text-xs text-gray-400 mb-1">Una URL por línea (YouTube) o sube el archivo desde tu PC abajo.</p>
             <textarea name="videos" rows="3" class="mt-1 block w-full border rounded-md px-3 py-2">{{ (product.videos or [])|join('\n') if product else '' }}</textarea>
         </div>
+
+        {% if product %}
+        <div class="border border-dashed border-gray-300 rounded-md p-4">
+            <label class="block text-sm font-medium text-gray-700">📹 Subir video desde tu PC</label>
+            <p class="text-xs text-gray-400 mb-2">MP4/WebM/MOV (máx 200 MB). Se agrega a la lista de arriba; guarda para publicarlo.</p>
+            <div class="flex gap-2 items-center">
+                <input type="file" id="video-file" accept="video/*" class="text-sm">
+                <button type="button" id="video-upload-btn" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 text-sm">Subir</button>
+            </div>
+            <p id="video-status" class="text-xs text-gray-600 mt-2"></p>
+        </div>
+        <script>
+        (function() {
+            var btn = document.getElementById('video-upload-btn');
+            if (!btn) return;
+            function csrfT() {
+                var m = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+                return m ? decodeURIComponent(m[1]) : '';
+            }
+            btn.addEventListener('click', async function() {
+                var file = document.getElementById('video-file').files[0];
+                var status = document.getElementById('video-status');
+                if (!file) { status.textContent = 'Elige un archivo de video primero.'; return; }
+                status.textContent = 'Subiendo...';
+                var fd = new FormData();
+                fd.append('video', file);
+                try {
+                    var r = await fetch('/admin/products/{{ product.id }}/upload-video', {
+                        method: 'POST',
+                        headers: {'X-CSRF-Token': csrfT()},
+                        body: fd
+                    });
+                    if (r.ok) {
+                        var data = await r.json();
+                        var ta = document.querySelector('textarea[name="videos"]');
+                        ta.value = (ta.value.trim() ? ta.value.trim() + '\n' : '') + data.url;
+                        document.getElementById('video-file').value = '';
+                        status.textContent = '✅ Subido. Pulsa Guardar para publicarlo en la página del comprador.';
+                    } else {
+                        var err = await r.json().catch(function() { return {}; });
+                        status.textContent = 'Error: ' + (err.detail || r.status);
+                    }
+                } catch (e) {
+                    status.textContent = 'Error de conexión: ' + e.message;
+                }
+            });
+        })();
+        </script>
+        {% endif %}
 
         {% if product %}
         <div>

@@ -77,33 +77,20 @@ class LLMGateway:
         if not self.cb.can_attempt():
             return ""
 
-        last_error = None
-        headers = {}
-        if settings.ollama_api_key:
-            headers["Authorization"] = f"Bearer {settings.ollama_api_key}"
-        for attempt in range(max_retries + 1):
-            try:
-                async with httpx.AsyncClient(timeout=60.0) as client:
-                    response = await client.post(
-                        f"{self.ollama_host}/api/generate",
-                        headers=headers,
-                        json={
-                            "model": self.model,
-                            "prompt": prompt,
-                            "stream": False,
-                            "options": {"temperature": 0.7},
-                        },
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    answer = data.get("response", "").strip()
-                    self.cb.record_success()
-                    self._set_cached(cache_key, answer)
-                    return answer
-            except Exception as exc:
-                last_error = exc
-                if attempt < max_retries:
-                    await asyncio.sleep(2 ** attempt)
+        # Los agentes (copywriter, product advisor, supervisor) pasan por el
+        # router dual: Ollama Cloud si hay OLLAMA_API_KEY, si no -> OpenCode Go.
+        # Así el depto de marketing funciona con SOLO OpenCode Go + minimax.
+        from app.ai.llm_router import llm_router, TaskType
+
+        try:
+            answer = await llm_router.generate(prompt, "", task_type=TaskType.GENERAL)
+            answer = (answer or "").strip()
+            if answer:
+                self.cb.record_success()
+                self._set_cached(cache_key, answer)
+                return answer
+        except Exception:
+            pass
 
         self.cb.record_failure()
         return ""

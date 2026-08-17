@@ -47,9 +47,21 @@ class ProductService:
         product = await self.get_product(db, product_id)
         if not product:
             return False
-        product.is_active = False
-        await db.flush()
-        return True
+        # Borrado REAL (el usuario espera que desaparezca del catálogo).
+        # Si hay órdenes que referencian el producto, la FK impediría el
+        # borrado — en ese caso se desactiva para no romper el historial.
+        try:
+            await db.delete(product)
+            await db.flush()
+            return True
+        except Exception:
+            await db.rollback()
+            product = await self.get_product(db, product_id)
+            if not product:
+                return True
+            product.is_active = False
+            await db.flush()
+            return True
     
     async def get_categories(self, db: AsyncSession) -> List[Category]:
         result = await db.execute(select(Category).where(Category.is_active == True))

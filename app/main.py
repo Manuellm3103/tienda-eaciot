@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
@@ -57,6 +58,7 @@ from app.routers.admin_campaigns import router as admin_campaigns_router
 from app.routers.admin_whatsapp import router as admin_whatsapp_router
 from app.routers.webhooks import router as webhooks_router
 from app.routers.invoice_validation import router as invoice_validation_router
+from app.routers.admin_remisiones import router as admin_remisiones_router
 
 
 @asynccontextmanager
@@ -88,6 +90,10 @@ if settings.allowed_hosts_list != ["*"]:
 # Static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+# Archivos subidos por el admin (videos de producto, etc.)
+os.makedirs(settings.upload_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+
 # Templates
 from app.templates_instance import templates
 
@@ -114,6 +120,7 @@ app.include_router(admin_email_queue_router)
 app.include_router(admin_campaigns_router)
 app.include_router(admin_whatsapp_router)
 app.include_router(invoice_validation_router)
+app.include_router(admin_remisiones_router)
 app.include_router(webhooks_router)
 app.include_router(auth_router)
 app.include_router(products_router)
