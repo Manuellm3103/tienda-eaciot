@@ -336,8 +336,12 @@ def main() -> None:
                     qd = q.json()
                     entries = qd if isinstance(qd, list) else qd.get("emails", qd)
                     sent = [e for e in entries if isinstance(e, dict) and str(e.get("status", "")).lower() in ("sent", "enviado", "delivered", "ok")]
+                    pending_err = next((e.get("last_error") for e in entries
+                                        if isinstance(e, dict) and str(e.get("status", "")).lower() == "pending" and e.get("last_error")), None)
                     record("Correos transaccionales enviados por SMTP real",
-                           len(sent) >= 1, f"{len(sent)} enviado(s) de {len(entries)} en cola")
+                           len(sent) >= 1,
+                           f"{len(sent)} enviado(s) de {len(entries)} en cola"
+                           + (f" | motivo real SMTP: {pending_err[:180]}" if pending_err else ""))
                 except Exception as exc:
                     record("Correos transaccionales (cola)", False, str(exc)[:150])
 
