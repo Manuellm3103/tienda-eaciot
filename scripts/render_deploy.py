@@ -157,6 +157,45 @@ def wait_health(max_wait: int = 300) -> bool:
     return False
 
 
+def _revive_products(api_key: str, service_id: str) -> None:
+    """Recupera los productos apagados por el botón Eliminar viejo.
+
+    El plan gratuito de Render NO incluye Shell, así que no se puede ejecutar
+    SQL directo. En su lugar: se inyecta AUTO_REVIVE_PRODUCTS=true en las
+    variables, se dispara un deploy y scripts/release.sh corre
+    revive_products.py en la base de datos real de Render (idempotente:
+    reactivar productos ya activos no hace nada).
+    """
+    print("♻ Recuperación de productos (sin Shell, vía release del deploy)...")
+    current = api("GET", f"/services/{service_id}/env-vars", api_key)
+    current = current if isinstance(current, list) else []
+    merged = {v.get("key"): v.get("value", "") for v in current if v.get("key")}
+    merged["AUTO_REVIVE_PRODUCTS"] = "true"
+    payload = [{"key": k, "value": v} for k, v in merged.items() if k and v != ""]
+    api("PUT", f"/services/{service_id}/env-vars", api_key, body=payload)
+    print(f"✓ AUTO_REVIVE_PRODUCTS=true inyectada ({len(payload)} variables en total)")
+    trigger_deploy(api_key, service_id)
+    print("⏳ El deploy corre revive_products.py en Render y reactiva TODOS los inactivos.")
+    print("   Después: revisa /products/ en tu tienda. Para quitar el modo revive:")
+    print("   python scripts\\render_deploy.py --unrevive")
+    wait_health()
+
+
+def _unrevive_products(api_key: str, service_id: str) -> None:
+    """Quita AUTO_REVIVE_PRODUCTS y redeploya (limpieza tras la recuperación)."""
+    current = api("GET", f"/services/{service_id}/env-vars", api_key)
+    current = current if isinstance(current, list) else []
+    payload = [
+        {"key": v.get("key"), "value": v.get("value", "")}
+        for v in current
+        if v.get("key") and v.get("key") != "AUTO_REVIVE_PRODUCTS" and v.get("value", "") != ""
+    ]
+    api("PUT", f"/services/{service_id}/env-vars", api_key, body=payload)
+    print("✓ AUTO_REVIVE_PRODUCTS eliminada")
+    trigger_deploy(api_key, service_id)
+    wait_health()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Deploy automatizado de Tienda Eaciot a Render")
     parser.add_argument("--list", action="store_true", help="lista servicios y sale")
@@ -164,6 +203,10 @@ def main() -> None:
     parser.add_argument("--csd", action="store_true", help="subir también el CSD (Secret Files)")
     parser.add_argument("--env-file", default=str(ENV_FILE), help="ruta del .env (default: ~/.config/tienda-eaciot/render.env)")
     parser.add_argument("--skip-deploy", action="store_true", help="solo sincroniza variables, sin disparar deploy")
+    parser.add_argument("--revive-products", action="store_true",
+                        help="reactiva TODOS los productos inactivos (recupera los que apagó el botón Eliminar viejo)")
+    parser.add_argument("--unrevive", action="store_true",
+                        help="quita el modo revive y redeploya (limpieza posterior)")
     args = parser.parse_args()
 
     api_key = os.environ.get("RENDER_API_KEY", "").strip()
@@ -197,6 +240,14 @@ def main() -> None:
 
     service_id = args.service or find_service(api_key)["id"]
     print(f"Servicio: {service_id}")
+
+    if args.revive_products:
+        _revive_products(api_key, service_id)
+        return
+
+    if args.unrevive:
+        _unrevive_products(api_key, service_id)
+        return
 
     env = load_env(args.env_file)
     print(f"✓ .env leído: {len(env)} variables ({args.env_file})")
