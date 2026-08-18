@@ -191,6 +191,55 @@ def _unrevive_products(api_key: str, service_id: str, env_file: str) -> None:
     wait_health()
 
 
+def _heal(api_key: str, service_id: str, env_file: str) -> None:
+    """Cura completa de la tienda en Render — un solo comando:
+
+    1. Crea el disco persistente /var/data (Render exige tarjeta en Billing).
+       Sin disco, app.db vive en el filesystem efímero y CADA deploy o
+       reinicio de la instancia free BORRA productos, precios y órdenes.
+    2. Apunta DATABASE_URL y UPLOAD_DIR al disco.
+    3. Sube el .env completo + RESTORE_CATALOG=true para que el release
+       del deploy siguiente cree el catálogo (laptops/SSD) en el disco.
+    4. Dispara el deploy y espera /health.
+    """
+    print("🩹 HEAL: asegurando disco persistente...")
+    try:
+        disk = api("POST", "/disks", api_key, body={
+            "name": "tienda-data",
+            "sizeGB": 1,
+            "mountPath": "/var/data",
+            "serviceId": service_id,
+        })
+        print(f"✓ Disco creado: {disk.get('mountPath')} ({disk.get('sizeGB')}GB)")
+    except SystemExit as exc:
+        msg = str(exc)
+        if "402" in msg or "Payment" in msg:
+            raise SystemExit(
+                "Render exige tarjeta registrada para discos persistentes.\n"
+                "  1. Entra a https://dashboard.render.com/billing y agrega tu tarjeta.\n"
+                "  2. Corre de nuevo: python scripts\\render_deploy.py --heal\n"
+                "Sin disco, la tienda se borra en cada deploy (plan free)."
+            ) from exc
+        if "409" in msg or "already" in msg.lower():
+            print("✓ El disco ya existía — se reutiliza.")
+        else:
+            print(f"⚠ Disco: {msg}")
+
+    print("🩹 HEAL: variables al disco + RESTORE_CATALOG=true...")
+    env = load_env(env_file)
+    env["DATABASE_URL"] = "sqlite+aiosqlite:////var/data/app.db"
+    env["UPLOAD_DIR"] = "/var/data/uploads"
+    env["RESTORE_CATALOG"] = "true"
+    payload = [{"key": k, "value": v} for k, v in env.items() if k and v != ""]
+    api("PUT", f"/services/{service_id}/env-vars", api_key, body=payload)
+    print(f"✓ {len(payload)} variables subidas (DATABASE_URL → /var/data/app.db)")
+    trigger_deploy(api_key, service_id)
+    print("⏳ El release crea el esquema en el disco + catálogo laptops/SSD + IA.")
+    print("   Auditoría: https://tienda.eaciot.com/uploads/release_audit.txt")
+    print("   Limpieza posterior: python scripts\\render_deploy.py --csd")
+    wait_health()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Deploy automatizado de Tienda Eaciot a Render")
     parser.add_argument("--list", action="store_true", help="lista servicios y sale")
@@ -204,6 +253,8 @@ def main() -> None:
                         help="quita el modo revive y redeploya (limpieza posterior)")
     parser.add_argument("--restore-catalog", action="store_true",
                         help="crea el catálogo laptops/SSD desde scripts/data/catalogo.json + IA")
+    parser.add_argument("--heal", action="store_true",
+                        help="cura completa: disco persistente + DB en /var/data + catálogo + deploy")
     args = parser.parse_args()
 
     api_key = os.environ.get("RENDER_API_KEY", "").strip()
@@ -244,6 +295,10 @@ def main() -> None:
 
     if args.unrevive:
         _unrevive_products(api_key, service_id, args.env_file)
+        return
+
+    if args.heal:
+        _heal(api_key, service_id, args.env_file)
         return
 
     if args.restore_catalog:

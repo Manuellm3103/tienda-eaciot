@@ -6,12 +6,14 @@
 set -e
 set -o pipefail
 
-mkdir -p uploads
-AUDIT="uploads/release_audit.txt"
+AUDIT_DIR="${UPLOAD_DIR:-./uploads}"
+mkdir -p "$AUDIT_DIR"
+AUDIT="$AUDIT_DIR/release_audit.txt"
 
 echo "=== release $(date -u) ===" >> "$AUDIT"
 echo "flags: RESTORE_CATALOG=${RESTORE_CATALOG:-unset} AUTO_REVIVE_PRODUCTS=${AUTO_REVIVE_PRODUCTS:-unset} AUTO_ENRICH=${AUTO_ENRICH:-unset}" >> "$AUDIT"
 echo "db: ${DATABASE_URL:-unset}" >> "$AUDIT"
+echo "cwd: $(pwd)" >> "$AUDIT"
 
 echo "Running database migrations..."
 alembic upgrade head 2>&1 | tee -a "$AUDIT"

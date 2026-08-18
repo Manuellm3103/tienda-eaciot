@@ -12,7 +12,9 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: DATABASE_URL
-        value: sqlite+aiosqlite:///./app.db
+        value: sqlite+aiosqlite:////var/data/app.db
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
       - key: FRONTEND_URL
         value: https://tienda.eaciot.com
       - key: FORCE_HTTPS
@@ -109,5 +111,5 @@ services:
         value: "601"
     disk:
       name: tienda-data
-      mountPath: /opt/render/project/src
+      mountPath: /var/data
       sizeGB: 1
