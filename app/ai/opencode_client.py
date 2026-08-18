@@ -42,19 +42,23 @@ class OpenCodeClient:
 
         The `system` message is passed as a chat role; the legacy
         /v1/completions endpoint does not accept a system field.
+
+        Nota: max_tokens=2048 y timeout=180s son NECESARIOS para el paquete SEO
+        del depto de marketing (JSON de ~180 palabras + bullets + términos).
+        Con 1024 tokens / 60s el JSON se truncaba o daba ReadTimeout.
         """
         messages = []
         if system:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(180.0, connect=15.0)) as client:
             response = await client.post(
                 self._endpoint("/chat/completions"),
                 json={
                     "model": self.model,
                     "messages": messages,
-                    "max_tokens": 1024,
+                    "max_tokens": 2048,
                     "temperature": 0.7,
                 },
                 headers=self._headers(),
@@ -64,13 +68,13 @@ class OpenCodeClient:
 
     async def chat(self, messages: list[dict]) -> str:
         """Chat completion via OpenAI-compatible /v1/chat/completions."""
-        async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(180.0, connect=15.0)) as client:
             response = await client.post(
                 self._endpoint("/chat/completions"),
                 json={
                     "model": self.model,
                     "messages": messages,
-                    "max_tokens": 1024,
+                    "max_tokens": 2048,
                     "temperature": 0.7,
                 },
                 headers=self._headers(),

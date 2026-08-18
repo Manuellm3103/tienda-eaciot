@@ -45,8 +45,11 @@ python scripts/restore_catalog.py 2>&1 | tee -a "$AUDIT" | python scripts/releas
 echo "== Tienda Eaciot: importar catálogo HP OmniBook (borradores, idempotente) =="
 python scripts/import_hp_omnibook.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py hp || true
 
-echo "== Tienda Eaciot: enrich con el depto de marketing IA (best-effort) =="
-python scripts/enrich_products.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py enrich || true
+echo "== Tienda Eaciot: enrich depto marketing IA (background, no bloquea el arranque) =="
+# En background para que uvicorn arranque al instante y el health check de
+# Render pase. ~77s por producto; 25 productos ≈ 30 min generándose mientras
+# la tienda ya está en línea (idempotente: retoma donde se quedó).
+( python scripts/enrich_products.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py enrich ) &
 
 echo "== Tienda Eaciot: arrancando =="
 # --proxy-headers + --forwarded-allow-ips: el proxy de la plataforma (Nixopus
