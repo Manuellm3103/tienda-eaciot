@@ -9,7 +9,7 @@ from uuid import UUID
 from decimal import Decimal
 from app.database import get_db
 from app.config import settings
-from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, CategoryCreate, CategoryResponse
+from app.schemas.product import ProductCreate, ProductUpdate, ProductAdminResponse, CategoryCreate, CategoryResponse
 from app.services.product_service import product_service
 from app.services.product_content_service import product_content_service
 from app.middleware import validate_csrf
@@ -23,12 +23,12 @@ router = APIRouter(
 from app.templates_instance import templates
 
 
-@router.post("/", response_model=ProductResponse)
+@router.post("/", response_model=ProductAdminResponse)
 async def create_product(data: ProductCreate, db: AsyncSession = Depends(get_db)):
     return await product_service.create_product(db, data)
 
 
-@router.put("/{product_id}", response_model=ProductResponse)
+@router.put("/{product_id}", response_model=ProductAdminResponse)
 async def update_product(product_id: UUID, data: ProductUpdate, db: AsyncSession = Depends(get_db)):
     product = await product_service.update_product(db, product_id, data)
     if not product:
