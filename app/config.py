@@ -115,7 +115,14 @@ class Settings(BaseSettings):
     # App Secret de la app de Meta — se usa para verificar la firma
     # X-Hub-Signature-256 de los webhooks entrantes (NUNCA el verify token).
     whatsapp_app_secret: str = ""
-    
+
+    # TWA / Android — assetlinks.json para la Trusted Web Activity (APK).
+    # El fingerprint debe coincidir con el certificado con el que se firma el APK.
+    # Para Play Store, regenera tu keystore con tu propia contraseña y actualiza
+    # TWA_SHA256_FINGERPRINT con el valor real (keytool -list -v -keystore ...).
+    twa_package_name: str = "com.eaciot.twa"
+    twa_sha256_fingerprint: str = "2B:D0:A5:37:16:EA:3B:14:D8:43:D9:5A:92:66:37:2D:8D:E5:BA:7D:B6:20:03:E9:D4:13:50:70:A0:09:2F:3A"
+
     class Config:
         env_file = ".env"
         extra = "ignore"

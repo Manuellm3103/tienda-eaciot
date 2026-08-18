@@ -26,6 +26,18 @@ async def test_homepage(client):
 
 
 @pytest.mark.asyncio
+async def test_assetlinks_for_android_twa(client):
+    """La TWA de Android necesita /.well-known/assetlinks.json para verificarse."""
+    response = await client.get("/.well-known/assetlinks.json")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert data[0]["relation"] == ["delegate_permission/common.handle_all_urls"]
+    assert data[0]["target"]["namespace"] == "android_app"
+    assert data[0]["target"]["package_name"] == "com.eaciot.twa"
+
+
+@pytest.mark.asyncio
 async def test_products_page(client):
     response = await client.get("/products/")
     assert response.status_code == 200

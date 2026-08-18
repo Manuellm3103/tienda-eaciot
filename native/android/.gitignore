@@ -1,0 +1,10 @@
+# Claves de firma (secreto) y salidas de build — NUNCA commitear
+*.keystore
+*.jks
+*.p12
+app-release-signed.apk
+app-release-bundle.aab
+app/build/
+.gradle/
+build/
+twa-manifest.json.*

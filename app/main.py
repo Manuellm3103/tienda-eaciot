@@ -202,6 +202,27 @@ app.include_router(shipping_router)
 app.include_router(refunds_router)
 
 
+@app.get("/.well-known/assetlinks.json")
+async def assetlinks():
+    """Asset Links para la Trusted Web Activity (APK de Android).
+
+    Permite que la app nativa abra eaciot.com a pantalla completa (sin barra de
+    direcciones). Android verifica que el fingerprint del certificado de firma
+    del APK coincida con el publicado aquí.
+    """
+    fingerprint = settings.twa_sha256_fingerprint.strip()
+    return JSONResponse([
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": settings.twa_package_name,
+                "sha256_cert_fingerprints": [fingerprint] if fingerprint else [],
+            },
+        }
+    ])
+
+
 @app.get("/health")
 async def health(db: AsyncSession = Depends(get_db)):
     db_ok = False

@@ -1,0 +1,39 @@
+{
+  "packageId": "com.eaciot.twa",
+  "host": "eaciot.com",
+  "name": "Tienda Eaciot",
+  "launcherName": "Eaciot",
+  "display": "standalone",
+  "themeColor": "#2563EB",
+  "navigationColor": "#2563EB",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#F9FAFB",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://eaciot.com/static/icons/icon-512.png",
+  "maskableIconUrl": "https://eaciot.com/static/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://eaciot.com/static/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainVerifiedApp": false,
+  "appVersion": "1.0.0"
+}
