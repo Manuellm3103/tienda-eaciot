@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
+# Release de Render. Todo se registra en uploads/release_audit.txt, que queda
+# servible en https://tienda.eaciot.com/uploads/release_audit.txt (Render free
+# no incluye Shell, así que este archivo es la ventana de depuración del
+# release). Nunca escribe secretos.
 set -e
+set -o pipefail
+
+mkdir -p uploads
+AUDIT="uploads/release_audit.txt"
+
+echo "=== release $(date -u) ===" >> "$AUDIT"
+echo "flags: RESTORE_CATALOG=${RESTORE_CATALOG:-unset} AUTO_REVIVE_PRODUCTS=${AUTO_REVIVE_PRODUCTS:-unset} AUTO_ENRICH=${AUTO_ENRICH:-unset}" >> "$AUDIT"
+echo "db: ${DATABASE_URL:-unset}" >> "$AUDIT"
 
 echo "Running database migrations..."
-alembic upgrade head
+alembic upgrade head 2>&1 | tee -a "$AUDIT"
 
 echo "Bootstrapping demo products + admin user (idempotent)..."
-python scripts/bootstrap.py
+python scripts/bootstrap.py 2>&1 | tee -a "$AUDIT" || echo "bootstrap FAILED" >> "$AUDIT"
 
 echo "Reviving inactive products if AUTO_REVIVE_PRODUCTS is set (one-shot recovery)..."
-python scripts/revive_products.py || echo "Revive skipped (never blocks the deploy)"
+python scripts/revive_products.py 2>&1 | tee -a "$AUDIT" || echo "revive FAILED" >> "$AUDIT"
 
 echo "Restoring catalog (laptops/SSD) if RESTORE_CATALOG is set (one-shot)..."
-python scripts/restore_catalog.py || echo "Restore skipped (never blocks the deploy)"
+python scripts/restore_catalog.py 2>&1 | tee -a "$AUDIT" || echo "restore FAILED" >> "$AUDIT"
 
 echo "Enriching products with the AI marketing department (best-effort)..."
-python scripts/enrich_products.py || echo "Enrich skipped (never blocks the deploy)"
+python scripts/enrich_products.py 2>&1 | tee -a "$AUDIT" || echo "enrich FAILED" >> "$AUDIT"
 
-echo "Release phase complete."
+echo "Release phase complete." | tee -a "$AUDIT"
