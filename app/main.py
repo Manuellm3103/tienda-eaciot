@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from app.config import settings
-from app.database import init_db, get_db
+from app.database import init_db, get_db, async_session
 from app.middleware import rate_limit_middleware, SecurityHeadersMiddleware, setup_cors, CSRFMiddleware, CanonicalDomainMiddleware
 from app.services.product_service import product_service
 from app.services.recommendation_service import recommendation_service
@@ -93,6 +93,27 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # Archivos subidos por el admin (videos de producto, etc.)
 os.makedirs(settings.upload_dir, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads")
+
+
+@app.get("/release-audit")
+async def release_audit():
+    """Auditoría de los pasos del release (pública, saneada, sin secretos).
+
+    Render free no tiene Shell ni logs consultables por API, así que cada
+    paso del release guarda su salida (ya saneada) en la tabla release_runs.
+    """
+    from sqlalchemy import text
+    async with async_session() as session:
+        rows = (await session.execute(text(
+            "SELECT script, status, ts, message FROM release_runs "
+            "ORDER BY ts DESC, rowid DESC LIMIT 50"
+        ))).fetchall()
+    return {
+        "release_runs": [
+            {"script": r[0], "status": r[1], "ts": str(r[2]), "message": r[3]}
+            for r in rows
+        ]
+    }
 
 # Templates
 from app.templates_instance import templates

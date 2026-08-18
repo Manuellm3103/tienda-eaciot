@@ -16,18 +16,18 @@ echo "db: ${DATABASE_URL:-unset}" >> "$AUDIT"
 echo "cwd: $(pwd)" >> "$AUDIT"
 
 echo "Running database migrations..."
-alembic upgrade head 2>&1 | tee -a "$AUDIT"
+alembic upgrade head 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py alembic
 
 echo "Bootstrapping demo products + admin user (idempotent)..."
-python scripts/bootstrap.py 2>&1 | tee -a "$AUDIT" || echo "bootstrap FAILED" >> "$AUDIT"
+python scripts/bootstrap.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py bootstrap || echo "bootstrap FAILED" >> "$AUDIT"
 
 echo "Reviving inactive products if AUTO_REVIVE_PRODUCTS is set (one-shot recovery)..."
-python scripts/revive_products.py 2>&1 | tee -a "$AUDIT" || echo "revive FAILED" >> "$AUDIT"
+python scripts/revive_products.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py revive || echo "revive FAILED" >> "$AUDIT"
 
 echo "Restoring catalog (laptops/SSD) if RESTORE_CATALOG is set (one-shot)..."
-python scripts/restore_catalog.py 2>&1 | tee -a "$AUDIT" || echo "restore FAILED" >> "$AUDIT"
+python scripts/restore_catalog.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py restore || echo "restore FAILED" >> "$AUDIT"
 
 echo "Enriching products with the AI marketing department (best-effort)..."
-python scripts/enrich_products.py 2>&1 | tee -a "$AUDIT" || echo "enrich FAILED" >> "$AUDIT"
+python scripts/enrich_products.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py enrich || echo "enrich FAILED" >> "$AUDIT"
 
 echo "Release phase complete." | tee -a "$AUDIT"
