@@ -27,6 +27,9 @@ python scripts/revive_products.py 2>&1 | tee -a "$AUDIT" | python scripts/releas
 echo "Restoring catalog (laptops/SSD) if RESTORE_CATALOG is set (one-shot)..."
 python scripts/restore_catalog.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py restore || echo "restore FAILED" >> "$AUDIT"
 
+echo "Applying pre-generated SEO content (offline, idempotent)..."
+python scripts/apply_enriched_content.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py enrich_local || echo "enrich_local FAILED" >> "$AUDIT"
+
 echo "Enriching products with the AI marketing department (background, non-blocking)..."
 ( python scripts/enrich_products.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py enrich ) &
 
