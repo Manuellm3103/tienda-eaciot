@@ -36,13 +36,13 @@ class ProductBase(BaseModel):
     videos: Optional[list[str]] = None
     # Precio de competencia (anclaje) — se muestra tachado con % de ahorro.
     compare_at_price: Optional[Decimal] = Field(None, gt=0)
-    # Precios internos (SOLO admin, nunca en la tienda pública).
-    cost_price: Optional[Decimal] = Field(None, gt=0)
-    hp_price: Optional[Decimal] = Field(None, gt=0)
 
 
 class ProductCreate(ProductBase):
-    pass
+    # Precios internos (SOLO admin, nunca en la tienda pública). Viven aquí
+    # (no en ProductBase) para que ProductResponse NO los serialice jamás.
+    cost_price: Optional[Decimal] = Field(None, gt=0)
+    hp_price: Optional[Decimal] = Field(None, gt=0)
 
 
 class ProductUpdate(BaseModel):
@@ -65,6 +65,16 @@ class ProductResponse(ProductBase):
     id: UUID
     is_active: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
+
+class ProductAdminResponse(ProductResponse):
+    """ProductResponse + precios internos. Solo usarlo en endpoints admin.
+
+    Mantener cost_price/hp_price fuera de ProductResponse es lo que evita
+    que la API pública filtre el costo y el margen del negocio.
+    """
+    cost_price: Optional[Decimal] = Field(None, gt=0)
+    hp_price: Optional[Decimal] = Field(None, gt=0)

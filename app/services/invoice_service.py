@@ -9,6 +9,7 @@ Provider precedence:
 """
 import base64
 import os
+from html import escape
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -346,6 +347,9 @@ class InvoiceService:
             title = (product.title if product else "Producto") + (
                 f" · {it.variant_name}" if it.variant_name else ""
             )
+            # Escapar dato no-admin: título/variante pueden contener HTML y el
+            # recibo se sirve como HTML crudo en el admin (admin_invoices.py).
+            title = escape(title)
             rows.append(
                 f"<tr><td>{title}</td><td>{it.quantity}</td>"
                 f"<td>${float(it.price_at_purchase or 0):.2f}</td></tr>"
@@ -357,6 +361,12 @@ class InvoiceService:
             if invoice.provider == "manual"
             else "Comprobante de venta — la CFDI (XML) está disponible en tu cuenta."
         )
+        # Escapar todo lo controlable por el cliente (nombre/RFC) antes de
+        # interpolar: el recibo se renderiza en el contexto autenticado del admin.
+        customer_name = escape(invoice.customer_name or "—")
+        customer_rfc = escape(invoice.customer_rfc or "—")
+        business_name = escape(settings.business_name or "Tienda Eaciot")
+        business_rfc = escape(settings.business_rfc or "—")
         return f"""<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>body{{font-family:Arial,sans-serif;color:#333;}} .c{{max-width:640px;margin:0 auto;padding:20px;}}
 h1{{font-size:22px;}} table{{width:100%;border-collapse:collapse;margin:20px 0;}}
@@ -364,9 +374,9 @@ td,th{{border:1px solid #ddd;padding:8px;text-align:left;}} th{{background:#f5f5
 .tot{{font-size:20px;font-weight:bold;}}</style></head><body><div class="c">
 {logo}
 <h1>Comprobante de compra</h1>
-<p><strong>{settings.business_name or 'Tienda Eaciot'}</strong> · RFC: {settings.business_rfc or '—'}</p>
+<p><strong>{business_name}</strong> · RFC: {business_rfc}</p>
 <p>Orden #{str(order.id)[:8]} · {order.created_at.strftime('%d/%m/%Y') if order.created_at else ''}</p>
-<p>Cliente: {invoice.customer_name or '—'} · RFC: {invoice.customer_rfc or '—'}</p>
+<p>Cliente: {customer_name} · RFC: {customer_rfc}</p>
 <table><tr><th>Producto</th><th>Cant.</th><th>Precio</th></tr>{''.join(rows)}</table>
 <p class="tot">Total: ${float(order.total_amount or 0):.2f} MXN</p>
 <p style="color:#888;font-size:12px;">{footer_note}</p>
