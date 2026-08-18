@@ -1,65 +1,43 @@
-# Producción: un solo servicio FastAPI + volumen persistente para SQLite.
-# Es el archivo que lee el build pack "Docker Compose" de Nixopus.
-# Local:  docker compose --env-file .env up --build
-# Todas las variables vienen del entorno de despliegue (${VAR}); la plataforma
-# las inyecta en el entorno de Compose y las referencias de abajo las pasan al
-# contenedor.
+# Tienda Eaciot — despliegue autohospedado (Coolify / Dokploy / Docker Compose).
+#
+# Sustituye a Render. El contenedor es el mismo Dockerfile que ya corre en
+# producción; la única diferencia real es que aquí la BD vive en un volumen
+# Docker (app-data) en lugar del disk mount de Render.
+#
+# Uso local (sin Coolify):
+#   cp .env.example .env   # rellena los secretos (APP_SECRET_KEY, Stripe, etc.)
+#   docker compose up -d --build
+#
+# En Coolify: crea una aplicación con build pack "Docker Compose" (o "Dockerfile"),
+# apunta a este repo, expone el puerto 8000 y pon el dominio tienda.eaciot.com.
+# Coolify añade Traefik + Let's Encrypt (HTTPS) automáticamente.
 
 services:
   app:
     build: .
+    container_name: tienda-eaciot
+    restart: unless-stopped
     ports:
       - "8000:8000"
-    volumes:
-      # Persiste app.db (DATABASE_URL=sqlite+aiosqlite:////data/app.db) entre
-      # deploys: sin esto cada redeploy perdería usuarios, pedidos y catálogo.
-      - appdata:/data
+    env_file:
+      - .env
     environment:
-      - APP_NAME=${APP_NAME:-Tienda Eaciot}
-      - APP_SECRET_KEY=${APP_SECRET_KEY:-}
-      - FRONTEND_URL=${FRONTEND_URL:-https://tienda.eaciot.com}
-      - DEBUG=${DEBUG:-false}
-      - FORCE_HTTPS=${FORCE_HTTPS:-true}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-tienda.eaciot.com,www.tienda.eaciot.com,*.nixopus.ai}
-      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:////data/app.db}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
-      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
-      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
-      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_FROM=${SMTP_FROM:-}
-      - SMTP_TLS=${SMTP_TLS:-true}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-https://tienda.eaciot.com/auth/google/callback}
-      - OLLAMA_HOST=${OLLAMA_HOST:-}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-}
-      - OLLAMA_API_KEY=${OLLAMA_API_KEY:-}
-      - PAC_PROVIDER=${PAC_PROVIDER:-finkok}
-      - PAC_ENVIRONMENT=${PAC_ENVIRONMENT:-production}
-      - PAC_USERNAME=${PAC_USERNAME:-}
-      - PAC_PASSWORD=${PAC_PASSWORD:-}
-      - CSD_PASSWORD=${CSD_PASSWORD:-}
-      - FACTURAPI_API_KEY=${FACTURAPI_API_KEY:-}
-      - FACTURAPI_BASE_URL=${FACTURAPI_BASE_URL:-}
-      - BUSINESS_RFC=${BUSINESS_RFC:-}
-      - BUSINESS_NAME=${BUSINESS_NAME:-}
-      - BUSINESS_TAX_REGIME=${BUSINESS_TAX_REGIME:-601}
-      - BUSINESS_ZIP_CODE=${BUSINESS_ZIP_CODE:-}
-      - BUSINESS_IVA_RATE=${BUSINESS_IVA_RATE:-0.16}
-      - UPLOAD_DIR=${UPLOAD_DIR:-./uploads}
-      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-104857600}
+      # Persistencia real: SQLite y uploads viven en el volumen, no en el
+      # filesystem efímero del contenedor (sobrevive redeploys y reinicios).
+      DATABASE_URL: sqlite+aiosqlite:////var/data/app.db
+      UPLOAD_DIR: /var/data/uploads
+      PORT: "8000"
+      # Detrás del proxy de Coolify/Dokploy (termina TLS), uvicorn debe confiar
+      # en X-Forwarded-Proto para no entrar en bucle de redirección HTTPS.
+      FORCE_HTTPS: "true"
+    volumes:
+      - app-data:/var/data
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
-    restart: unless-stopped
+      start_period: 45s
 
 volumes:
-  appdata:
+  app-data:

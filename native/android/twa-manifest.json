@@ -1,6 +1,6 @@
 {
   "packageId": "com.eaciot.twa",
-  "host": "eaciot.com",
+  "host": "tienda.eaciot.com",
   "name": "Tienda Eaciot",
   "launcherName": "Eaciot",
   "display": "standalone",
@@ -12,8 +12,8 @@
   "backgroundColor": "#F9FAFB",
   "enableNotifications": false,
   "startUrl": "/",
-  "iconUrl": "https://eaciot.com/static/icons/icon-512.png",
-  "maskableIconUrl": "https://eaciot.com/static/icons/icon-maskable-512.png",
+  "iconUrl": "https://tienda.eaciot.com/static/icons/icon-512.png",
+  "maskableIconUrl": "https://tienda.eaciot.com/static/icons/icon-maskable-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "./android.keystore",
@@ -23,7 +23,7 @@
   "appVersionCode": 1,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://eaciot.com/static/manifest.json",
+  "webManifestUrl": "https://tienda.eaciot.com/static/manifest.json",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": {
