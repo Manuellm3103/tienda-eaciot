@@ -202,6 +202,8 @@ def main() -> None:
                         help="reactiva TODOS los productos inactivos (recupera los que apagó el botón Eliminar viejo)")
     parser.add_argument("--unrevive", action="store_true",
                         help="quita el modo revive y redeploya (limpieza posterior)")
+    parser.add_argument("--restore-catalog", action="store_true",
+                        help="crea el catálogo laptops/SSD desde scripts/data/catalogo.json + IA")
     args = parser.parse_args()
 
     api_key = os.environ.get("RENDER_API_KEY", "").strip()
@@ -242,6 +244,18 @@ def main() -> None:
 
     if args.unrevive:
         _unrevive_products(api_key, service_id, args.env_file)
+        return
+
+    if args.restore_catalog:
+        env = load_env(args.env_file)
+        env["RESTORE_CATALOG"] = "true"
+        payload = [{"key": k, "value": v} for k, v in env.items() if k and v != ""]
+        api("PUT", f"/services/{service_id}/env-vars", api_key, body=payload)
+        print(f"✓ {len(payload)} variables restauradas + RESTORE_CATALOG=true")
+        trigger_deploy(api_key, service_id)
+        print("⏳ El deploy crea laptops/SSD desde catalogo.json y los enriquece con IA.")
+        print("   Después limpia el modo: python scripts\\render_deploy.py --unrevive")
+        wait_health()
         return
 
     env = load_env(args.env_file)

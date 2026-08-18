@@ -10,6 +10,9 @@ python scripts/bootstrap.py
 echo "Reviving inactive products if AUTO_REVIVE_PRODUCTS is set (one-shot recovery)..."
 python scripts/revive_products.py || echo "Revive skipped (never blocks the deploy)"
 
+echo "Restoring catalog (laptops/SSD) if RESTORE_CATALOG is set (one-shot)..."
+python scripts/restore_catalog.py || echo "Restore skipped (never blocks the deploy)"
+
 echo "Enriching products with the AI marketing department (best-effort)..."
 python scripts/enrich_products.py || echo "Enrich skipped (never blocks the deploy)"
 
