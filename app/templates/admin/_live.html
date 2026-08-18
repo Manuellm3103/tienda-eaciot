@@ -1,0 +1,152 @@
+{# ────────────────────────────────────────────────────────────────────────────
+   Partial de métricas en vivo del dashboard admin.
+   Se renderiza server-side en la carga inicial y luego el navegador lo
+   reemplaza vía SSE (/admin/dashboard/live) o polling (/admin/dashboard/partial)
+   ─────────────────────────────────────────────────────────────────────────── #}
+
+{# ── Action center: alertas urgentes ────────────────────────────────────── #}
+{% set low_count = metrics.inventory.low_stock_count %}
+{% set pending_orders = metrics.orders.pending %}
+{% set pending_content = metrics.content.pending %}
+{% if pending_orders or low_count or pending_content %}
+<div class="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4 mb-6 flex flex-wrap items-center gap-x-6 gap-y-2" role="alert">
+    {% if pending_orders %}
+    <span class="text-sm font-semibold text-amber-900">🕓 {{ pending_orders }} pedido(s) pendiente(s)</span>
+    {% endif %}
+    {% if low_count %}
+    <a href="/admin/inventory" class="text-sm font-semibold text-red-700 hover:underline">⚠️ {{ low_count }} producto(s) con stock bajo</a>
+    {% endif %}
+    {% if pending_content %}
+    <a href="/admin/products/" class="text-sm font-semibold text-cyan-700 hover:underline">✍️ {{ pending_content }} producto(s) sin contenido SEO</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{# ── KPI cards (8) ──────────────────────────────────────────────────────── #}
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow p-5">
+        <h3 class="text-gray-500 text-sm">Ventas Totales</h3>
+        <p class="text-2xl font-bold mt-1">${{ "{:,.2f}".format(metrics.sales.total) }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-5">
+        <h3 class="text-gray-500 text-sm">Ventas Hoy</h3>
+        <p class="text-2xl font-bold mt-1">${{ "{:,.2f}".format(metrics.sales.today) }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-5">
+        <h3 class="text-gray-500 text-sm">Ventas Semana</h3>
+        <p class="text-2xl font-bold mt-1">${{ "{:,.2f}".format(metrics.sales.this_week) }}</p>
+        {% if metrics.sparklines.sales %}
+        <svg viewBox="0 0 100 32" preserveAspectRatio="none" class="w-full h-8 mt-2" aria-hidden="true">
+            <polyline points="{{ metrics.sparklines.sales }}" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {% endif %}
+    </div>
+    <div class="bg-white rounded-lg shadow p-5">
+        <h3 class="text-gray-500 text-sm">Pedidos Pendientes</h3>
+        <p class="text-2xl font-bold mt-1 {% if metrics.orders.pending %}text-amber-600{% endif %}">{{ metrics.orders.pending }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-5">
+        <h3 class="text-gray-500 text-sm">Clientes Totales</h3>
+        <p class="text-2xl font-bold mt-1">{{ metrics.customers.total }}</p>
+        {% if metrics.sparklines.customers %}
+        <svg viewBox="0 0 100 32" preserveAspectRatio="none" class="w-full h-8 mt-2" aria-hidden="true">
+            <polyline points="{{ metrics.sparklines.customers }}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {% endif %}
+    </div>
+    <div class="bg-white rounded-lg shadow p-5">
+        <h3 class="text-gray-500 text-sm">Nuevos Hoy</h3>
+        <p class="text-2xl font-bold mt-1">{{ metrics.customers.new_today }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-5">
+        <h3 class="text-gray-500 text-sm">Ticket Promedio</h3>
+        <p class="text-2xl font-bold mt-1">${{ "{:,.2f}".format(metrics.sales.average_order_value) }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-5 {% if low_count %}ring-2 ring-red-200{% endif %}">
+        <h3 class="text-gray-500 text-sm">Stock Bajo</h3>
+        <p class="text-2xl font-bold mt-1 {% if low_count %}text-red-600{% endif %}">{{ low_count }}</p>
+    </div>
+</div>
+
+{# ── Pedidos recientes + Stock bajo ─────────────────────────────────────── #}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-bold mb-4">Pedidos Recientes</h2>
+        {% if metrics.orders.recent %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b text-left text-gray-500">
+                    <th class="py-2">ID</th>
+                    <th>Cliente</th>
+                    <th class="text-right">Total</th>
+                    <th class="text-right">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in metrics.orders.recent %}
+                <tr class="border-b">
+                    <td class="py-2 font-mono text-xs">{{ o.id }}</td>
+                    <td class="py-2">{{ o.customer }}</td>
+                    <td class="py-2 text-right font-medium">${{ "{:,.2f}".format(o.total) }}</td>
+                    <td class="py-2 text-right">
+                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold
+                            {% if o.status == 'paid' %}bg-emerald-100 text-emerald-700
+                            {% elif o.status in ('pending', 'processing') %}bg-amber-100 text-amber-700
+                            {% elif o.status == 'cancelled' %}bg-red-100 text-red-700
+                            {% else %}bg-blue-100 text-blue-700{% endif %}">{{ o.status }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-gray-500 text-sm">Sin pedidos todavía.</p>
+        {% endif %}
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-lg font-bold mb-4">Stock Bajo</h2>
+        {% if metrics.inventory.low_stock %}
+        <ul class="divide-y">
+            {% for p in metrics.inventory.low_stock %}
+            <li class="py-2 flex justify-between items-center">
+                <span class="text-sm text-gray-800 truncate pr-3">{{ p.title }}</span>
+                <span class="text-sm font-semibold {% if p.stock == 0 %}text-red-600{% else %}text-amber-600{% endif %} shrink-0">{{ p.stock }} / {{ p.reorder_point }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="/admin/inventory" class="inline-block mt-3 text-sm text-indigo-600 hover:underline">Gestionar inventario →</a>
+        {% else %}
+        <p class="text-gray-500 text-sm">Inventario saludable. ✅</p>
+        {% endif %}
+    </div>
+</div>
+
+{# ── Estado de contenido SEO ────────────────────────────────────────────── #}
+<div class="bg-white rounded-lg shadow p-6 mb-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h2 class="text-lg font-bold">Estado del Contenido SEO</h2>
+            <p class="text-sm text-gray-500">Productos activos con descripción y meta generadas por el depto de marketing IA.</p>
+        </div>
+        <div class="flex items-center gap-6">
+            <div class="text-center">
+                <p class="text-2xl font-bold text-emerald-600">{{ metrics.content.enriched }}</p>
+                <p class="text-xs text-gray-500">con contenido</p>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl font-bold {% if metrics.content.pending %}text-amber-500{% else %}text-emerald-600{% endif %}">{{ metrics.content.pending }}</p>
+                <p class="text-xs text-gray-500">pendientes</p>
+            </div>
+            <div class="text-center">
+                <p class="text-2xl font-bold">{{ metrics.content.total }}</p>
+                <p class="text-xs text-gray-500">activos</p>
+            </div>
+        </div>
+    </div>
+    {% set pct = (metrics.content.enriched / metrics.content.total * 100) if metrics.content.total else 0 %}
+    <div class="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden" role="progressbar" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+        <div class="h-2 bg-gradient-to-r from-cyan-500 to-emerald-500 rounded-full" style="width: {{ pct }}%"></div>
+    </div>
+    <a href="/admin/products/" class="inline-block mt-3 text-sm text-indigo-600 hover:underline">Revisar catálogo →</a>
+</div>

@@ -31,30 +31,17 @@
     <div id="enrich-response" class="text-sm text-emerald-700 font-medium mt-3"></div>
 </div>
 
-<!-- Métricas -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white rounded-lg shadow p-5">
-        <h3 class="text-gray-500 text-sm">Ventas Totales</h3>
-        <p class="text-3xl font-bold">${{ metrics.sales.total }}</p>
-    </div>
-    <div class="bg-white rounded-lg shadow p-5">
-        <h3 class="text-gray-500 text-sm">Ventas Hoy</h3>
-        <p class="text-3xl font-bold">${{ metrics.sales.today }}</p>
-    </div>
-    <div class="bg-white rounded-lg shadow p-5">
-        <h3 class="text-gray-500 text-sm">Clientes Totales</h3>
-        <p class="text-3xl font-bold">{{ metrics.customers.total }}</p>
-    </div>
-    <div class="bg-white rounded-lg shadow p-5">
-        <h3 class="text-gray-500 text-sm">Nuevos Hoy</h3>
-        <p class="text-3xl font-bold">{{ metrics.customers.new_today }}</p>
-    </div>
+<!-- Métricas en vivo: server-render inicial; luego SSE (/admin/dashboard/live)
+     o fallback a polling (/admin/dashboard/partial). -->
+<div id="live-partial">
+    {% include "admin/_live.html" %}
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <!-- Top Productos -->
     <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold mb-4">Top Productos</h2>
+        {% if metrics.top_products %}
         <table class="w-full">
             <thead>
                 <tr class="border-b">
@@ -71,13 +58,16 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+        <p class="text-gray-500 text-sm">Aún no hay ventas para rankear.</p>
+        {% endif %}
     </div>
 
     <!-- Sugerencias IA -->
     <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold mb-4">Sugerencias de IA</h2>
         <div id="ai-suggestions" hx-get="/admin/ai/suggestions/partial" hx-trigger="load">
-            Cargando sugerencias...
+            <p class="text-gray-500 text-sm">Cargando sugerencias...</p>
         </div>
     </div>
 </div>
@@ -103,6 +93,49 @@
 </div>
 
 <script>
+// ── En vivo: Server-Sent Events con fallback a polling ─────────────────────
+// Si el proxy bufferiza el SSE (se cae la conexión), cerramos el EventSource
+// y caemos a polling cada 15s contra /admin/dashboard/partial.
+(function() {
+    const live = document.getElementById('live-partial');
+    if (!live) return;
+    let pollTimer = null;
+
+    function startPolling() {
+        if (pollTimer) return;
+        pollTimer = setInterval(async () => {
+            try {
+                const r = await fetch('/admin/dashboard/partial', {
+                    headers: { 'HX-Request': 'true' },
+                    credentials: 'same-origin',
+                });
+                if (r.ok) live.innerHTML = await r.text();
+            } catch (e) { /* mantener último estado */ }
+        }, 15000);
+    }
+
+    let es;
+    try {
+        es = new EventSource('/admin/dashboard/live');
+        es.addEventListener('metrics', (e) => {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.html) live.innerHTML = data.html;
+            } catch (err) { /* ignorar payload corrupto */ }
+        });
+        es.onerror = () => {
+            // EventSource se reconecta solo, pero si la plataforma bufferiza,
+            // mejor apagarlo y usar polling.
+            if (es.readyState === EventSource.CLOSED) {
+                es.close();
+                startPolling();
+            }
+        };
+    } catch (e) {
+        startPolling();
+    }
+})();
+
 // Chat con el depto de marketing IA (agentes: contenido, SEO, campañas, analítica)
 document.getElementById('marketing-submit').addEventListener('click', async () => {
     const input = document.getElementById('marketing-input');

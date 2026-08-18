@@ -1,0 +1,54 @@
+{# Panel de sugerencias IA del dashboard admin. Renderizado por
+   GET /admin/ai/suggestions/partial (HTMX). Maneja error / empty para que el
+   panel nunca se quede en "Cargando..." #}
+
+{% if error %}
+<div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
+    <p class="font-medium">No se pudieron cargar las sugerencias IA.</p>
+    <p class="text-xs mt-1 text-red-500">{{ error[:200] }}</p>
+    <button hx-get="/admin/ai/suggestions/partial" hx-target="#ai-suggestions" hx-swap="innerHTML"
+            class="mt-2 text-xs font-semibold underline">↻ Reintentar</button>
+</div>
+{% else %}
+    {% set fidel = suggestions.fidel_customers or [] %}
+    {% set promos = suggestions.promotion_suggestions or [] %}
+
+    {% if not fidel and not promos %}
+    <p class="text-gray-500 text-sm">Sin sugerencias por ahora. Cuando haya ventas y clientes, la IA propondrá acciones.</p>
+    {% endif %}
+
+    {% if fidel %}
+    <h3 class="font-semibold text-sm mb-2">👑 Clientes fieles</h3>
+    <ul class="divide-y mb-4">
+        {% for c in fidel[:5] %}
+        <li class="py-2">
+            <p class="text-sm font-medium text-gray-800">{{ c.get('user_id', 'Cliente') }}</p>
+            <p class="text-xs text-gray-500">{{ c.get('reason', '') }}</p>
+            {% if c.get('suggested_reward') %}
+            <span class="inline-block mt-1 px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700 text-xs">{{ c.get('suggested_reward') }}</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if promos %}
+    <h3 class="font-semibold text-sm mb-2">🎯 Promociones sugeridas</h3>
+    <ul class="divide-y">
+        {% for p in promos[:3] %}
+        <li class="py-2">
+            <p class="text-sm font-medium text-gray-800">{{ p.get('title', 'Promoción') }}</p>
+            <p class="text-xs text-gray-500">{{ p.get('description', '') }}</p>
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+                <span class="inline-block px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs">
+                    {{ p.get('discount_type', '') }} {{ p.get('discount_value', '') }}
+                </span>
+                {% if p.get('target_segment') %}
+                <span class="text-xs text-gray-400">{{ p.get('target_segment') }}</span>
+                {% endif %}
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+{% endif %}
