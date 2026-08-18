@@ -3,13 +3,20 @@
 Generates a complete SEO package (SEO title, meta description, persuasive
 description, bullet points, Mexican search terms, alt texts) and scores it
 through the dual-LLM router.
+
+Fallo controlado: si el LLM no está configurado o no responde, cae a un
+catálogo de contenido SEO PRE-generado (scripts/data/enriched_content.json)
+para que el botón "Generar Contenido IA" siempre deje el producto listo.
 """
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.product import Product
 from app.ai.llm_router import llm_router, TaskType
+from app.services.app_setting_service import get_setting
 
 SYSTEM_PROMPT = (
     "Eres un especialista SEO de comercio electrónico para Tienda Eaciot, "
@@ -18,9 +25,30 @@ SYSTEM_PROMPT = (
     "válido, sin comentarios ni markdown."
 )
 
+# Catálogo offline (cargado una vez, en memoria).
+_OFFLINE_CATALOG: Optional[dict] = None
+
+
+def _load_offline_catalog() -> dict:
+    global _OFFLINE_CATALOG
+    if _OFFLINE_CATALOG is not None:
+        return _OFFLINE_CATALOG
+    path = Path(__file__).resolve().parents[2] / "scripts" / "data" / "enriched_content.json"
+    try:
+        _OFFLINE_CATALOG = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        _OFFLINE_CATALOG = {}
+    return _OFFLINE_CATALOG
+
 
 class ProductContentService:
-    async def generate_content(self, product: Product) -> dict:
+    async def _selected_llm(self, db: AsyncSession) -> tuple[str, str]:
+        """(provider, model) elegidos por el admin, o ('', '') para usar la ruta por defecto."""
+        provider = (await get_setting(db, "llm_provider", "")).strip()
+        model = (await get_setting(db, "llm_model", "")).strip()
+        return provider, model
+
+    async def generate_content(self, product: Product, provider: str = "", model: str = "") -> dict:
         prompt = (
             f"Genera el contenido SEO completo para este producto:\n"
             f"Título: {product.title}\n"
@@ -39,13 +67,19 @@ class ProductContentService:
             "- alt_texts: entre 2 y 4 textos alternativos descriptivos para imágenes."
         )
         return await llm_router.generate_structured(
-            prompt, system=SYSTEM_PROMPT, task_type=TaskType.PRODUCT_DESCRIPTION
+            prompt,
+            system=SYSTEM_PROMPT,
+            task_type=TaskType.PRODUCT_DESCRIPTION,
+            force_provider=provider or None,
+            model=model or None,
         )
 
     def _score_content(self, content: dict) -> tuple[float, float]:
         """Return (content_score, seo_score) between 0 and 100."""
+        # Acepta 'seo_title' (salida del LLM) o 'meta_title' (catálogo offline).
+        seo_title = content.get("seo_title") or content.get("meta_title")
         seo_checks = [
-            bool(content.get("seo_title") and len(str(content["seo_title"])) <= 60),
+            bool(seo_title and len(str(seo_title)) <= 60),
             bool(content.get("meta_description") and len(str(content["meta_description"])) <= 155),
             bool(content.get("description") and 80 <= len(str(content["description"]).split()) <= 180),
             bool(content.get("search_terms") and isinstance(content["search_terms"], list) and len(content["search_terms"]) >= 5),
@@ -59,17 +93,26 @@ class ProductContentService:
         content_score = sum(content_checks) / len(content_checks) * 100 if content_checks else 0.0
         return round(content_score, 2), round(seo_score, 2)
 
-    async def apply_to_product(self, db: AsyncSession, product: Product) -> dict:
-        """Generate and persist SEO content + scores onto Product columns."""
-        content = await self.generate_content(product)
-        usable = any(
-            content.get(k) for k in ("seo_title", "meta_description", "description")
+    @staticmethod
+    def _is_usable(content: dict) -> bool:
+        return any(
+            content.get(k) for k in ("seo_title", "meta_title", "meta_description", "description")
         )
-        if not usable:
-            return {"status": "unavailable", "content": content}
 
-        if content.get("seo_title"):
-            product.meta_title = str(content["seo_title"])[:255]
+    def _lookup_offline(self, title: str) -> Optional[dict]:
+        entry = _load_offline_catalog().get(title)
+        if not entry:
+            return None
+        content = dict(entry)
+        if not content.get("seo_title") and content.get("meta_title"):
+            content["seo_title"] = content["meta_title"]
+        return content
+
+    async def _persist_content(self, db: AsyncSession, product: Product, content: dict, source: str) -> dict:
+        """Aplica un dict de contenido SEO al producto y lo puntúa."""
+        seo_title = content.get("seo_title") or content.get("meta_title")
+        if seo_title:
+            product.meta_title = str(seo_title)[:255]
         if content.get("meta_description"):
             product.meta_description = str(content["meta_description"])[:500]
         if content.get("description"):
@@ -87,10 +130,28 @@ class ProductContentService:
         await db.flush()
         return {
             "status": "generated",
+            "source": source,
             "content": content,
             "content_score": content_score,
             "seo_score": seo_score,
         }
+
+    async def apply_to_product(self, db: AsyncSession, product: Product) -> dict:
+        """Generate and persist SEO content + scores onto Product columns.
+
+        Fallback offline: si el LLM no produce contenido usable, usa el catálogo
+        pre-generado (por título exacto) para no dejar el botón colgado.
+        """
+        provider, model = await self._selected_llm(db)
+        content = await self.generate_content(product, provider, model)
+        if self._is_usable(content):
+            return await self._persist_content(db, product, content, source="llm")
+
+        offline = self._lookup_offline(product.title)
+        if offline:
+            return await self._persist_content(db, product, offline, source="offline")
+
+        return {"status": "unavailable", "content": content}
 
     async def batch_enrich(self, db: AsyncSession, limit: int = 20, force: bool = False) -> dict:
         """Enrich active products.
@@ -106,6 +167,8 @@ class ProductContentService:
 
         enriched = 0
         failed = 0
+        by_llm = 0
+        by_offline = 0
         for p in products:
             if not force and p.description and len(p.description) >= 50:
                 continue
@@ -114,9 +177,18 @@ class ProductContentService:
             res = await self.apply_to_product(db, p)
             if res["status"] == "generated":
                 enriched += 1
+                if res.get("source") == "offline":
+                    by_offline += 1
+                else:
+                    by_llm += 1
             else:
                 failed += 1
-        return {"enriched": enriched, "failed": failed}
+        return {
+            "enriched": enriched,
+            "failed": failed,
+            "llm": by_llm,
+            "offline": by_offline,
+        }
 
 
 product_content_service = ProductContentService()

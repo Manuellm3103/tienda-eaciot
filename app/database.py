@@ -99,6 +99,7 @@ _SQLITE_COLUMN_MIGRATIONS = {
         ("price_updated_at", "TIMESTAMP"),
         ("reorder_point", "INTEGER"),
         ("safety_stock_days", "INTEGER"),
+        ("supplier_id", "VARCHAR(36)"),
     ],
     "reviews": [
         ("sentiment_score", "FLOAT"),

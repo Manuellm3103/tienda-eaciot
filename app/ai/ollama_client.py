@@ -10,13 +10,13 @@ class OllamaClient:
         if settings.ollama_api_key:
             self._headers["Authorization"] = f"Bearer {settings.ollama_api_key}"
 
-    async def generate(self, prompt: str, system: str = "") -> str:
+    async def generate(self, prompt: str, system: str = "", model: str = "") -> str:
         async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:
             response = await client.post(
                 f"{self.host}/api/generate",
                 headers=self._headers,
                 json={
-                    "model": self.model,
+                    "model": model or self.model,
                     "prompt": prompt,
                     "system": system,
                     "stream": False,
@@ -24,6 +24,13 @@ class OllamaClient:
             )
             response.raise_for_status()
             return response.json()["response"]
+
+    async def list_models(self) -> list[str]:
+        """Lista de modelos disponibles (GET /api/tags)."""
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            response = await client.get(f"{self.host}/api/tags", headers=self._headers)
+            response.raise_for_status()
+            return [m.get("name", "") for m in response.json().get("models", [])]
 
     async def chat(self, messages: list) -> str:
         async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0)) as client:

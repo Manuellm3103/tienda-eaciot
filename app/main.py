@@ -59,6 +59,8 @@ from app.routers.admin_whatsapp import router as admin_whatsapp_router
 from app.routers.webhooks import router as webhooks_router
 from app.routers.invoice_validation import router as invoice_validation_router
 from app.routers.admin_remisiones import router as admin_remisiones_router
+from app.routers.admin_suppliers import router as admin_suppliers_router
+from app.routers.admin_llm import router as admin_llm_router
 
 
 @asynccontextmanager
@@ -164,6 +166,8 @@ app.include_router(admin_campaigns_router)
 app.include_router(admin_whatsapp_router)
 app.include_router(invoice_validation_router)
 app.include_router(admin_remisiones_router)
+app.include_router(admin_suppliers_router)
+app.include_router(admin_llm_router)
 app.include_router(webhooks_router)
 app.include_router(auth_router)
 app.include_router(products_router)

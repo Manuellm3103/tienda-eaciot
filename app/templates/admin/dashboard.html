@@ -19,6 +19,16 @@
     </div>
     <div id="marketing-response" class="text-sm text-gray-800 whitespace-pre-wrap mb-4"></div>
 
+    <!-- Selector de modelo IA: elige qué proveedor/modelo usa el depto de marketing -->
+    <div class="flex flex-wrap items-center gap-3 mb-3 text-sm">
+        <label for="llm-model-select" class="text-gray-600 font-medium">🧠 Modelo IA:</label>
+        <select id="llm-model-select" class="border border-gray-300 rounded px-2 py-1.5 bg-white max-w-xs">
+            <option value="">Cargando modelos...</option>
+        </select>
+        <span id="llm-model-status" class="text-xs text-gray-500"></span>
+        <a href="/admin/llm/models" target="_blank" class="text-xs text-blue-600 hover:underline">Diagnóstico</a>
+    </div>
+
     <div class="flex flex-wrap gap-2">
         <button id="btn-enrich" class="bg-emerald-600 text-white px-4 py-2 rounded">
             ✨ Re-escribir TODOS los productos con IA
@@ -84,6 +94,7 @@
     <a href="/admin/analytics" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition text-sm font-medium">📈 Analítica IA</a>
     <a href="/admin/fraud" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition text-sm font-medium">🛡️ Antifraude IA</a>
     <a href="/admin/inventory" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition text-sm font-medium">🏬 Inventario IA</a>
+    <a href="/admin/suppliers" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition text-sm font-medium">🚚 Proveedores</a>
     <a href="/admin/loyalty" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition text-sm font-medium">⭐ Lealtad IA</a>
     <a href="/admin/search" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition text-sm font-medium">🔍 Búsqueda IA</a>
     <a href="/admin/reviews" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition text-sm font-medium">💬 Reseñas IA</a>
@@ -168,12 +179,85 @@ document.getElementById('btn-enrich').addEventListener('click', async () => {
             headers: { 'X-CSRF-Token': window.getCsrfToken() }
         });
         const data = await r.json();
-        resp.textContent = `✅ Productos reescritos: ${data.enriched} | Fallidos (¿IA sin key?): ${data.failed}`;
+        resp.textContent = data.summary
+            || `✅ Productos reescritos: ${data.enriched} | Fallidos: ${data.failed}`;
     } catch (e) {
         resp.textContent = 'Error: ' + e.message;
     } finally {
         btn.disabled = false;
     }
 });
+
+// ── Selector de modelo IA ────────────────────────────────────────────────
+(function() {
+    const sel = document.getElementById('llm-model-select');
+    if (!sel) return;
+    const status = document.getElementById('llm-model-status');
+    const csrf = () => window.getCsrfToken();
+
+    async function load() {
+        try {
+            const r = await fetch('/admin/llm/models', { credentials: 'same-origin' });
+            const data = await r.json();
+            const current = (data.current.provider && data.current.model)
+                ? data.current.provider + ':' + data.current.model : '';
+            const ollama = data.models.ollama || [];
+            const opencode = data.models.opencode || [];
+
+            let html = '<option value="">Automático (recomendado)</option>';
+            if (ollama.length) {
+                html += '<optgroup label="Ollama">';
+                ollama.forEach(m => { html += '<option value="ollama:' + m + '">' + m + '</option>'; });
+                html += '</optgroup>';
+            }
+            if (opencode.length) {
+                html += '<optgroup label="OpenCode Go">';
+                opencode.forEach(m => { html += '<option value="opencode:' + m + '">' + m + '</option>'; });
+                html += '</optgroup>';
+            }
+            if (!ollama.length && !opencode.length) {
+                html += '<option value="" disabled>Sin proveedor LLM en vivo</option>';
+            }
+            sel.innerHTML = html;
+            sel.value = current;
+
+            if (!ollama.length && !opencode.length) {
+                status.textContent = '⚠️ Sin LLM en vivo — se usa contenido pre-generado.';
+            } else if (current) {
+                status.textContent = 'Usando ' + current;
+            } else {
+                status.textContent = 'Ruta automática';
+            }
+        } catch (e) {
+            sel.innerHTML = '<option value="">Error al cargar modelos</option>';
+            status.textContent = 'No se pudieron listar los modelos.';
+        }
+    }
+
+    sel.addEventListener('change', async function() {
+        const val = sel.value;
+        const idx = val.indexOf(':');
+        const provider = idx >= 0 ? val.slice(0, idx) : '';
+        const model = idx >= 0 ? val.slice(idx + 1) : '';
+        status.textContent = 'Guardando...';
+        try {
+            const body = new URLSearchParams({ provider: provider, model: model });
+            const r = await fetch('/admin/llm/model', {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrf(), 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: body.toString(),
+            });
+            const data = await r.json();
+            status.textContent = data.model
+                ? '✅ Usando ' + data.provider + ':' + data.model
+                : '✅ Ruta automática';
+        } catch (e) {
+            status.textContent = 'Error al guardar: ' + e.message;
+        }
+    });
+
+    load();
+})();
 </script>
 {% endblock %}

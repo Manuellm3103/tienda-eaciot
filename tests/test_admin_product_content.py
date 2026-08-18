@@ -100,7 +100,7 @@ async def test_apply_to_product_persists_scores_and_alt_texts(db, monkeypatch):
     )
     await db.commit()
 
-    async def fake_generate(_product):
+    async def fake_generate(_product, provider="", model=""):
         return {
             "seo_title": "Auriculares Bluetooth México",
             "meta_description": "Compra auriculares bluetooth con envío gratis.",
@@ -146,7 +146,7 @@ async def test_batch_enrich_updates_scores(db, monkeypatch):
     )
     await db.commit()
 
-    async def fake_generate(_product):
+    async def fake_generate(_product, provider="", model=""):
         return {
             "seo_title": "Mouse Inalámbrico",
             "meta_description": "Mouse ergonómico inalámbrico.",
@@ -157,6 +157,16 @@ async def test_batch_enrich_updates_scores(db, monkeypatch):
         }
 
     monkeypatch.setattr(product_content_service, "generate_content", fake_generate)
+
+    # Aislar: batch_enrich procesa los productos activos en orden de inserción.
+    # Si quedan productos activos de otros tests, pueden agotar el límite antes
+    # de llegar a este producto. Desactivamos el resto para que el test sea
+    # determinista sin importar el orden de ejecución.
+    from sqlalchemy import update
+    await db.execute(
+        update(Product).where(Product.id != product.id).values(is_active=False)
+    )
+    await db.commit()
 
     result = await product_content_service.batch_enrich(db, limit=5)
     await db.commit()

@@ -37,7 +37,7 @@ class OpenCodeClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
-    async def generate(self, prompt: str, system: str = "") -> str:
+    async def generate(self, prompt: str, system: str = "", model: str = "") -> str:
         """Generate a completion via OpenAI-compatible /v1/chat/completions.
 
         The `system` message is passed as a chat role; the legacy
@@ -56,7 +56,7 @@ class OpenCodeClient:
             response = await client.post(
                 self._endpoint("/chat/completions"),
                 json={
-                    "model": self.model,
+                    "model": model or self.model,
                     "messages": messages,
                     "max_tokens": 2048,
                     "temperature": 0.7,
@@ -65,6 +65,17 @@ class OpenCodeClient:
             )
             response.raise_for_status()
             return response.json()["choices"][0]["message"]["content"]
+
+    async def list_models(self) -> list[str]:
+        """Lista modelos vía /v1/models (OpenAI-compatible)."""
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            response = await client.get(self._endpoint("/models"), headers=self._headers())
+            response.raise_for_status()
+            data = response.json()
+            return [
+                m.get("id") or m.get("name") or ""
+                for m in data.get("data", [])
+            ]
 
     async def chat(self, messages: list[dict]) -> str:
         """Chat completion via OpenAI-compatible /v1/chat/completions."""

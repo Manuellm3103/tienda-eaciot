@@ -67,6 +67,7 @@ class LLMRouter:
         system: str = "",
         task_type: TaskType = TaskType.GENERAL,
         force_provider: Optional[str] = None,
+        model: Optional[str] = None,
     ) -> str:
         """
         Generate a completion, routing to the best provider.
@@ -76,6 +77,7 @@ class LLMRouter:
             system: System prompt / context
             task_type: What kind of task (affects routing)
             force_provider: Override routing ('ollama' or 'opencode')
+            model: Override the provider's default model name
 
         Returns:
             Generated text response
@@ -87,13 +89,20 @@ class LLMRouter:
             preferred = "opencode"
         fallback = "opencode" if preferred == "ollama" else "ollama"
 
+        # Si el admin eligió un modelo concreto, forzamos ese proveedor y no
+        # hacemos fallback cruzado (mandar un modelo de OpenCode a Ollama o
+        # viceversa solo produce "model not found").
+        if force_provider and model:
+            result = await self._try_provider(force_provider, prompt, system, model)
+            return result or ""
+
         # Try preferred provider first
-        result = await self._try_provider(preferred, prompt, system)
+        result = await self._try_provider(preferred, prompt, system, model)
         if result is not None:
             return result
 
         # Fallback to secondary provider
-        result = await self._try_provider(fallback, prompt, system)
+        result = await self._try_provider(fallback, prompt, system, model)
         if result is not None:
             return result
 
@@ -105,12 +114,16 @@ class LLMRouter:
         prompt: str,
         system: str = "",
         task_type: TaskType = TaskType.JSON_EXTRACTION,
+        force_provider: Optional[str] = None,
+        model: Optional[str] = None,
     ) -> dict:
         """
         Generate structured JSON output. Always prefers OpenCode Go
         since it's more reliable at following JSON schemas.
         """
-        response = await self.generate(prompt, system, task_type)
+        response = await self.generate(
+            prompt, system, task_type, force_provider=force_provider, model=model
+        )
         try:
             # Try to extract JSON from response (handles markdown fences)
             text = response.strip()
@@ -120,14 +133,27 @@ class LLMRouter:
         except (json.JSONDecodeError, IndexError):
             return {}
 
+    async def list_models(self) -> dict[str, list[str]]:
+        """Modelos disponibles por proveedor (best-effort, [] si no alcanza)."""
+        result: dict[str, list[str]] = {"ollama": [], "opencode": []}
+        try:
+            result["ollama"] = await self.ollama.list_models()
+        except Exception:
+            pass
+        try:
+            result["opencode"] = await self.opencode.list_models()
+        except Exception:
+            pass
+        return result
+
     async def _try_provider(
-        self, provider: str, prompt: str, system: str
+        self, provider: str, prompt: str, system: str, model: Optional[str] = None
     ) -> Optional[str]:
         """Try one provider, return None on failure."""
         client = self.ollama if provider == "ollama" else self.opencode
         try:
             start = time.time()
-            result = await client.generate(prompt, system)
+            result = await client.generate(prompt, system, model=model or "")
             elapsed = time.time() - start
             self._record_latency(provider, elapsed)
             return result

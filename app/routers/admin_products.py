@@ -3,6 +3,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Form, Query, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from uuid import UUID
@@ -12,6 +13,7 @@ from app.config import settings
 from app.schemas.product import ProductCreate, ProductUpdate, ProductAdminResponse, CategoryCreate, CategoryResponse
 from app.services.product_service import product_service
 from app.services.product_content_service import product_content_service
+from app.models.supplier import Supplier
 from app.middleware import validate_csrf
 from app.dependencies import require_admin
 
@@ -49,6 +51,26 @@ async def create_category(data: CategoryCreate, db: AsyncSession = Depends(get_d
     return await product_service.create_category(db, data)
 
 
+def _enrich_summary(result: dict) -> str:
+    """Resumen legible del resultado de batch-enrich / generate-content."""
+    if result.get("enriched"):
+        parts = [f"✅ {result['enriched']} reescrito(s)"]
+        if result.get("llm"):
+            parts.append(f"IA en vivo {result['llm']}")
+        if result.get("offline"):
+            parts.append(f"pre-generado {result['offline']}")
+        msg = " · ".join(parts)
+        if result.get("failed"):
+            msg += f" | ⚠️ {result['failed']} sin contenido"
+        return msg
+    if result.get("failed"):
+        return (
+            f"⚠️ No se generó contenido para {result['failed']} producto(s). "
+            "Revisa la configuración del modelo IA en el dashboard."
+        )
+    return "Nada que reescribir (los productos ya tienen contenido)."
+
+
 @router.post("/batch-enrich")
 async def admin_products_batch_enrich(
     request: Request,
@@ -63,6 +85,11 @@ async def admin_products_batch_enrich(
     await validate_csrf(request)
     result = await product_content_service.batch_enrich(db, force=force)
     await db.commit()
+    summary = _enrich_summary(result)
+    # htmx (botón del catálogo) quiere HTML; el fetch del dashboard quiere JSON.
+    if request.headers.get("HX-Request"):
+        return HTMLResponse(f'<span class="text-emerald-700 font-medium">{summary}</span>')
+    result["summary"] = summary
     return JSONResponse(result)
 
 
@@ -82,11 +109,20 @@ async def admin_product_generate_content(
     response_payload = {
         "product_id": product_id,
         "status": result["status"],
+        "source": result.get("source"),
     }
     if "content_score" in result:
         response_payload["content_score"] = result["content_score"]
     if "seo_score" in result:
         response_payload["seo_score"] = result["seo_score"]
+    if result["status"] == "generated":
+        label = "IA" if result.get("source") == "llm" else "pre-generado"
+        msg = f"✅ Contenido {label} (SEO {result.get('seo_score', 0):.0f})"
+    else:
+        msg = "⚠️ No se pudo generar contenido (¿LLM sin configurar?)."
+    if request.headers.get("HX-Request"):
+        return HTMLResponse(f'<span class="text-green-600 text-xs">{msg}</span>')
+    response_payload["summary"] = msg
     return JSONResponse(response_payload)
 
 
@@ -138,12 +174,18 @@ async def admin_products_list(request: Request, db: AsyncSession = Depends(get_d
     )
 
 
+async def _get_suppliers(db: AsyncSession):
+    result = await db.execute(select(Supplier).where(Supplier.is_active == True).order_by(Supplier.name))
+    return result.scalars().all()
+
+
 @router.get("/new", response_class=HTMLResponse)
 async def admin_product_new(request: Request, db: AsyncSession = Depends(get_db)):
     categories = await product_service.get_categories(db)
+    suppliers = await _get_suppliers(db)
     return templates.TemplateResponse(
         "admin/product_form.html",
-        {"request": request, "categories": categories, "product": None},
+        {"request": request, "categories": categories, "suppliers": suppliers, "product": None},
     )
 
 
@@ -162,6 +204,7 @@ async def admin_product_create(
     compare_at_price: str = Form(""),
     cost_price: str = Form(""),
     hp_price: str = Form(""),
+    supplier_id: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await validate_csrf(request)
@@ -171,6 +214,7 @@ async def admin_product_create(
         price=Decimal(price),
         product_type=product_type,
         category_id=category_id or None,
+        supplier_id=supplier_id or None,
         stock=stock,
         image_url=image_url or None,
         specs=_parse_specs(specs),
@@ -196,9 +240,10 @@ async def admin_product_edit(request: Request, product_id: str, db: AsyncSession
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     categories = await product_service.get_categories(db)
+    suppliers = await _get_suppliers(db)
     return templates.TemplateResponse(
         "admin/product_form.html",
-        {"request": request, "product": product, "categories": categories},
+        {"request": request, "product": product, "categories": categories, "suppliers": suppliers},
     )
 
 
@@ -218,6 +263,7 @@ async def admin_product_update(
     compare_at_price: str = Form(""),
     cost_price: str = Form(""),
     hp_price: str = Form(""),
+    supplier_id: str = Form(""),
     is_active: bool = Form(False),
     db: AsyncSession = Depends(get_db),
 ):
@@ -228,6 +274,7 @@ async def admin_product_update(
         price=Decimal(price),
         product_type=product_type,
         category_id=category_id or None,
+        supplier_id=supplier_id or None,
         stock=stock,
         image_url=image_url or None,
         compare_at_price=Decimal(compare_at_price) if compare_at_price.strip() else None,

@@ -29,6 +29,7 @@ class ProductBase(BaseModel):
     description: Optional[str] = None
     price: Decimal = Field(gt=0)
     category_id: Optional[UUID] = None
+    supplier_id: Optional[UUID] = None
     product_type: str = Field(pattern="^(ebook|curso|software|template|fisico)$")
     image_url: Optional[str] = None
     stock: int = -1
@@ -50,6 +51,7 @@ class ProductUpdate(BaseModel):
     description: Optional[str] = None
     price: Optional[Decimal] = Field(None, gt=0)
     category_id: Optional[UUID] = None
+    supplier_id: Optional[UUID] = None
     product_type: Optional[str] = None
     image_url: Optional[str] = None
     stock: Optional[int] = None

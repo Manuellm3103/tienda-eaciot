@@ -30,6 +30,8 @@ class ProductService:
         # PKs/FKs are String(36); never bind a UUID object (SQLite rejects it).
         if payload.get("category_id"):
             payload["category_id"] = str(payload["category_id"])
+        if payload.get("supplier_id"):
+            payload["supplier_id"] = str(payload["supplier_id"])
         product = Product(**payload)
         db.add(product)
         await db.flush()
@@ -40,7 +42,7 @@ class ProductService:
         if not product:
             return None
         for key, value in data.model_dump(exclude_unset=True).items():
-            if key == "category_id" and value:
+            if key in ("category_id", "supplier_id") and value:
                 value = str(value)
             setattr(product, key, value)
         await db.flush()

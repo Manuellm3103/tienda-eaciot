@@ -70,6 +70,17 @@
         </div>
         
         <div>
+            <label class="block text-sm font-medium text-gray-700">Proveedor</label>
+            <select name="supplier_id" class="mt-1 block w-full border rounded-md px-3 py-2">
+                <option value="">Sin proveedor</option>
+                {% for supplier in suppliers %}
+                <option value="{{ supplier.id }}" {{ 'selected' if product and product.supplier_id == supplier.id else '' }}>{{ supplier.name }}</option>
+                {% endfor %}
+            </select>
+            <a href="/admin/suppliers/" target="_blank" class="text-xs text-blue-600 hover:underline">Gestionar proveedores →</a>
+        </div>
+
+        <div>
             <label class="block text-sm font-medium text-gray-700">URL de imagen</label>
             <input type="url" name="image_url" value="{{ product.image_url if product else '' }}" class="mt-1 block w-full border rounded-md px-3 py-2">
         </div>

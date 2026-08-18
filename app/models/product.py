@@ -27,6 +27,7 @@ class Product(Base):
     description = Column(Text)
     price = Column(Numeric(10, 2), nullable=False)
     category_id = Column(String(36), ForeignKey("categories.id"))
+    supplier_id = Column(String(36), ForeignKey("suppliers.id"), nullable=True)
 
     product_type = Column(String(20), nullable=False)  # ebook, curso, software, template, fisico
 
@@ -72,4 +73,5 @@ class Product(Base):
 
     # Relationships
     category = relationship("Category", back_populates="products")
+    supplier = relationship("Supplier", back_populates="products", lazy="selectin")
     variants = relationship("ProductVariant", back_populates="product", lazy="selectin")

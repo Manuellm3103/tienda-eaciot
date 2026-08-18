@@ -23,6 +23,8 @@ from app.models.agent_action import AgentAction
 from app.models.product_embedding import ProductEmbedding
 from app.models.marketing_decision import MarketingDecision
 from app.models.product_bundle import ProductBundle
+from app.models.supplier import Supplier
+from app.models.app_setting import AppSetting
 
 __all__ = [
     "User",
@@ -54,4 +56,6 @@ __all__ = [
     "ProductEmbedding",
     "MarketingDecision",
     "ProductBundle",
+    "Supplier",
+    "AppSetting",
 ]
