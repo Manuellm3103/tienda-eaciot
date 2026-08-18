@@ -20,7 +20,17 @@
     <div>
         <h1 class="text-3xl font-bold mb-4">{{ product.title }}</h1>
         <p class="text-gray-600 mb-6">{{ product.description }}</p>
-        <p class="text-3xl font-bold text-blue-600 mb-6">${{ product.price }}</p>
+        <div class="mb-6">
+            {% if product.compare_at_price and product.compare_at_price > product.price %}
+            <p class="text-lg text-gray-400 line-through">${{ product.compare_at_price }}</p>
+            <p class="text-3xl font-bold text-blue-600">${{ product.price }}</p>
+            <span class="inline-block mt-2 bg-red-600 text-white text-sm font-bold px-2 py-1 rounded">
+                Ahorra {{ ((1 - product.price / product.compare_at_price) * 100)|round|int }}% vs competencia
+            </span>
+            {% else %}
+            <p class="text-3xl font-bold text-blue-600">${{ product.price }}</p>
+            {% endif %}
+        </div>
         {% if product.specs %}
         <div class="mb-6">
             <h2 class="font-bold mb-2">Especificaciones</h2>

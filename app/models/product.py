@@ -50,6 +50,9 @@ class Product(Base):
     seo_score = Column(Numeric(5, 2), nullable=True)
     alt_texts = Column(JSON, nullable=True)  # list[str]
 
+    # Precio de competencia (anclaje): se muestra tachado junto al precio real.
+    compare_at_price = Column(Numeric(10, 2), nullable=True)
+
     # Dynamic pricing
     base_price = Column(Numeric(10, 2), nullable=True)
     dynamic_price = Column(Numeric(10, 2), nullable=True)

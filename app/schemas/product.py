@@ -34,6 +34,8 @@ class ProductBase(BaseModel):
     stock: int = -1
     specs: Optional[dict] = None
     videos: Optional[list[str]] = None
+    # Precio de competencia (anclaje) — se muestra tachado con % de ahorro.
+    compare_at_price: Optional[Decimal] = Field(None, gt=0)
 
 
 class ProductCreate(ProductBase):
@@ -51,6 +53,7 @@ class ProductUpdate(BaseModel):
     specs: Optional[dict] = None
     videos: Optional[list[str]] = None
     is_active: Optional[bool] = None
+    compare_at_price: Optional[Decimal] = Field(None, gt=0)
 
 
 class ProductResponse(ProductBase):

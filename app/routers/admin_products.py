@@ -159,6 +159,7 @@ async def admin_product_create(
     image_url: str = Form(""),
     specs: str = Form(""),
     videos: str = Form(""),
+    compare_at_price: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     await validate_csrf(request)
@@ -172,6 +173,7 @@ async def admin_product_create(
         image_url=image_url or None,
         specs=_parse_specs(specs),
         videos=_parse_videos(videos),
+        compare_at_price=Decimal(compare_at_price) if compare_at_price.strip() else None,
     )
     product = await product_service.create_product(db, data)
     # El depto de marketing reescribe el contenido al instante (best-effort:
@@ -209,6 +211,7 @@ async def admin_product_update(
     image_url: str = Form(""),
     specs: str = Form(""),
     videos: str = Form(""),
+    compare_at_price: str = Form(""),
     is_active: bool = Form(False),
     db: AsyncSession = Depends(get_db),
 ):
@@ -221,6 +224,7 @@ async def admin_product_update(
         category_id=category_id or None,
         stock=stock,
         image_url=image_url or None,
+        compare_at_price=Decimal(compare_at_price) if compare_at_price.strip() else None,
         specs=_parse_specs(specs),
         videos=_parse_videos(videos),
         is_active=is_active,

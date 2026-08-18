@@ -60,6 +60,11 @@ async def main() -> None:
                 product_type=it.get("product_type", "fisico"),
                 stock=int(it.get("stock", 10)),
                 category_id=cat.id,
+                compare_at_price=(
+                    Decimal(str(it["compare_at_price"]))
+                    if it.get("compare_at_price")
+                    else None
+                ),
             )
             db.add(product)
             await db.flush()

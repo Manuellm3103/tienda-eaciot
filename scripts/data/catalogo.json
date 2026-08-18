@@ -3,6 +3,7 @@
     "title": "Laptop HP 15.6\" Ryzen 5 16GB/512GB SSD",
     "description": "Laptop HP con procesador AMD Ryzen 5, 16 GB de RAM y SSD de 512 GB. Ideal para trabajo, estudio y multitarea diaria con pantalla de 15.6 pulgadas.",
     "price": "12999.00",
+    "compare_at_price": "15499.00",
     "product_type": "fisico",
     "stock": 10,
     "category": "laptops"
@@ -11,6 +12,7 @@
     "title": "Laptop Dell Inspiron 15 i5 12GB/512GB SSD",
     "description": "Dell Inspiron 15 con Intel Core i5, 12 GB de RAM y almacenamiento SSD de 512 GB. Equilibrio perfecto entre rendimiento y precio.",
     "price": "13499.00",
+    "compare_at_price": "15999.00",
     "product_type": "fisico",
     "stock": 8,
     "category": "laptops"
@@ -19,6 +21,7 @@
     "title": "Laptop Lenovo IdeaPad 3 Ryzen 7 16GB/1TB",
     "description": "Lenovo IdeaPad 3 con AMD Ryzen 7, 16 GB de RAM y 1 TB de almacenamiento. Potencia para diseño, programación y oficina avanzada.",
     "price": "15999.00",
+    "compare_at_price": "18999.00",
     "product_type": "fisico",
     "stock": 6,
     "category": "laptops"
@@ -27,6 +30,7 @@
     "title": "Laptop Acer Aspire 5 14\" i7 16GB/1TB SSD",
     "description": "Acer Aspire 5 de 14 pulgadas con Intel Core i7, 16 GB de RAM y SSD de 1 TB. Ligera, rápida y con gran autonomía de batería.",
     "price": "16499.00",
+    "compare_at_price": "19499.00",
     "product_type": "fisico",
     "stock": 5,
     "category": "laptops"
@@ -35,6 +39,7 @@
     "title": "SSD Kingston NV2 1TB M.2 NVMe",
     "description": "Unidad de estado sólido Kingston NV2 de 1 TB, formato M.2 NVMe PCIe 4.0. Velocidades de lectura de hasta 3,500 MB/s. Acelera tu equipo al instante.",
     "price": "1299.00",
+    "compare_at_price": "1549.00",
     "product_type": "fisico",
     "stock": 25,
     "category": "almacenamiento"
@@ -43,6 +48,7 @@
     "title": "SSD Crucial BX500 1TB SATA 2.5\"",
     "description": "SSD Crucial BX500 de 1 TB, formato SATA 2.5\". El upgrade más sencillo para revivir laptops y PCs de escritorio. Lecturas de 540 MB/s.",
     "price": "1149.00",
+    "compare_at_price": "1399.00",
     "product_type": "fisico",
     "stock": 30,
     "category": "almacenamiento"
