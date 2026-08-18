@@ -11,6 +11,24 @@ AUDIT_DIR="${UPLOAD_DIR:-./uploads}"
 mkdir -p "$AUDIT_DIR"
 AUDIT="$AUDIT_DIR/release_audit.txt"
 
+# ── Persistencia ──────────────────────────────────────────────────────────
+# La BD debe vivir en el disco persistente (/var/data en Render), NO en el
+# filesystem efímero del contenedor (./app.db se pierde en cada deploy).
+# Si DATABASE_URL no está definido o apunta al ./app.db local, redirigir a
+# /var/data/app.db y rescatar cualquier ./app.db previo que exista.
+case "${DATABASE_URL:-}" in
+  ""|*"/./app.db"|sqlite+aiosqlite:///app.db)
+    if [ -d /var/data ] && [ -w /var/data ]; then
+      if [ -f ./app.db ] && [ ! -f /var/data/app.db ]; then
+        cp -f ./app.db /var/data/app.db
+        echo "PERSIST: ./app.db -> /var/data/app.db (rescate)" >> "$AUDIT"
+      fi
+      export DATABASE_URL="sqlite+aiosqlite:////var/data/app.db"
+      echo "PERSIST: DATABASE_URL -> $DATABASE_URL" >> "$AUDIT"
+    fi
+    ;;
+esac
+
 echo "=== entrypoint $(date -u) cwd=$(pwd) db=${DATABASE_URL:-unset} ===" >> "$AUDIT"
 
 echo "== Tienda Eaciot: migraciones =="

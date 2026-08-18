@@ -2,7 +2,7 @@
   {
     "title": "Computadora HP OmniBook 5 laptop ai",
     "description": "Laptop HP OmniBook 5 con IA integrada. Procesador Intel Core Ultra 5 225U, SSD de 512 GB y Windows 11. Diseño ultradelgado con HP AI Companion para simplificar tu flujo de trabajo y batería de larga duración con carga rápida del 50% en 30 minutos.",
-    "price": "0.00",
+    "price": "14000",
     "cost_price": "11500.00",
     "hp_price": null,
     "specs": {
@@ -15,14 +15,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_14_snapdragon_oled/omni5_14_01.png"
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_01.png",
+    "compare_at_price": null
   },
   {
     "title": "Laptop Hp Omnibook 5 Ultra 7 Touch",
     "description": "Laptop HP OmniBook 5 con procesador Intel Core Ultra 7 y pantalla táctil. Rendimiento con IA para productividad avanzada, diseño de aluminio y batería para todo el día. Incluye Windows 11.",
-    "price": "0.00",
+    "price": "18500",
     "cost_price": null,
     "hp_price": null,
     "specs": {
@@ -35,14 +36,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_16_intel/omni5_16_01.png"
+    "image_file": "ob5_16_intel/omni5_16_01.png",
+    "compare_at_price": null
   },
   {
     "title": "Hp omnibook 5 oled snapdragon x",
     "description": "Laptop HP OmniBook 5 Next Gen AI con procesador Snapdragon X y pantalla OLED de 2K. Hasta 34 horas de batería, carga del 50% en 30 minutos con HP Fast Charge y HP AI Companion integrado. Windows 11.",
-    "price": "0.00",
+    "price": "14000",
     "cost_price": "11500.00",
     "hp_price": "1049.99",
     "hp_price_currency": "USD",
@@ -58,14 +60,15 @@
     ],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_14_snapdragon_oled/omni5_14_02.png"
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_02.png",
+    "compare_at_price": "19400"
   },
   {
     "title": "HP OmniBook 5 Touch 16 pulgadas",
     "description": "Laptop HP OmniBook 5 de 16 pulgadas con pantalla táctil y procesadores Intel Core Ultra. Ideal para productividad y multimedia con IA integrada, diseño metálico y Windows 11.",
-    "price": "0.00",
+    "price": "17500",
     "cost_price": null,
     "hp_price": null,
     "specs": {
@@ -77,14 +80,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_16_intel/omni5_16_02.png"
+    "image_file": "ob5_16_intel/omni5_16_02.png",
+    "compare_at_price": null
   },
   {
     "title": "Hp Lap Top OmniBook 5 AI",
     "description": "Laptop HP OmniBook 5 con IA. Procesador Intel Core Ultra 5 225U, SSD de 512 GB, Windows 11 y HP AI Companion para trabajar más rápido. Ligera, delgada y con gran autonomía.",
-    "price": "0.00",
+    "price": "14000",
     "cost_price": null,
     "hp_price": null,
     "specs": {
@@ -96,14 +100,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_14_snapdragon_oled/omni5_14_01.png"
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_01.png",
+    "compare_at_price": null
   },
   {
     "title": "Laptop Hp Omnibook 5 Touch",
     "description": "Laptop HP OmniBook 5 con pantalla táctil de 14 pulgadas y procesador Snapdragon X. Batería de hasta 34 horas, carga rápida del 50% en 30 minutos y HP AI Companion. Windows 11.",
-    "price": "0.00",
+    "price": "19900",
     "cost_price": "19000.00",
     "hp_price": "1049.99",
     "hp_price_currency": "USD",
@@ -116,14 +121,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_14_snapdragon_oled/omni5_14_03.png"
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_03.png",
+    "compare_at_price": null
   },
   {
     "title": "¡LAPTOP HP OMNIBOOK NUEVA EN VENTA! ✨",
     "description": "Laptop HP OmniBook nueva. Equipo con inteligencia artificial integrada, diseño delgado y batería de larga duración. Windows 11 listo para usar.",
-    "price": "0.00",
+    "price": "14000",
     "cost_price": null,
     "hp_price": null,
     "specs": {
@@ -135,14 +141,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_14_snapdragon_oled/omni5_14_04.png"
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_04.png",
+    "compare_at_price": null
   },
   {
     "title": "Laptop HP OmniBook 5 16\" Intel Core Ultra 5 / 16GB / 1TB",
     "description": "Laptop HP OmniBook 5 de 16 pulgadas con procesador Intel Core Ultra 5, 16 GB de RAM y disco SSD de 1 TB. Pantalla amplia para productividad, IA integrada y Windows 11.",
-    "price": "0.00",
+    "price": "18500",
     "cost_price": null,
     "hp_price": null,
     "specs": {
@@ -155,14 +162,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_16_intel/omni5_16_03.png"
+    "image_file": "ob5_16_intel/omni5_16_03.png",
+    "compare_at_price": null
   },
   {
     "title": "Laptop HP OmniBook 5 AI 16-af1072la - Nueva, caja cerrada",
     "description": "Laptop HP OmniBook 5 AI 16-af1072la nueva en caja cerrada. Procesador Intel Core Ultra con IA integrada, pantalla de 16 pulgadas y Windows 11. Garantía de equipo nuevo.",
-    "price": "0.00",
+    "price": "18000",
     "cost_price": "15000.00",
     "hp_price": null,
     "specs": {
@@ -174,14 +182,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_16_intel/omni5_16_04.png"
+    "image_file": "ob5_16_intel/omni5_16_04.png",
+    "compare_at_price": null
   },
   {
     "title": "Laptop HP Omnibook 16 pulgadas AI OLED",
     "description": "Laptop HP OmniBook de 16 pulgadas con pantalla OLED e inteligencia artificial integrada. Colores vibrantes, rendimiento con procesadores Intel Core Ultra y Windows 11.",
-    "price": "0.00",
+    "price": "21500",
     "cost_price": null,
     "hp_price": null,
     "specs": {
@@ -192,14 +201,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_16_intel/omni5_16_05.png"
+    "image_file": "ob5_16_intel/omni5_16_05.png",
+    "compare_at_price": null
   },
   {
     "title": "OmniBook 7 flip ultra",
     "description": "Laptop HP OmniBook 7 Flip 2 en 1 con bisagra 360° para modo laptop, carpa y tablet. Pantalla táctil de 16 pulgadas, procesadores Intel Core Ultra de 2ª generación y Windows 11.",
-    "price": "0.00",
+    "price": "19000",
     "cost_price": null,
     "hp_price": "1139.99",
     "hp_price_currency": "USD",
@@ -212,14 +222,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob7_flip_16/flip16_01.png"
+    "image_file": "ob7_flip_16/flip16_01.png",
+    "compare_at_price": "21100"
   },
   {
     "title": "💻 HP OmniBook 7 Flip Ultra 5 | 2th Gen | 16GB RAM | 512GB SSD | 16\" FullHD Touch | Gráfica Intel Arc",
     "description": "HP OmniBook 7 Flip Ultra 5 de 2ª generación: 16 GB de RAM, SSD de 512 GB, pantalla táctil Full HD de 16 pulgadas y gráficos Intel Arc. Convertible 2 en 1 con Windows 11.",
-    "price": "0.00",
+    "price": "19000",
     "cost_price": null,
     "hp_price": "1139.99",
     "hp_price_currency": "USD",
@@ -236,14 +247,15 @@
     ],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob7_flip_16/flip16_02.png"
+    "image_file": "ob7_flip_16/flip16_02.png",
+    "compare_at_price": "21100"
   },
   {
     "title": "Hp Omnibook 5 Touch",
     "description": "Laptop HP OmniBook 5 con pantalla táctil de 14 pulgadas, procesador Snapdragon X, batería de hasta 34 horas y HP AI Companion. Windows 11.",
-    "price": "0.00",
+    "price": "17500",
     "cost_price": null,
     "hp_price": "1049.99",
     "hp_price_currency": "USD",
@@ -255,14 +267,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_14_snapdragon_oled/omni5_14_05.png"
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_05.png",
+    "compare_at_price": "19400"
   },
   {
     "title": "Hp omnibook 5 AI",
     "description": "Laptop HP OmniBook 5 con IA integrada. Intel Core Ultra 5 225U, SSD de 512 GB, Windows 11 y HP AI Companion. Rendimiento y portabilidad para el día a día.",
-    "price": "0.00",
+    "price": "14000",
     "cost_price": null,
     "hp_price": null,
     "specs": {
@@ -274,14 +287,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob5_14_snapdragon_oled/omni5_14_06.png"
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_06.png",
+    "compare_at_price": null
   },
   {
     "title": "Laptop Hp OmniBook 7 nueva y sellada",
     "description": "Laptop HP OmniBook 7 nueva y sellada. PC con IA de alto rendimiento, diseño metálico premium y Windows 11. Equipo nuevo en caja.",
-    "price": "0.00",
+    "price": "23000",
     "cost_price": null,
     "hp_price": "1799.99",
     "hp_price_currency": "CAD",
@@ -293,14 +307,15 @@
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob7_14/omni7_14_frontright.jpg"
+    "image_file": "ob7_14/omni7_14_frontright.jpg",
+    "compare_at_price": "25200"
   },
   {
     "title": "LAPTOP HP OMNIBOOK 7 AERO",
     "description": "Laptop HP OmniBook 7 Aero: la más ligera de su categoría con IA. Procesador Snapdragon X Elite, memoria de 16 GB y SSD de 512 GB. Pantalla de 14 pulgadas 2.2K, cuerpo ultraligero y batería para todo el día. Windows 11.",
-    "price": "0.00",
+    "price": "30000",
     "cost_price": null,
     "hp_price": "1799.99",
     "hp_price_currency": "USD",
@@ -317,8 +332,9 @@
     ],
     "product_type": "fisico",
     "category": "laptops",
-    "is_active": false,
+    "is_active": true,
     "stock": 1,
-    "image_file": "ob7_aero_13/aero_01.png"
+    "image_file": "ob7_aero_13/aero_01.png",
+    "compare_at_price": "33300"
   }
 ]

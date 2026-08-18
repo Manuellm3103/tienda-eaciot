@@ -87,7 +87,22 @@ async def main() -> None:
                 if not img or "hp.widen.net" in img or "hp.com/ca-en/shop/media" in img:
                     producto.image_url = it.get("image_url") or None
                     actualizados += 1
-                    await db.flush()
+
+                # Poblar precio/activo del borrador SOLO mientras siga en estado
+                # "draft" (precio 0). Si el dueño ya puso un precio real, este
+                # paso NO lo pisa en los próximos deploys.
+                es_draft = (
+                    producto.price is None or float(producto.price or 0) == 0
+                )
+                if es_draft:
+                    producto.price = Decimal(str(it.get("price", "0")))
+                    if it.get("compare_at_price"):
+                        producto.compare_at_price = Decimal(str(it["compare_at_price"]))
+                    if it.get("is_active") is not None:
+                        producto.is_active = bool(it["is_active"])
+                    actualizados += 1
+
+                await db.flush()
                 continue
 
             slug = it.get("category", "general")
