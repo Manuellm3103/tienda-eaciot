@@ -1,12 +1,55 @@
 {% extends "base.html" %}
 
+{% set base = request.base_url|string %}
+{% set og_image_url = product.image_url if product.image_url and product.image_url.startswith('http') else (base + product.image_url.lstrip('/')) if product.image_url else (base + 'static/images/logo.png') %}
+
 {% block title %}{{ product.meta_title or product.title }} - Tienda Eaciot{% endblock %}
+{% block meta_description %}{{ product.meta_description or (product.description or '')[:155] }}{% endblock %}
+{% block og_title %}{{ product.meta_title or product.title }} - Tienda Eaciot{% endblock %}
+{% block og_description %}{{ product.meta_description or (product.description or '')[:155] }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_url %}{{ request.url }}{% endblock %}
+{% block og_image %}{{ og_image_url }}{% endblock %}
+{% block canonical %}{{ request.url }}{% endblock %}
 
 {% block meta %}
-{% if product.meta_description %}<meta name="description" content="{{ product.meta_description }}">{% endif %}
+<meta property="product:retailer_item_id" content="{{ product.id }}">
+<meta property="product:price:amount" content="{{ product.price }}">
+<meta property="product:price:currency" content="MXN">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": {{ product.title | tojson }},
+  "image": {{ og_image_url | tojson }},
+  "description": {{ (product.description or '') | tojson }},
+  "brand": {"@type": "Brand", "name": "Tienda Eaciot"},
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "MXN",
+    "price": {{ product.price | string | tojson }},
+    "availability": "https://schema.org/{{ 'InStock' if product.stock > 0 else 'OutOfStock' }}",
+    "url": {{ request.url | string | tojson }},
+    "itemCondition": "https://schema.org/NewCondition"
+  }
+}
+</script>
 {% endblock %}
 
 {% block content %}
+<nav aria-label="Ruta de navegación" class="text-sm text-gray-500 mb-6">
+    <ol class="list-none p-0 flex flex-wrap gap-1 items-center">
+        <li><a href="/" class="hover:text-blue-600">Inicio</a></li>
+        <li aria-hidden="true" class="mx-1 text-gray-400">/</li>
+        <li><a href="/products" class="hover:text-blue-600">Productos</a></li>
+        {% if product.category %}
+        <li aria-hidden="true" class="mx-1 text-gray-400">/</li>
+        <li><a href="/products?category={{ product.category.slug }}" class="hover:text-blue-600">{{ product.category.name }}</a></li>
+        {% endif %}
+        <li aria-hidden="true" class="mx-1 text-gray-400">/</li>
+        <li class="text-gray-700 truncate max-w-[200px]">{{ product.title }}</li>
+    </ol>
+</nav>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
     <div>
         {% if product.image_url %}
@@ -31,6 +74,11 @@
             <p class="text-3xl font-bold text-blue-600">${{ product.price }}</p>
             {% endif %}
         </div>
+        {% if product.product_type == 'fisico' and product.stock is defined and product.stock is not none and product.stock <= 5 %}
+        <p class="text-sm text-red-600 font-medium mb-4" role="status">⚠️ Solo quedan {{ product.stock }} unidades — ¡aprovecha!</p>
+        {% elif product.product_type == 'fisico' and product.stock is defined and product.stock is not none and product.stock > 5 %}
+        <p class="text-sm text-emerald-600 font-medium mb-4" role="status">✓ En existencia — envío inmediato</p>
+        {% endif %}
         {% if product.specs %}
         <div class="mb-6">
             <h2 class="font-bold mb-2">Especificaciones</h2>
@@ -64,6 +112,26 @@
                 Ver más productos
             </a>
         </div>
+        <div class="mt-6 grid grid-cols-3 gap-3 text-center text-xs text-gray-600">
+            <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                <svg class="h-6 w-6 mx-auto mb-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                Pago seguro
+            </div>
+            <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                <svg class="h-6 w-6 mx-auto mb-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17h18M5 17V9a2 2 0 012-2h10a2 2 0 012 2v8M7 17a1 1 0 110 2 1 1 0 010-2zm10 0a1 1 0 110 2 1 1 0 010-2z"/>
+                </svg>
+                Envío garantizado
+            </div>
+            <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                <svg class="h-6 w-6 mx-auto mb-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                Garantía incluida
+            </div>
+        </div>
         {% if variants %}
         <script>
         (function() {
@@ -95,7 +163,7 @@
             {% if url.startswith('/uploads/') %}
             <video class="w-full h-full" src="{{ url }}" controls preload="metadata"></video>
             {% else %}
-            <iframe class="w-full h-full" src="{{ url }}" title="Video oficial del producto" frameborder="0" allowfullscreen></iframe>
+            <iframe class="w-full h-full" src="{{ url }}" title="Video oficial del producto" frameborder="0" allowfullscreen loading="lazy"></iframe>
             {% endif %}
         </div>
         {% endfor %}
@@ -110,7 +178,7 @@
         {% for rp in related_products %}
         <div class="bg-white rounded-lg shadow p-4">
             {% if rp.image_url %}
-            <img src="{{ rp.image_url }}" alt="{{ rp.title }}" class="w-full h-32 object-cover rounded mb-3">
+            <img src="{{ rp.image_url }}" alt="{{ rp.title }}" loading="lazy" decoding="async" class="w-full h-32 object-cover rounded mb-3">
             {% endif %}
             <a href="/products/{{ rp.id }}" class="font-semibold hover:text-blue-600">{{ rp.title }}</a>
             <p class="text-blue-600 font-bold mt-2">${{ rp.price }}</p>

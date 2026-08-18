@@ -3,10 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Tienda Eaciot — laptops, productos digitales y físicos de alta calidad. Envío seguro y pagos protegidos.{% endblock %}">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="icon" type="image/png" href="/static/images/logo.png">
+    <link rel="canonical" href="{% block canonical %}{{ request.url }}{% endblock %}">
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Tienda Eaciot">
+    <meta property="og:title" content="{% block og_title %}Tienda Eaciot{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Tienda Eaciot — laptops, productos digitales y físicos de alta calidad.{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.url_for('static', path='images/logo.png') }}{% endblock %}">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Tienda Eaciot">
+    <meta name="twitter:description" content="Tienda Eaciot — laptops, productos digitales y físicos de alta calidad.">
+    <meta name="twitter:image" content="/static/images/logo.png">
     {% block meta %}{% endblock %}
     <title>{% block title %}Tienda Eaciot{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Tienda Eaciot",
+      "url": "{{ request.base_url }}",
+      "logo": "{{ request.url_for('static', path='images/logo.png') }}",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "email": "soporte@eaciot.com"
+      }
+    }
+    </script>
+    <style>
+        html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+        body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        :focus-visible { outline: 3px solid rgba(37,99,235,.5); outline-offset: 2px; border-radius: 4px; }
+        a, button { transition: color .15s ease, background-color .15s ease, transform .1s ease, box-shadow .15s ease; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(37,99,235,.25); }
+        .btn-primary:active { transform: translateY(0); }
+        .card-hover { transition: box-shadow .2s ease, transform .2s ease; }
+        .card-hover:hover { box-shadow: 0 12px 28px rgba(0,0,0,.10); transform: translateY(-2px); }
+        .card-hover:hover .product-image { transform: scale(1.03); }
+        .product-image { transition: transform .3s ease; }
+        .badge { letter-spacing: .02em; }
+    </style>
     <script>
         window.getCsrfToken = function() {
             const match = document.cookie.match(new RegExp('(^| )csrf_token=([^;]+)'));
@@ -20,7 +63,7 @@
     </script>
 </head>
 <body class="bg-gray-50">
-    <nav class="bg-white shadow">
+    <nav class="bg-white shadow" aria-label="Navegación principal">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -61,11 +104,11 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 py-8">
+    <main id="main-content" class="max-w-7xl mx-auto px-4 py-8">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-gray-800 text-white py-8 mt-16">
+    <footer class="bg-gray-800 text-white py-8 mt-16" role="contentinfo">
         <div class="max-w-7xl mx-auto px-4 text-center">
             <p>&copy; 2026 Tienda Eaciot. Todos los derechos reservados.</p>
             <div class="mt-4 flex justify-center space-x-6 text-sm text-gray-400">

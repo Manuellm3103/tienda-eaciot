@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from uuid import UUID
 from app.models.product import Product, Category
@@ -19,7 +20,9 @@ class ProductService:
         return result.scalars().all()
     
     async def get_product(self, db: AsyncSession, product_id: UUID) -> Optional[Product]:
-        result = await db.execute(select(Product).where(Product.id == product_id))
+        result = await db.execute(
+            select(Product).options(selectinload(Product.category)).where(Product.id == product_id)
+        )
         return result.scalar_one_or_none()
     
     async def create_product(self, db: AsyncSession, data: ProductCreate) -> Product:
