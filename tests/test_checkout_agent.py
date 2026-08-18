@@ -21,10 +21,17 @@ async def _auth_client(client, db, email: str = "checkout@test.com", admin: bool
     return user
 
 
+async def _chat(client, message: str, session_id: str | None = None):
+    body = {"message": message}
+    if session_id:
+        body["session_id"] = session_id
+    return await client.post("/api/chat/", json=body)
+
+
 @pytest.mark.asyncio
 async def test_checkout_intent_starts_flow(client, db):
     await _auth_client(client, db)
-    response = await client.get("/api/chat/?message=quiero%20comprar")
+    response = await _chat(client, "quiero comprar")
     assert response.status_code == 200
     data = response.json()
     assert "Vamos a crear tu pedido" in data["answer"]
@@ -55,27 +62,19 @@ async def test_checkout_full_flow_creates_order(client, db):
     session_id = "checkout-session-1"
 
     # Start
-    r1 = await client.get(
-        f"/api/chat/?message=quiero+comprar&session_id={session_id}"
-    )
+    r1 = await _chat(client, "quiero comprar", session_id=session_id)
     assert r1.json()["agent"] == "checkout"
 
     # Items
-    r2 = await client.get(
-        f"/api/chat/?message=2+zapatos+rojos&session_id={session_id}"
-    )
+    r2 = await _chat(client, "2 zapatos rojos", session_id=session_id)
     assert "dirección" in r2.json()["answer"].lower()
 
     # Address
-    r3 = await client.get(
-        f"/api/chat/?message=Calle+Principal+123,+Cuernavaca&session_id={session_id}"
-    )
+    r3 = await _chat(client, "Calle Principal 123, Cuernavaca", session_id=session_id)
     assert "Resumen" in r3.json()["answer"]
 
     # Confirm
-    r4 = await client.get(
-        f"/api/chat/?message=sí,+comprar&session_id={session_id}"
-    )
+    r4 = await _chat(client, "sí, comprar", session_id=session_id)
     data = r4.json()
     assert "Pedido creado" in data["answer"]
     assert data["metadata"]["order_id"]
@@ -114,14 +113,10 @@ async def test_checkout_requires_auth(client, db):
     await db.refresh(product)
 
     session_id = "checkout-anon"
-    await client.get(f"/api/chat/?message=quiero+comprar&session_id={session_id}")
-    await client.get(f"/api/chat/?message=1+producto+anonimo&session_id={session_id}")
-    await client.get(
-        f"/api/chat/?message=direccion+123&session_id={session_id}"
-    )
-    response = await client.get(
-        f"/api/chat/?message=sí,+comprar&session_id={session_id}"
-    )
+    await _chat(client, "quiero comprar", session_id=session_id)
+    await _chat(client, "1 producto anonimo", session_id=session_id)
+    await _chat(client, "direccion 123", session_id=session_id)
+    response = await _chat(client, "sí, comprar", session_id=session_id)
     data = response.json()
     assert "iniciar sesión" in data["answer"].lower()
 
@@ -148,11 +143,9 @@ async def test_checkout_spending_limit_escalates(client, db):
     await db.refresh(product)
 
     session_id = "checkout-limit"
-    await client.get(f"/api/chat/?message=quiero+comprar&session_id={session_id}")
-    await client.get(f"/api/chat/?message=2+producto+caro&session_id={session_id}")
-    response = await client.get(
-        f"/api/chat/?message=direccion+123&session_id={session_id}"
-    )
+    await _chat(client, "quiero comprar", session_id=session_id)
+    await _chat(client, "2 producto caro", session_id=session_id)
+    response = await _chat(client, "direccion 123", session_id=session_id)
     assert "supera el límite" in response.json()["answer"].lower()
 
 
@@ -160,8 +153,8 @@ async def test_checkout_spending_limit_escalates(client, db):
 async def test_checkout_cancel(client, db):
     await _auth_client(client, db, email="checkoutcancel@test.com")
     session_id = "checkout-cancel"
-    await client.get(f"/api/chat/?message=quiero+comprar&session_id={session_id}")
-    response = await client.get(f"/api/chat/?message=cancelar&session_id={session_id}")
+    await _chat(client, "quiero comprar", session_id=session_id)
+    response = await _chat(client, "cancelar", session_id=session_id)
     assert "cancelado" in response.json()["answer"].lower()
 
 

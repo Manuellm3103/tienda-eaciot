@@ -112,6 +112,9 @@ class Settings(BaseSettings):
     whatsapp_verify_token: str = ""
     whatsapp_phone_number_id: str = ""
     whatsapp_access_token: str = ""
+    # App Secret de la app de Meta — se usa para verificar la firma
+    # X-Hub-Signature-256 de los webhooks entrantes (NUNCA el verify token).
+    whatsapp_app_secret: str = ""
     
     class Config:
         env_file = ".env"

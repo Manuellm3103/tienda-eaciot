@@ -345,7 +345,7 @@ async def google_callback(request: Request, code: str, state: str = "/", db: Asy
             value=access_token,
             httponly=True,
             secure=cookie_secure(request),
-            samesite="none",
+            samesite="lax",
             max_age=30 * 24 * 60 * 60,
         )
 
@@ -409,7 +409,7 @@ async def microsoft_callback(request: Request, code: str, state: str = "/", db: 
             value=access_token,
             httponly=True,
             secure=cookie_secure(request),
-            samesite="none",
+            samesite="lax",
             max_age=30 * 24 * 60 * 60,
         )
 
@@ -478,7 +478,7 @@ async def github_callback(request: Request, code: str, state: str = "/", db: Asy
             value=access_token,
             httponly=True,
             secure=cookie_secure(request),
-            samesite="none",
+            samesite="lax",
             max_age=30 * 24 * 60 * 60,
         )
 

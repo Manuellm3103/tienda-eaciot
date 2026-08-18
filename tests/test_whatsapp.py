@@ -1,3 +1,7 @@
+import hashlib
+import hmac
+import json
+
 import pytest
 from sqlalchemy import select
 from unittest.mock import AsyncMock, patch
@@ -71,14 +75,26 @@ async def test_whatsapp_incoming_message_creates_user_and_enqueues_reply(client,
         ],
     }
 
-    with patch.object(
-        whatsapp_service, "_send_whatsapp_reply", new=AsyncMock()
-    ) as mock_send:
-        with patch(
-            "app.services.whatsapp_service.chat_service.chat",
-            new=AsyncMock(return_value={"answer": "Sí, tenemos varios modelos.", "products": []}),
-        ):
-            response = await client.post("/webhooks/whatsapp", json=payload)
+    raw = json.dumps(payload).encode()
+    secret = "test_app_secret"
+    sig = "sha256=" + hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest()
+
+    with patch("app.routers.webhooks.settings.whatsapp_app_secret", secret):
+        with patch.object(
+            whatsapp_service, "_send_whatsapp_reply", new=AsyncMock()
+        ) as mock_send:
+            with patch(
+                "app.services.whatsapp_service.chat_service.chat",
+                new=AsyncMock(return_value={"answer": "Sí, tenemos varios modelos.", "products": []}),
+            ):
+                response = await client.post(
+                    "/webhooks/whatsapp",
+                    content=raw,
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Hub-Signature-256": sig,
+                    },
+                )
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
@@ -89,6 +105,28 @@ async def test_whatsapp_incoming_message_creates_user_and_enqueues_reply(client,
     assert user is not None
     assert user.email.startswith("whatsapp+")
     mock_send.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_whatsapp_webhook_rejects_unsigned_payload(client, db):
+    """Sin firma X-Hub-Signature-256 (o firma inválida) el webhook rechaza."""
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [{"changes": [{"value": {"messages": []}}]}],
+    }
+    with patch("app.routers.webhooks.settings.whatsapp_app_secret", "test_app_secret"):
+        response = await client.post("/webhooks/whatsapp", json=payload)
+    assert response.status_code == 400
+
+    raw = json.dumps(payload).encode()
+    bad_sig = "sha256=" + hmac.new(b"wrong", raw, hashlib.sha256).hexdigest()
+    with patch("app.routers.webhooks.settings.whatsapp_app_secret", "test_app_secret"):
+        response = await client.post(
+            "/webhooks/whatsapp",
+            content=raw,
+            headers={"Content-Type": "application/json", "X-Hub-Signature-256": bad_sig},
+        )
+    assert response.status_code == 400
 
 
 @pytest.mark.asyncio

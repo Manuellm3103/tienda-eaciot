@@ -3,6 +3,10 @@
 Currently handles WhatsApp Cloud API verification and inbound message events.
 """
 
+import hashlib
+import hmac
+import json
+
 from fastapi import APIRouter, Request, HTTPException, Depends, Query
 from fastapi.responses import PlainTextResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +16,22 @@ from app.database import get_db
 from app.services.whatsapp_service import whatsapp_service
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+
+
+def _verify_whatsapp_signature(payload: bytes, sig_header: str) -> None:
+    """Verify Meta's X-Hub-Signature-256 (HMAC-SHA256 of the RAW body).
+
+    Meta firma el payload con el App Secret de la app de Meta (no el verify
+    token ni el access token). Preferimos whatsapp_app_secret; si no está
+    definido, caemos al access token para no romper integraciones previas.
+    Fail-closed: sin secreto configurado, el webhook no acepta mensajes.
+    """
+    secret = settings.whatsapp_app_secret or settings.whatsapp_access_token
+    if not secret:
+        raise HTTPException(status_code=403, detail="Webhook not configured")
+    expected = "sha256=" + hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig_header or "", expected):
+        raise HTTPException(status_code=400, detail="Invalid signature")
 
 
 @router.get("/whatsapp")
@@ -37,8 +57,11 @@ async def receive_whatsapp(
     db: AsyncSession = Depends(get_db),
 ):
     """Receive inbound WhatsApp messages and route them to the AI assistant."""
+    body = await request.body()
+    _verify_whatsapp_signature(body, request.headers.get("X-Hub-Signature-256", ""))
+
     try:
-        payload = await request.json()
+        payload = json.loads(body)
     except Exception as exc:
         raise HTTPException(status_code=400, detail="Invalid JSON") from exc
 
