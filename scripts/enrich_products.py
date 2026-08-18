@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import select  # noqa: E402
 
-from app.database import async_session  # noqa: E402
+from app.database import async_session, init_db  # noqa: E402
 from app.models.product import Product  # noqa: E402
 from app.services.product_content_service import product_content_service  # noqa: E402
 
@@ -26,6 +26,9 @@ MAX_PRODUCTS = 25
 
 
 async def main() -> None:
+    # Auto-cura el esquema SQLite antes de tocar la BD (el release corre
+    # antes que el arranque de la app en Render).
+    await init_db()
     if os.getenv("AUTO_ENRICH", "true").strip().lower() in ("false", "0", "no"):
         print("Enrich: desactivado (AUTO_ENRICH=false)")
         return

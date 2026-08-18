@@ -20,7 +20,7 @@ sys.path.insert(0, str(REPO))
 
 from sqlalchemy import select  # noqa: E402
 
-from app.database import async_session  # noqa: E402
+from app.database import async_session, init_db  # noqa: E402
 from app.models.product import Product, Category  # noqa: E402
 from app.services.product_content_service import product_content_service  # noqa: E402
 
@@ -28,6 +28,10 @@ CATALOG = REPO / "scripts" / "data" / "catalogo.json"
 
 
 async def main() -> None:
+    # Auto-cura el esquema SQLite ANTES de tocar la BD: en Render el release
+    # corre antes que el arranque de la app, así que las columnas nuevas
+    # (compare_at_price, meta_title...) no existirían sin este paso.
+    await init_db()
     if os.getenv("RESTORE_CATALOG", "").strip().lower() not in ("true", "1", "yes"):
         print("Restore: RESTORE_CATALOG no está activo — nada que hacer.")
         return

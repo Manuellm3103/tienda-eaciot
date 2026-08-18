@@ -15,11 +15,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import update  # noqa: E402
 
-from app.database import async_session  # noqa: E402
+from app.database import async_session, init_db  # noqa: E402
 from app.models.product import Product  # noqa: E402
 
 
 async def main() -> None:
+    # Auto-cura el esquema SQLite antes de tocar la BD (el release corre
+    # antes que el arranque de la app en Render).
+    await init_db()
     if os.getenv("AUTO_REVIVE_PRODUCTS", "").strip().lower() not in ("true", "1", "yes"):
         print("Revive: AUTO_REVIVE_PRODUCTS no está activo — nada que hacer.")
         return
