@@ -14,6 +14,7 @@ tienda pública.
 import asyncio
 import json
 import os
+import shutil
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -23,10 +24,36 @@ sys.path.insert(0, str(REPO))
 
 from sqlalchemy import select  # noqa: E402
 
+from app.config import settings  # noqa: E402
 from app.database import async_session, init_db  # noqa: E402
 from app.models.product import Product, Category  # noqa: E402
 
 CATALOG = REPO / "scripts" / "data" / "hp_omnibook.json"
+MEDIA_SRC = REPO / "scripts" / "data" / "hp_media"
+
+
+def _sync_media() -> int:
+    """Copia las imágenes oficiales HP del repo al UPLOAD_DIR (idempotente).
+
+    Fuente: scripts/data/hp_media (commiteado). Destino: settings.upload_dir
+    (/var/data/uploads en Render). Así la tienda sirve las imágenes localmente
+    y no depende del CDN de HP (hp.widen.net / hp.com), que responde 503 de
+    forma intermitente.
+    """
+    if not MEDIA_SRC.exists():
+        return 0
+    dest_root = Path(settings.upload_dir) / "products" / "hp"
+    n = 0
+    for src in sorted(MEDIA_SRC.rglob("*")):
+        if not src.is_file():
+            continue
+        rel = src.relative_to(MEDIA_SRC)
+        dst = dest_root / rel
+        if not dst.exists() or dst.stat().st_size != src.stat().st_size:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            n += 1
+    return n
 
 
 async def main() -> None:
@@ -40,14 +67,27 @@ async def main() -> None:
         print("HP: no existe scripts/data/hp_omnibook.json — nada que importar.")
         return
 
+    sincronizadas = _sync_media()
+    print(f"HP: {sincronizadas} imágenes copiadas a {settings.upload_dir}/products/hp")
+
     items = json.loads(CATALOG.read_text(encoding="utf-8"))
     async with async_session() as db:
         creados = 0
+        actualizados = 0
         for it in items:
-            exists = (
-                await db.execute(select(Product).where(Product.title == it["title"]))
+            title = it["title"]
+            producto = (
+                await db.execute(select(Product).where(Product.title == title))
             ).scalar_one_or_none()
-            if exists:
+
+            if producto:
+                # Migrar media de CDN remoto -> local (solo una vez). No se
+                # toca image_url si el admin ya la personalizó manualmente.
+                img = producto.image_url or ""
+                if not img or "hp.widen.net" in img or "hp.com/ca-en/shop/media" in img:
+                    producto.image_url = it.get("image_url") or None
+                    actualizados += 1
+                    await db.flush()
                 continue
 
             slug = it.get("category", "general")
@@ -84,8 +124,8 @@ async def main() -> None:
             await db.flush()
             creados += 1
         await db.commit()
-        print(f"HP: {creados} productos OmniBook creados como borradores "
-              f"(precio pendiente del dueño, inactivos).")
+        print(f"HP: {creados} productos creados, {actualizados} actualizados "
+              f"(media local). Borradores inactivos, precio pendiente del dueño.")
 
 
 if __name__ == "__main__":

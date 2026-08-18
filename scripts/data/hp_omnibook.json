@@ -5,13 +5,19 @@
     "price": "0.00",
     "cost_price": "11500.00",
     "hp_price": null,
-    "specs": {"Procesador": "Intel Core Ultra 5 225U", "Almacenamiento": "SSD 512 GB", "Sistema operativo": "Windows 11", "RAM": "16 GB"},
-    "image_url": "https://hp.widen.net/content/wjdqxhhxgm/webp/wjdqxhhxgm.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Procesador": "Intel Core Ultra 5 225U",
+      "Almacenamiento": "SSD 512 GB",
+      "Sistema operativo": "Windows 11",
+      "RAM": "16 GB"
+    },
+    "image_url": "/uploads/products/hp/ob5_14_snapdragon_oled/omni5_14_01.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_01.png"
   },
   {
     "title": "Laptop Hp Omnibook 5 Ultra 7 Touch",
@@ -19,13 +25,19 @@
     "price": "0.00",
     "cost_price": null,
     "hp_price": null,
-    "specs": {"Procesador": "Intel Core Ultra 7 255U", "RAM": "16 GB", "Almacenamiento": "SSD 512 GB", "Pantalla": "16\" táctil (1920 x 1200)"},
-    "image_url": "https://hp.widen.net/content/4s4rignnl6/webp/4s4rignnl6.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Procesador": "Intel Core Ultra 7 255U",
+      "RAM": "16 GB",
+      "Almacenamiento": "SSD 512 GB",
+      "Pantalla": "16\" táctil (1920 x 1200)"
+    },
+    "image_url": "/uploads/products/hp/ob5_16_intel/omni5_16_01.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_16_intel/omni5_16_01.png"
   },
   {
     "title": "Hp omnibook 5 oled snapdragon x",
@@ -34,13 +46,21 @@
     "cost_price": "11500.00",
     "hp_price": "1049.99",
     "hp_price_currency": "USD",
-    "specs": {"Procesador": "Snapdragon X", "Pantalla": "14\" OLED 2K táctil", "Batería": "Hasta 34 horas", "Almacenamiento": "SSD 256 GB - 1 TB"},
-    "image_url": "https://hp.widen.net/content/3y3pr8oa06/webp/3y3pr8oa06.png?dpi=72&color=ffffff00&w=1200",
-    "videos": ["https://www.hp.com/wcsstore/hpusstore/Treatment/Video/WIN26_Copilot+PC.mp4"],
+    "specs": {
+      "Procesador": "Snapdragon X",
+      "Pantalla": "14\" OLED 2K táctil",
+      "Batería": "Hasta 34 horas",
+      "Almacenamiento": "SSD 256 GB - 1 TB"
+    },
+    "image_url": "/uploads/products/hp/ob5_14_snapdragon_oled/omni5_14_02.png",
+    "videos": [
+      "https://www.hp.com/wcsstore/hpusstore/Treatment/Video/WIN26_Copilot+PC.mp4"
+    ],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_02.png"
   },
   {
     "title": "HP OmniBook 5 Touch 16 pulgadas",
@@ -48,13 +68,18 @@
     "price": "0.00",
     "cost_price": null,
     "hp_price": null,
-    "specs": {"Pantalla": "16\" táctil (1920 x 1200)", "Procesador": "Intel Core Ultra 5 / Ultra 7", "Sistema operativo": "Windows 11"},
-    "image_url": "https://hp.widen.net/content/iqed0xl7r5/webp/iqed0xl7r5.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Pantalla": "16\" táctil (1920 x 1200)",
+      "Procesador": "Intel Core Ultra 5 / Ultra 7",
+      "Sistema operativo": "Windows 11"
+    },
+    "image_url": "/uploads/products/hp/ob5_16_intel/omni5_16_02.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_16_intel/omni5_16_02.png"
   },
   {
     "title": "Hp Lap Top OmniBook 5 AI",
@@ -62,13 +87,18 @@
     "price": "0.00",
     "cost_price": null,
     "hp_price": null,
-    "specs": {"Procesador": "Intel Core Ultra 5 225U", "Almacenamiento": "SSD 512 GB", "Sistema operativo": "Windows 11"},
-    "image_url": "https://hp.widen.net/content/wjdqxhhxgm/webp/wjdqxhhxgm.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Procesador": "Intel Core Ultra 5 225U",
+      "Almacenamiento": "SSD 512 GB",
+      "Sistema operativo": "Windows 11"
+    },
+    "image_url": "/uploads/products/hp/ob5_14_snapdragon_oled/omni5_14_01.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_01.png"
   },
   {
     "title": "Laptop Hp Omnibook 5 Touch",
@@ -77,13 +107,18 @@
     "cost_price": "19000.00",
     "hp_price": "1049.99",
     "hp_price_currency": "USD",
-    "specs": {"Pantalla": "14\" 2K táctil", "Procesador": "Snapdragon X", "Batería": "Hasta 34 horas"},
-    "image_url": "https://hp.widen.net/content/fusq71kuwi/webp/fusq71kuwi.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Pantalla": "14\" 2K táctil",
+      "Procesador": "Snapdragon X",
+      "Batería": "Hasta 34 horas"
+    },
+    "image_url": "/uploads/products/hp/ob5_14_snapdragon_oled/omni5_14_03.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_03.png"
   },
   {
     "title": "¡LAPTOP HP OMNIBOOK NUEVA EN VENTA! ✨",
@@ -91,13 +126,18 @@
     "price": "0.00",
     "cost_price": null,
     "hp_price": null,
-    "specs": {"Marca": "HP", "Línea": "OmniBook", "Sistema operativo": "Windows 11"},
-    "image_url": "https://hp.widen.net/content/c658jcrqdj/webp/c658jcrqdj.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Marca": "HP",
+      "Línea": "OmniBook",
+      "Sistema operativo": "Windows 11"
+    },
+    "image_url": "/uploads/products/hp/ob5_14_snapdragon_oled/omni5_14_04.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_04.png"
   },
   {
     "title": "Laptop HP OmniBook 5 16\" Intel Core Ultra 5 / 16GB / 1TB",
@@ -105,13 +145,19 @@
     "price": "0.00",
     "cost_price": null,
     "hp_price": null,
-    "specs": {"Procesador": "Intel Core Ultra 5", "RAM": "16 GB", "Almacenamiento": "SSD 1 TB", "Pantalla": "16\""},
-    "image_url": "https://hp.widen.net/content/mzom6ax1t2/webp/mzom6ax1t2.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Procesador": "Intel Core Ultra 5",
+      "RAM": "16 GB",
+      "Almacenamiento": "SSD 1 TB",
+      "Pantalla": "16\""
+    },
+    "image_url": "/uploads/products/hp/ob5_16_intel/omni5_16_03.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_16_intel/omni5_16_03.png"
   },
   {
     "title": "Laptop HP OmniBook 5 AI 16-af1072la - Nueva, caja cerrada",
@@ -119,13 +165,18 @@
     "price": "0.00",
     "cost_price": "15000.00",
     "hp_price": null,
-    "specs": {"Modelo": "16-af1072la", "Pantalla": "16\"", "Condición": "Nueva, caja cerrada"},
-    "image_url": "https://hp.widen.net/content/xv6wfpz8ld/webp/xv6wfpz8ld.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Modelo": "16-af1072la",
+      "Pantalla": "16\"",
+      "Condición": "Nueva, caja cerrada"
+    },
+    "image_url": "/uploads/products/hp/ob5_16_intel/omni5_16_04.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_16_intel/omni5_16_04.png"
   },
   {
     "title": "Laptop HP Omnibook 16 pulgadas AI OLED",
@@ -133,13 +184,17 @@
     "price": "0.00",
     "cost_price": null,
     "hp_price": null,
-    "specs": {"Pantalla": "16\" OLED", "Tecnología": "Intel Core Ultra con IA"},
-    "image_url": "https://hp.widen.net/content/kptxu2gj2t/webp/kptxu2gj2t.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Pantalla": "16\" OLED",
+      "Tecnología": "Intel Core Ultra con IA"
+    },
+    "image_url": "/uploads/products/hp/ob5_16_intel/omni5_16_05.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_16_intel/omni5_16_05.png"
   },
   {
     "title": "OmniBook 7 flip ultra",
@@ -148,13 +203,18 @@
     "cost_price": null,
     "hp_price": "1139.99",
     "hp_price_currency": "USD",
-    "specs": {"Pantalla": "16\" táctil", "Bisagra": "360° 2 en 1", "Procesador": "Intel Core Ultra 2ª generación"},
-    "image_url": "https://hp.widen.net/content/mlslbfc0ow/webp/mlslbfc0ow.png?w=1200&dpi=72&color=ffffff00",
+    "specs": {
+      "Pantalla": "16\" táctil",
+      "Bisagra": "360° 2 en 1",
+      "Procesador": "Intel Core Ultra 2ª generación"
+    },
+    "image_url": "/uploads/products/hp/ob7_flip_16/flip16_01.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob7_flip_16/flip16_01.png"
   },
   {
     "title": "💻 HP OmniBook 7 Flip Ultra 5 | 2th Gen | 16GB RAM | 512GB SSD | 16\" FullHD Touch | Gráfica Intel Arc",
@@ -163,13 +223,22 @@
     "cost_price": null,
     "hp_price": "1139.99",
     "hp_price_currency": "USD",
-    "specs": {"Procesador": "Intel Core Ultra 5 (2ª generación)", "RAM": "16 GB", "Almacenamiento": "SSD 512 GB", "Pantalla": "16\" Full HD táctil", "Gráficos": "Intel Arc"},
-    "image_url": "https://hp.widen.net/content/wpvx8c8p0k/webp/wpvx8c8p0k.png?w=1200&dpi=72&color=ffffff00",
-    "videos": ["https://www.hp.com/wcsstore/hpusstore/Treatment/Video/WIN26_Copilot+PC.mp4"],
+    "specs": {
+      "Procesador": "Intel Core Ultra 5 (2ª generación)",
+      "RAM": "16 GB",
+      "Almacenamiento": "SSD 512 GB",
+      "Pantalla": "16\" Full HD táctil",
+      "Gráficos": "Intel Arc"
+    },
+    "image_url": "/uploads/products/hp/ob7_flip_16/flip16_02.png",
+    "videos": [
+      "https://www.hp.com/wcsstore/hpusstore/Treatment/Video/WIN26_Copilot+PC.mp4"
+    ],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob7_flip_16/flip16_02.png"
   },
   {
     "title": "Hp Omnibook 5 Touch",
@@ -178,13 +247,17 @@
     "cost_price": null,
     "hp_price": "1049.99",
     "hp_price_currency": "USD",
-    "specs": {"Pantalla": "14\" 2K táctil", "Procesador": "Snapdragon X"},
-    "image_url": "https://hp.widen.net/content/hcrud8duya/webp/hcrud8duya.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Pantalla": "14\" 2K táctil",
+      "Procesador": "Snapdragon X"
+    },
+    "image_url": "/uploads/products/hp/ob5_14_snapdragon_oled/omni5_14_05.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_05.png"
   },
   {
     "title": "Hp omnibook 5 AI",
@@ -192,13 +265,18 @@
     "price": "0.00",
     "cost_price": null,
     "hp_price": null,
-    "specs": {"Procesador": "Intel Core Ultra 5 225U", "Almacenamiento": "SSD 512 GB", "Sistema operativo": "Windows 11"},
-    "image_url": "https://hp.widen.net/content/g2bgbs4x2j/webp/g2bgbs4x2j.png?dpi=72&color=ffffff00&w=1200",
+    "specs": {
+      "Procesador": "Intel Core Ultra 5 225U",
+      "Almacenamiento": "SSD 512 GB",
+      "Sistema operativo": "Windows 11"
+    },
+    "image_url": "/uploads/products/hp/ob5_14_snapdragon_oled/omni5_14_06.png",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob5_14_snapdragon_oled/omni5_14_06.png"
   },
   {
     "title": "Laptop Hp OmniBook 7 nueva y sellada",
@@ -207,13 +285,17 @@
     "cost_price": null,
     "hp_price": "1799.99",
     "hp_price_currency": "CAD",
-    "specs": {"Condición": "Nueva, sellada", "Línea": "HP OmniBook 7"},
-    "image_url": "https://www.hp.com/ca-en/shop/media/catalog/product/a/u/auster_14_ob7_cs_meteorsilver_wlan_nt_ircam_backlit_win11_catalog_frontright_5796054_cus.jpg?store=ca-en&image-type=image&quality=100&width=1200",
+    "specs": {
+      "Condición": "Nueva, sellada",
+      "Línea": "HP OmniBook 7"
+    },
+    "image_url": "/uploads/products/hp/ob7_14/omni7_14_frontright.jpg",
     "videos": [],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob7_14/omni7_14_frontright.jpg"
   },
   {
     "title": "LAPTOP HP OMNIBOOK 7 AERO",
@@ -222,12 +304,21 @@
     "cost_price": null,
     "hp_price": "1799.99",
     "hp_price_currency": "USD",
-    "specs": {"Procesador": "Snapdragon X Elite", "RAM": "16 GB LPDDR5x", "Almacenamiento": "SSD 512 GB", "Pantalla": "14\" 2.2K IPS", "Peso": "Ultraligero"},
-    "image_url": "https://hp.widen.net/content/nmsr64uw3x/webp/nmsr64uw3x.png?w=1200&dpi=72&color=ffffff00",
-    "videos": ["https://www.hp.com/wcsstore/hpusstore/Treatment/Video/WIN26_Copilot+PC.mp4"],
+    "specs": {
+      "Procesador": "Snapdragon X Elite",
+      "RAM": "16 GB LPDDR5x",
+      "Almacenamiento": "SSD 512 GB",
+      "Pantalla": "14\" 2.2K IPS",
+      "Peso": "Ultraligero"
+    },
+    "image_url": "/uploads/products/hp/ob7_aero_13/aero_01.png",
+    "videos": [
+      "https://www.hp.com/wcsstore/hpusstore/Treatment/Video/WIN26_Copilot+PC.mp4"
+    ],
     "product_type": "fisico",
     "category": "laptops",
     "is_active": false,
-    "stock": 1
+    "stock": 1,
+    "image_file": "ob7_aero_13/aero_01.png"
   }
 ]
