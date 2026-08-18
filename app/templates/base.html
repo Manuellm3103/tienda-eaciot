@@ -6,6 +6,13 @@
     <meta name="description" content="{% block meta_description %}Tienda Eaciot — laptops, productos digitales y físicos de alta calidad. Envío seguro y pagos protegidos.{% endblock %}">
     <meta name="theme-color" content="#2563eb">
     <link rel="icon" type="image/png" href="/static/images/logo.png">
+    <link rel="manifest" href="/static/manifest.json">
+    <!-- PWA / instalable en iOS, Android y escritorio -->
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Eaciot">
     <link rel="canonical" href="{% block canonical %}{{ request.url }}{% endblock %}">
     <!-- Open Graph -->
     <meta property="og:site_name" content="Tienda Eaciot">
@@ -60,6 +67,14 @@
                 evt.detail.headers['X-CSRF-Token'] = window.getCsrfToken();
             }
         });
+    </script>
+    <script>
+        // PWA: registra el service worker para permitir instalación y offline.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/static/sw.js').catch(function() {});
+            });
+        }
     </script>
 </head>
 <body class="bg-gray-50">
