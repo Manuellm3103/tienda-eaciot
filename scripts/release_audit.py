@@ -47,24 +47,27 @@ async def main() -> None:
         status = "error"
     msg = sanitize(raw)
 
-    async with async_session() as db:
-        await db.execute(
-            text(
-                "CREATE TABLE IF NOT EXISTS release_runs ("
-                "id VARCHAR(36) PRIMARY KEY, "
-                "ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-                "script VARCHAR(50), status VARCHAR(10), message TEXT)"
+    try:
+        async with async_session() as db:
+            await db.execute(
+                text(
+                    "CREATE TABLE IF NOT EXISTS release_runs ("
+                    "id VARCHAR(36) PRIMARY KEY, "
+                    "ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                    "script VARCHAR(50), status VARCHAR(10), message TEXT)"
+                )
             )
-        )
-        await db.execute(
-            text(
-                "INSERT INTO release_runs (id, script, status, message) "
-                "VALUES (:id, :script, :status, :message)"
-            ),
-            {"id": str(uuid.uuid4()), "script": script, "status": status, "message": msg},
-        )
-        await db.commit()
-    print(f"audit: {script} -> {status}")
+            await db.execute(
+                text(
+                    "INSERT INTO release_runs (id, script, status, message) "
+                    "VALUES (:id, :script, :status, :message)"
+                ),
+                {"id": str(uuid.uuid4()), "script": script, "status": status, "message": msg},
+            )
+            await db.commit()
+        print(f"audit: {script} -> {status}")
+    except Exception as exc:  # el audit JAMÁS rompe el release
+        print(f"audit: {script} -> FALLO_AUDIT ({type(exc).__name__}: {exc})")
 
 
 if __name__ == "__main__":

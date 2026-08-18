@@ -101,19 +101,41 @@ async def release_audit():
 
     Render free no tiene Shell ni logs consultables por API, así que cada
     paso del release guarda su salida (ya saneada) en la tabla release_runs.
+    Incluye diagnóstico (dónde vive la BD, tablas, error) para depurar sin
+    acceso al servidor.
     """
     from sqlalchemy import text
-    async with async_session() as session:
-        rows = (await session.execute(text(
-            "SELECT script, status, ts, message FROM release_runs "
-            "ORDER BY ts DESC, rowid DESC LIMIT 50"
-        ))).fetchall()
-    return {
-        "release_runs": [
-            {"script": r[0], "status": r[1], "ts": str(r[2]), "message": r[3]}
-            for r in rows
-        ]
+    out = {
+        "database_url": settings.database_url,
+        "db_file": None,
+        "tables": [],
+        "release_runs": [],
+        "error": None,
     }
+    try:
+        if settings.database_url.startswith("sqlite"):
+            rel = settings.database_url.split(":///", 1)[-1]
+            for cand in (rel, os.path.abspath(rel)):
+                if os.path.exists(cand):
+                    out["db_file"] = cand
+                    out["db_size"] = os.path.getsize(cand)
+                    break
+        async with async_session() as session:
+            names = (await session.execute(text(
+                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+            ))).fetchall()
+            out["tables"] = [n[0] for n in names][:80]
+            rows = (await session.execute(text(
+                "SELECT script, status, ts, message FROM release_runs "
+                "ORDER BY ts DESC, rowid DESC LIMIT 50"
+            ))).fetchall()
+            out["release_runs"] = [
+                {"script": r[0], "status": r[1], "ts": str(r[2]), "message": r[3]}
+                for r in rows
+            ]
+    except Exception as exc:
+        out["error"] = f"{type(exc).__name__}: {exc}"
+    return out
 
 # Templates
 from app.templates_instance import templates
