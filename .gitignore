@@ -42,3 +42,7 @@ csd/
 
 # Carpeta ajena al proyecto (evita que git add -A la meta de nuevo)
 Domain-Control-Panel/
+
+# Proxy OpenCode LiteLLM — contiene api_key en texto plano (NUNCA commitear)
+litellm_config.yaml
+Start-Workspace.ps1
