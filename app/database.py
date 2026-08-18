@@ -92,6 +92,8 @@ _SQLITE_COLUMN_MIGRATIONS = {
         ("alt_texts", "TEXT"),
         ("base_price", "NUMERIC(10,2)"),
         ("compare_at_price", "NUMERIC(10,2)"),
+        ("cost_price", "NUMERIC(10,2)"),
+        ("hp_price", "NUMERIC(10,2)"),
         ("dynamic_price", "NUMERIC(10,2)"),
         ("dynamic_pricing_enabled", "BOOLEAN DEFAULT 0"),
         ("price_updated_at", "TIMESTAMP"),

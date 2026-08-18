@@ -36,6 +36,9 @@ class ProductBase(BaseModel):
     videos: Optional[list[str]] = None
     # Precio de competencia (anclaje) — se muestra tachado con % de ahorro.
     compare_at_price: Optional[Decimal] = Field(None, gt=0)
+    # Precios internos (SOLO admin, nunca en la tienda pública).
+    cost_price: Optional[Decimal] = Field(None, gt=0)
+    hp_price: Optional[Decimal] = Field(None, gt=0)
 
 
 class ProductCreate(ProductBase):
@@ -54,6 +57,8 @@ class ProductUpdate(BaseModel):
     videos: Optional[list[str]] = None
     is_active: Optional[bool] = None
     compare_at_price: Optional[Decimal] = Field(None, gt=0)
+    cost_price: Optional[Decimal] = Field(None, gt=0)
+    hp_price: Optional[Decimal] = Field(None, gt=0)
 
 
 class ProductResponse(ProductBase):

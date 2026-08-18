@@ -22,7 +22,7 @@
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="block text-sm font-medium text-gray-700">Precio</label>
-                <input type="number" step="0.01" name="price" value="{{ product.price if product else '' }}" required class="mt-1 block w-full border rounded-md px-3 py-2">
+                <input type="number" step="0.01" name="price" value="{{ product.price if product and product.price and product.price > 0 else '' }}" required class="mt-1 block w-full border rounded-md px-3 py-2" placeholder="Pendiente — lo llenas tú">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Stock</label>
@@ -34,6 +34,17 @@
             <label class="block text-sm font-medium text-gray-700">Precio de competencia (anclaje)</label>
             <input type="number" step="0.01" name="compare_at_price" value="{{ product.compare_at_price if product and product.compare_at_price else '' }}" class="mt-1 block w-full border rounded-md px-3 py-2" placeholder="Ej: 15999.00 — déjalo vacío si no aplica">
             <p class="text-xs text-gray-400 mt-1">Si es mayor que tu precio, en la tienda se muestra tachado junto al precio real con el % de ahorro. En la tienda se verá como el precio de los competidores.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">🟢 Costo — Precio en que lo consigo <span class="text-amber-600">(solo admin)</span></label>
+                <input type="number" step="0.01" name="cost_price" value="{{ product.cost_price if product and product.cost_price else '' }}" class="mt-1 block w-full border rounded-md px-3 py-2" placeholder="Solo tú lo ves, nunca se muestra en la tienda">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">🔵 Precio página oficial HP <span class="text-amber-600">(solo admin)</span></label>
+                <input type="number" step="0.01" name="hp_price" value="{{ product.hp_price if product and product.hp_price else '' }}" class="mt-1 block w-full border rounded-md px-3 py-2" placeholder="Referencia oficial HP, solo visible para ti">
+            </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">

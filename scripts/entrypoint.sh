@@ -24,6 +24,8 @@ python scripts/revive_products.py 2>&1 | tee -a "$AUDIT" | python scripts/releas
 
 echo "== Tienda Eaciot: restaurar catálogo laptops/SSD (one-shot) =="
 python scripts/restore_catalog.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py restore || true
+echo "== Tienda Eaciot: importar catálogo HP OmniBook (borradores, idempotente) =="
+python scripts/import_hp_omnibook.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py hp || true
 
 echo "== Tienda Eaciot: enrich con el depto de marketing IA (best-effort) =="
 python scripts/enrich_products.py 2>&1 | tee -a "$AUDIT" | python scripts/release_audit.py enrich || true

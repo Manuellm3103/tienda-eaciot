@@ -26,6 +26,8 @@
                 <th class="text-left py-3 px-4">Producto</th>
                 <th class="text-left py-3 px-4">Tipo</th>
                 <th class="text-right py-3 px-4">Precio</th>
+                <th class="text-right py-3 px-4" title="Precio en que lo consigo — solo admin">Costo</th>
+                <th class="text-right py-3 px-4" title="Precio página oficial HP — solo admin">HP</th>
                 <th class="text-center py-3 px-4">Stock</th>
                 <th class="text-center py-3 px-4">Activo</th>
                 <th class="text-center py-3 px-4">SEO</th>
@@ -38,7 +40,9 @@
             <tr class="border-b">
                 <td class="py-3 px-4">{{ product.title }}</td>
                 <td class="py-3 px-4">{{ product.product_type }}</td>
-                <td class="text-right py-3 px-4">${{ product.price }}</td>
+                <td class="text-right py-3 px-4">{% if product.price and product.price > 0 %}${{ product.price }}{% else %}<span class="text-amber-600 font-medium">Pendiente</span>{% endif %}</td>
+                <td class="text-right py-3 px-4 text-emerald-700">{{ '$%.2f' | format(product.cost_price) if product.cost_price else '—' }}</td>
+                <td class="text-right py-3 px-4 text-blue-700">{{ '$%.2f' | format(product.hp_price) if product.hp_price else '—' }}</td>
                 <td class="text-center py-3 px-4">{{ product.stock }}</td>
                 <td class="text-center py-3 px-4">
                     {% if product.is_active %}
